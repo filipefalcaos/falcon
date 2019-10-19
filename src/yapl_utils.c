@@ -1,5 +1,5 @@
 /*
- * YAPL version 0.0.2 (master, Aug 15 2019)
+ * YAPL version 0.0.1 (master, Oct 18 2019)
  * yapl_utils.c: List of internal utility functions
  * See YAPL's license in the LICENSE file
  */

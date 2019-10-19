@@ -6,6 +6,8 @@
 
 #include "../include/yapl.h"
 #include "../include/yapl_utils.h"
+#include "../include/yapl_vm.h"
+#include "../include/yapl_debug.h"
 #include <readline/readline.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,7 +48,8 @@ static void printUsage() {
  * Interprets a YAPL source file.
  */
 static void runFile(const char *path) {
-    char *source = readFile(path);                    /* Gets the source content */
+    char *source = readFile(path); /* Gets the source content */
+    /* Interprets the source line */
     free(source);
 }
 
@@ -115,6 +118,12 @@ static void processArgs(int argc, char const **argv) {
 }
 
 int main(int argc, char const **argv) {
+    BytecodeChunk bytecodeChunk;
+    initBytecodeChunk(&bytecodeChunk);
+    initVM();
     processArgs(argc, argv);
+    interpret(&bytecodeChunk);
+    freeBytecodeChunk(&bytecodeChunk);
+    freeVM();
     return 0;
 }

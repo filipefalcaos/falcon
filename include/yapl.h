@@ -1,5 +1,5 @@
 /*
- * YAPL version 0.0.2 (master, Aug 15 2019)
+ * YAPL version 0.0.1 (master, Oct 18 2019)
  * yapl.h: YAPL - Yet Another Programming Language
  * See YAPL's license in the LICENSE file
  */
@@ -34,10 +34,6 @@
 #define MORE_INFO      "See full license in the \"LICENSE\" file"
 
 /* Limits */
-#define YAPL_MAX_SINGLE_BYTE UINT8_MAX + 1               /* 256 */
-#define YAPL_MAX_FRAMES      UINT16_MAX                  /* 65535U */
-#define YAPL_MAX_STACK       UINT16_MAX /* 65535U * 255 */
-#define YAPL_MAX_PARAMS      UINT8_MAX                   /* 255 */
-#define YAPL_MAX_CONSTANTS   16777215
+#define YAPL_MAX_SINGLE_BYTE (UINT8_MAX + 1) /* 256 */
 
 #endif // YAPL_H
