@@ -74,11 +74,10 @@ static ResultCode run() {
 
 /* Performs a binary operation of the 'op' operator on the two elements on the top of the YAPL VM's
  * stack. Then, returns the result */
-#define BINARY_OP(op) \
+#define BINARY_OP(op, type) \
     do { \
-        double b = pop(); \
-        double a = pop(); \
-        push(a op b); \
+        type a = pop(); \
+        vm.stackTop[-1] = (type) vm.stackTop[-1] op a; \
     } while (false)
 
 #ifdef __DEBUG_TRACE_EXECUTION__
@@ -87,7 +86,6 @@ static ResultCode run() {
 
     while (true) {
 #ifdef __DEBUG_TRACE_EXECUTION__
-
         printStack();
         disassembleInstruction(vm.bytecodeChunk, (int) (vm.pc - vm.bytecodeChunk->code));
 #endif
@@ -106,19 +104,22 @@ static ResultCode run() {
 
             /* Arithmetic operations */
             case OP_ADD:
-                BINARY_OP(+);
+                BINARY_OP(+, double);
                 break;
             case OP_SUBTRACT:
-                BINARY_OP(-);
+                BINARY_OP(-, double);
                 break;
             case OP_NEGATE:
-                push(-pop());
+                vm.stackTop[-1] = -vm.stackTop[-1];
                 break;
             case OP_MULTIPLY:
-                BINARY_OP(*);
+                BINARY_OP(*, double);
+                break;
+            case OP_MOD:
+                BINARY_OP(%, int);
                 break;
             case OP_DIVIDE:
-                BINARY_OP(/);
+                BINARY_OP(/, double);
                 break;
 
             /* Function operations */
