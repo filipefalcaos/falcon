@@ -5,8 +5,12 @@
  */
 
 #include "../include/yapl_vm.h"
-#include "../include/yapl_debug.h"
+#include "../include/yapl_compiler.h"
 #include <stdio.h>
+
+#ifdef YAPL_DEBUG_TRACE_EXECUTION
+#include "../include/yapl_debug.h"
+#endif
 
 /* VM instance */
 VM vm;
@@ -14,16 +18,12 @@ VM vm;
 /**
  * Resets the virtual machine stack.
  */
-static void resetVMStack() {
-    vm.stackTop = vm.stack;
-}
+static void resetVMStack() { vm.stackTop = vm.stack; }
 
 /**
  * Initializes the YAPL's virtual machine.
  */
-void initVM() {
-    resetVMStack();
-}
+void initVM() { resetVMStack(); }
 
 /**
  * Frees the YAPL's virtual machine and its allocated objects.
@@ -51,7 +51,7 @@ Value pop() {
  */
 void printStack() {
     printf("          ");
-    for (Value* slot = vm.stack; slot < vm.stackTop; slot++) {
+    for (Value *slot = vm.stack; slot < vm.stackTop; slot++) {
         printf("[ ");
         printValue(*slot);
         printf(" ]");
@@ -74,19 +74,19 @@ static ResultCode run() {
 
 /* Performs a binary operation of the 'op' operator on the two elements on the top of the YAPL VM's
  * stack. Then, returns the result */
-#define BINARY_OP(op, type) \
-    do { \
-        type a = pop(); \
+#define BINARY_OP(op, type)                            \
+    do {                                               \
+        type a = pop();                                \
         vm.stackTop[-1] = (type) vm.stackTop[-1] op a; \
     } while (false)
 
-#ifdef __DEBUG_TRACE_EXECUTION__
+#ifdef YAPL_DEBUG_TRACE_EXECUTION
     printTraceExecutionHeader();
 #endif
 
     while (true) {
-#ifdef __DEBUG_TRACE_EXECUTION__
-        printStack();
+#ifdef YAPL_DEBUG_TRACE_EXECUTION
+        if (vm.stack != vm.stackTop) printStack();
         disassembleInstruction(vm.bytecodeChunk, (int) (vm.pc - vm.bytecodeChunk->code));
 #endif
 
@@ -139,8 +139,18 @@ static ResultCode run() {
  * Interprets a YAPL's source code string. If the source is compiled successfully, the bytecode
  * chunk is set for the YAPL's virtual machine to execute.
  */
-ResultCode interpret(BytecodeChunk *bytecodeChunk) {
-    vm.bytecodeChunk = bytecodeChunk;
+ResultCode interpret(const char *source) {
+    BytecodeChunk bytecodeChunk;
+    initBytecodeChunk(&bytecodeChunk);
+
+    if (!compile(source, &bytecodeChunk)) { /* Compiles the source code */
+        freeBytecodeChunk(&bytecodeChunk);
+        return COMPILE_ERROR;
+    }
+
+    vm.bytecodeChunk = &bytecodeChunk;
     vm.pc = vm.bytecodeChunk->code;
-    return run();
+    ResultCode resultCode = run(); /* Executes the bytecode chunk */
+    freeBytecodeChunk(&bytecodeChunk);
+    return resultCode;
 }

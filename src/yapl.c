@@ -7,7 +7,6 @@
 #include "../include/yapl.h"
 #include "../include/yapl_utils.h"
 #include "../include/yapl_vm.h"
-#include "../include/yapl_debug.h"
 #include <readline/readline.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,8 +48,10 @@ static void printUsage() {
  */
 static void runFile(const char *path) {
     char *source = readFile(path); /* Gets the source content */
-    /* Interprets the source line */
+    ResultCode resultCode = interpret(source); /* Interprets the source code */
     free(source);
+    if (resultCode == COMPILE_ERROR) exit(65);
+    if (resultCode == RUNTIME_ERROR) exit(70);
 }
 
 /**
@@ -81,7 +82,7 @@ static void repl() {
         } else if (areStrEqual(inputLine, AUTHORS_FUNC)) {
             printAuthors(); /* Print authors */
         } else {
-            /* Interprets the source line */
+            interpret(inputLine); /* Interprets the source line */
         }
     }
 
@@ -118,12 +119,8 @@ static void processArgs(int argc, char const **argv) {
 }
 
 int main(int argc, char const **argv) {
-    BytecodeChunk bytecodeChunk;
-    initBytecodeChunk(&bytecodeChunk);
     initVM();
     processArgs(argc, argv);
-    interpret(&bytecodeChunk);
-    freeBytecodeChunk(&bytecodeChunk);
     freeVM();
     return 0;
 }

@@ -26,6 +26,6 @@ void initVM();
 void freeVM();
 void push(Value value);
 Value pop();
-ResultCode interpret(BytecodeChunk *bytecodeChunk);
+ResultCode interpret(const char *source);
 
 #endif // YAPL_VM_H

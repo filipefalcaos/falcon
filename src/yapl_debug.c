@@ -9,6 +9,15 @@
 #include <stdio.h>
 
 /**
+ * Print debugging (opcodes) header.
+ */
+void printOpcodesHeader() {
+    printf("=============================================================\n");
+    printf("================= DEBUGGING - PRINT OPCODES =================\n");
+    printf("=============================================================\n");
+}
+
+/**
  * Print debugging (trace execution) header.
  */
 void printTraceExecutionHeader() {

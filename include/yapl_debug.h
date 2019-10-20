@@ -12,6 +12,7 @@
 /* Virtual machine debugging operations */
 void disassembleBytecodeChunk(BytecodeChunk *bytecodeChunk, const char *name);
 int disassembleInstruction(BytecodeChunk *bytecodeChunk, int offset);
+void printOpcodesHeader();
 void printTraceExecutionHeader();
 
 #endif // YAPL_DEBUG_H

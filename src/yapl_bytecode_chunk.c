@@ -101,7 +101,7 @@ int addConstant(BytecodeChunk *bytecodeChunk, Value value) {
 /**
  * Writes a constant to the bytecode chunk.
  */
-void writeConstant(BytecodeChunk *bytecodeChunk, Value value, int line) {
+int writeConstant(BytecodeChunk *bytecodeChunk, Value value, int line) {
     int index = addConstant(bytecodeChunk, value);
 
     if (index < YAPL_MAX_SINGLE_BYTE) {
@@ -112,4 +112,6 @@ void writeConstant(BytecodeChunk *bytecodeChunk, Value value, int line) {
         writeToBytecodeChunk(bytecodeChunk, (uint8_t) (index & 0xff), line);
         writeToBytecodeChunk(bytecodeChunk, (uint8_t) ((index >> 8) & 0xff), line);
     }
+
+    return index;
 }
