@@ -6,6 +6,7 @@
 
 #include "../include/yapl_compiler.h"
 #include "../include/commons.h"
+#include "../include/yapl_object.h"
 #include "../include/yapl_scanner.h"
 #include <stdarg.h>
 #include <stdio.h>
@@ -159,7 +160,7 @@ static void endCompiler() {
 
 /* Forward parser's declarations, since the grammar is recursive */
 static void expression();
-static ParseRule* getRule(TokenType type);
+static ParseRule *getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 
 /**
@@ -174,6 +175,24 @@ static void binary() {
 
     /* Emits the operator instruction */
     switch (operatorType) {
+        case TK_NOT_EQUAL:
+            emitBytes(OP_EQUAL, OP_NOT);
+            break;
+        case TK_EQUAL_EQUAL:
+            emitByte(OP_EQUAL);
+            break;
+        case TK_GREATER:
+            emitByte(OP_GREATER);
+            break;
+        case TK_GREATER_EQUAL:
+            emitBytes(OP_LESS, OP_NOT);
+            break;
+        case TK_LESS:
+            emitByte(OP_LESS);
+            break;
+        case TK_LESS_EQUAL:
+            emitBytes(OP_GREATER, OP_NOT);
+            break;
         case TK_PLUS:
             emitByte(OP_ADD);
             break;
@@ -195,6 +214,25 @@ static void binary() {
 }
 
 /**
+ * Handles a literal (booleans or null) expression by outputting the proper instruction.
+ */
+static void literal() {
+    switch (parser.previous.type) {
+        case TK_FALSE:
+            emitByte(OP_FALSE);
+            break;
+        case TK_NULL:
+            emitByte(OP_NULL);
+            break;
+        case TK_TRUE:
+            emitByte(OP_TRUE);
+            break;
+        default:
+            return; /* Unreachable */
+    }
+}
+
+/**
  * Handles the opening parenthesis by compiling the expression between the parentheses, and then
  * parsing the closing parenthesis.
  */
@@ -209,7 +247,15 @@ static void grouping() {
  */
 static void number() {
     double value = strtod(parser.previous.start, NULL);
-    emitConstant(value);
+    emitConstant(NUMBER_VAL(value));
+}
+
+/**
+ * Handles a string expression by creating a string object, wrapping it in a Value, and then
+ * adding it to the constants table.
+ */
+static void string() {
+    emitConstant(OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.length - 2)));
 }
 
 /**
@@ -223,6 +269,9 @@ static void unary() {
     switch (operatorType) {
         case TK_MINUS:
             emitByte(OP_NEGATE);
+            break;
+        case TK_NOT:
+            emitByte(OP_NOT);
             break;
         default:
             return;
@@ -242,56 +291,56 @@ static void unary() {
     { prefix, infix, prec }
 
 ParseRule rules[] = {
-    PREFIX_RULE(grouping),           /* TK_LEFT_PAREN */
-    EMPTY_RULE,                      /* TK_RIGHT_PAREN */
-    EMPTY_RULE,                      /* TK_LEFT_BRACE */
-    EMPTY_RULE,                      /* TK_RIGHT_BRACE */
-    EMPTY_RULE,                      /* TK_COMMA */
-    EMPTY_RULE,                      /* TK_DOT */
-    EMPTY_RULE,                      /* TK_SEMICOLON */
-    RULE(unary, binary, PREC_TERM),  /* TK_MINUS */
-    INFIX_RULE(binary, PREC_TERM),   /* TK_PLUS */
-    INFIX_RULE(binary, PREC_FACTOR), /* TK_DIV */
-    INFIX_RULE(binary, PREC_FACTOR), /* TK_MOD */
-    INFIX_RULE(binary, PREC_FACTOR), /* TK_MULTIPLY */
-    EMPTY_RULE,                      /* TK_NOT */
-    EMPTY_RULE,                      /* TK_NOT_EQUAL */
-    EMPTY_RULE,                      /* TK_EQUAL */
-    EMPTY_RULE,                      /* TK_EQUAL_EQUAL */
-    EMPTY_RULE,                      /* TK_GREATER */
-    EMPTY_RULE,                      /* TK_GREATER_EQUAL */
-    EMPTY_RULE,                      /* TK_LESS */
-    EMPTY_RULE,                      /* TK_LESS_EQUAL */
-    EMPTY_RULE,                      /* TK_DECREMENT */
-    EMPTY_RULE,                      /* TK_INCREMENT */
-    EMPTY_RULE,                      /* TK_PLUS_EQUAL */
-    EMPTY_RULE,                      /* TK_MINUS_EQUAL */
-    EMPTY_RULE,                      /* TK_MULTIPLY_EQUAL */
-    EMPTY_RULE,                      /* TK_DIV_EQUAL */
-    EMPTY_RULE,                      /* TK_MOD_EQUAL */
-    EMPTY_RULE,                      /* TK_AND */
-    EMPTY_RULE,                      /* TK_OR */
-    EMPTY_RULE,                      /* TK_IDENTIFIER */
-    EMPTY_RULE,                      /* TK_STRING */
-    PREFIX_RULE(number),             /* TK_NUMBER */
-    EMPTY_RULE,                      /* TK_CLASS */
-    EMPTY_RULE,                      /* TK_ELSE */
-    EMPTY_RULE,                      /* TK_FALSE */
-    EMPTY_RULE,                      /* TK_FOR */
-    EMPTY_RULE,                      /* TK_FUNCTION */
-    EMPTY_RULE,                      /* TK_IF */
-    EMPTY_RULE,                      /* TK_NULL */
-    EMPTY_RULE,                      /* TK_PRINT */
-    EMPTY_RULE,                      /* TK_PUTS */
-    EMPTY_RULE,                      /* TK_RETURN */
-    EMPTY_RULE,                      /* TK_SUPER */
-    EMPTY_RULE,                      /* TK_THIS */
-    EMPTY_RULE,                      /* TK_TRUE */
-    EMPTY_RULE,                      /* TK_UNLESS */
-    EMPTY_RULE,                      /* TK_VAR */
-    EMPTY_RULE,                      /* TK_WHILE */
-    EMPTY_RULE,                      /* TK_ERROR */
-    EMPTY_RULE                       /* TK_EOF */
+    PREFIX_RULE(grouping),            /* TK_LEFT_PAREN */
+    EMPTY_RULE,                       /* TK_RIGHT_PAREN */
+    EMPTY_RULE,                       /* TK_LEFT_BRACE */
+    EMPTY_RULE,                       /* TK_RIGHT_BRACE */
+    EMPTY_RULE,                       /* TK_COMMA */
+    EMPTY_RULE,                       /* TK_DOT */
+    EMPTY_RULE,                       /* TK_SEMICOLON */
+    RULE(unary, binary, PREC_TERM),   /* TK_MINUS */
+    INFIX_RULE(binary, PREC_TERM),    /* TK_PLUS */
+    INFIX_RULE(binary, PREC_FACTOR),  /* TK_DIV */
+    INFIX_RULE(binary, PREC_FACTOR),  /* TK_MOD */
+    INFIX_RULE(binary, PREC_FACTOR),  /* TK_MULTIPLY */
+    PREFIX_RULE(unary),               /* TK_NOT */
+    INFIX_RULE(binary, PREC_EQUAL),   /* TK_NOT_EQUAL */
+    EMPTY_RULE,                       /* TK_EQUAL */
+    INFIX_RULE(binary, PREC_EQUAL),   /* TK_EQUAL_EQUAL */
+    INFIX_RULE(binary, PREC_COMPARE), /* TK_GREATER */
+    INFIX_RULE(binary, PREC_COMPARE), /* TK_GREATER_EQUAL */
+    INFIX_RULE(binary, PREC_COMPARE), /* TK_LESS */
+    INFIX_RULE(binary, PREC_COMPARE), /* TK_LESS_EQUAL */
+    EMPTY_RULE,                       /* TK_DECREMENT */
+    EMPTY_RULE,                       /* TK_INCREMENT */
+    EMPTY_RULE,                       /* TK_PLUS_EQUAL */
+    EMPTY_RULE,                       /* TK_MINUS_EQUAL */
+    EMPTY_RULE,                       /* TK_MULTIPLY_EQUAL */
+    EMPTY_RULE,                       /* TK_DIV_EQUAL */
+    EMPTY_RULE,                       /* TK_MOD_EQUAL */
+    EMPTY_RULE,                       /* TK_AND */
+    EMPTY_RULE,                       /* TK_OR */
+    EMPTY_RULE,                       /* TK_IDENTIFIER */
+    PREFIX_RULE(string),              /* TK_STRING */
+    PREFIX_RULE(number),              /* TK_NUMBER */
+    EMPTY_RULE,                       /* TK_CLASS */
+    EMPTY_RULE,                       /* TK_ELSE */
+    PREFIX_RULE(literal),             /* TK_FALSE */
+    EMPTY_RULE,                       /* TK_FOR */
+    EMPTY_RULE,                       /* TK_FUNCTION */
+    EMPTY_RULE,                       /* TK_IF */
+    PREFIX_RULE(literal),             /* TK_NULL */
+    EMPTY_RULE,                       /* TK_PRINT */
+    EMPTY_RULE,                       /* TK_PUTS */
+    EMPTY_RULE,                       /* TK_RETURN */
+    EMPTY_RULE,                       /* TK_SUPER */
+    EMPTY_RULE,                       /* TK_THIS */
+    PREFIX_RULE(literal),             /* TK_TRUE */
+    EMPTY_RULE,                       /* TK_UNLESS */
+    EMPTY_RULE,                       /* TK_VAR */
+    EMPTY_RULE,                       /* TK_WHILE */
+    EMPTY_RULE,                       /* TK_ERROR */
+    EMPTY_RULE                        /* TK_EOF */
 };
 
 #undef EMPTY_RULE

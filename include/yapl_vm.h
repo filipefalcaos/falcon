@@ -16,10 +16,14 @@ typedef struct {
     uint8_t *pc;                       /* Program counter */
     Value stack[YAPL_MAX_SINGLE_BYTE]; /* VM stack */
     Value *stackTop;                   /* Pointer to the stack top */
+    Obj *objects;                      /* List of runtime objects */
 } VM;
 
 /* Interpretation result codes */
 typedef enum { OK, COMPILE_ERROR, RUNTIME_ERROR } ResultCode;
+
+/* VM instance */
+extern VM vm;
 
 /* Virtual machine operations */
 void initVM();

@@ -52,7 +52,7 @@ add_executable(
         src/yapl_value.c
         include/yapl_vm.h
         src/yapl_vm.c
-)
+        include/yapl_object.h src/yapl_object.c)
 
 # Link the readline library
 find_package(Readline)

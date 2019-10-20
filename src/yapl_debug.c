@@ -46,6 +46,17 @@ static int constantInstruction(const char *name, BytecodeChunk *bytecodeChunk, i
 }
 
 /**
+ * Displays a constant instruction (16 bits).
+ */
+static int constantInstruction16(const char *name, BytecodeChunk *bytecodeChunk, int offset) {
+    uint16_t constant = bytecodeChunk->code[offset + 1] | (bytecodeChunk->code[offset + 2] << 8);
+    printf("%-16s %4d '", name, constant);
+    printValue(bytecodeChunk->constants.values[constant]);
+    printf("'\n");
+    return offset + 3;
+}
+
+/**
  * Disassembles a single instruction in a bytecode chunk.
  */
 int disassembleInstruction(BytecodeChunk *bytecodeChunk, int offset) {
@@ -63,6 +74,22 @@ int disassembleInstruction(BytecodeChunk *bytecodeChunk, int offset) {
     switch (instruction) { /* Verifies the instruction type */
         case OP_CONSTANT:
             return constantInstruction("OP_CONSTANT", bytecodeChunk, offset);
+        case OP_CONSTANT_16:
+            return constantInstruction16("OP_CONSTANT_16", bytecodeChunk, offset);
+        case OP_FALSE:
+            return simpleInstruction("OP_FALSE", offset);
+        case OP_TRUE:
+            return simpleInstruction("OP_TRUE", offset);
+        case OP_NULL:
+            return simpleInstruction("OP_NULL", offset);
+        case OP_NOT:
+            return simpleInstruction("OP_NOT", offset);
+        case OP_EQUAL:
+            return simpleInstruction("OP_EQUAL", offset);
+        case OP_GREATER:
+            return simpleInstruction("OP_GREATER", offset);
+        case OP_LESS:
+            return simpleInstruction("OP_LESS", offset);
         case OP_ADD:
             return simpleInstruction("OP_ADD", offset);
         case OP_SUBTRACT:

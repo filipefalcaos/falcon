@@ -7,6 +7,14 @@
 #ifndef YAPL_MEMORY_MANAGER_H
 #define YAPL_MEMORY_MANAGER_H
 
+#include "yapl_object.h"
+
+/* Allocates an array with a given element type and count */
+#define ALLOCATE(type, count) (type *) reallocate(NULL, 0, sizeof(type) * (count))
+
+/* Frees an allocation by resizing it to zero bytes */
+#define FREE(type, pointer) reallocate(pointer, sizeof(type), 0)
+
 /* Doubles the capacity of a given dynamic array based on its current one */
 #define INCREASE_CAPACITY(capacity) ((capacity) < 8 ? 8 : (capacity) * 2)
 
@@ -20,5 +28,6 @@
 
 /* Memory management operations */
 void *reallocate(void *previous, size_t oldSize, size_t newSize);
+void freeObjects();
 
 #endif // YAPL_MEMORY_MANAGER_H

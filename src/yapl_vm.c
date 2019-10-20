@@ -6,7 +6,11 @@
 
 #include "../include/yapl_vm.h"
 #include "../include/yapl_compiler.h"
+#include "../include/yapl_object.h"
+#include "../include/yapl_memory_manager.h"
+#include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 #ifdef YAPL_DEBUG_TRACE_EXECUTION
 #include "../include/yapl_debug.h"
@@ -21,14 +25,34 @@ VM vm;
 static void resetVMStack() { vm.stackTop = vm.stack; }
 
 /**
+ * Presents a runtime error to the programmer.
+ */
+void runtimeError(const char *format, ...) {
+    va_list args;
+    va_start(args, format); /* Gets the arguments */
+    va_end(args);
+
+    size_t instruction = vm.pc - vm.bytecodeChunk->code;     /* Gets the instruction */
+    int line = getSourceLine(vm.bytecodeChunk, instruction); /* Gets the line */
+
+    fprintf(stderr, "File \"<stdin>\", line %d, in <script>\n", line);
+    vfprintf(stderr, format, args);
+    fprintf(stderr, "\n");
+    resetVMStack(); /* Resets the stack due to error */
+}
+
+/**
  * Initializes the YAPL's virtual machine.
  */
-void initVM() { resetVMStack(); }
+void initVM() {
+    resetVMStack();
+    vm.objects = NULL;
+}
 
 /**
  * Frees the YAPL's virtual machine and its allocated objects.
  */
-void freeVM() {}
+void freeVM() { freeObjects(); }
 
 /**
  * Pushes a value to the YAPL's virtual machine stack.
@@ -44,6 +68,37 @@ void push(Value value) {
 Value pop() {
     vm.stackTop--;
     return *vm.stackTop;
+}
+
+/**
+ * Peeks a element on the YAPL's virtual machine stack.
+ */
+static Value peek(int distance) { return vm.stackTop[-1 - distance]; }
+
+/**
+ * Takes the logical not (falsiness) of a value (boolean or null). In YAPL, 'null', 'false', the
+ * number zero, and an empty string are falsey, while every other value behaves like 'true'.
+ */
+static bool isFalsey(Value value) {
+    return IS_NULL(value) || (IS_BOOL(value) && !AS_BOOL(value)) ||
+           (IS_NUMBER(value) && AS_NUMBER(value) == 0);
+}
+
+/**
+ * Concatenates the two values on the top of the virtual machine stack. Then, pushes the new string
+ * to the stack.
+ */
+static void concatenateStrings() {
+    ObjString *b = AS_STRING(pop());
+    ObjString *a = AS_STRING(vm.stackTop[-1]);
+
+    int length = a->length + b->length;
+    ObjString *result = makeString(length);
+    memcpy(result->chars, a->chars, a->length);
+    memcpy(result->chars + a->length, b->chars, b->length);
+    result->chars[length] = '\0';
+
+    vm.stackTop[-1] = OBJ_VAL(result);
 }
 
 /**
@@ -74,10 +129,15 @@ static ResultCode run() {
 
 /* Performs a binary operation of the 'op' operator on the two elements on the top of the YAPL VM's
  * stack. Then, returns the result */
-#define BINARY_OP(op, type)                            \
-    do {                                               \
-        type a = pop();                                \
-        vm.stackTop[-1] = (type) vm.stackTop[-1] op a; \
+#define BINARY_OP(op, valueType, type)                    \
+    do {                                                  \
+        if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
+            runtimeError("Operands must be numbers.");    \
+            return RUNTIME_ERROR;                         \
+        }                                                 \
+        type b = AS_NUMBER(pop());                        \
+        type a = AS_NUMBER(vm.stackTop[-1]);              \
+        vm.stackTop[-1] = valueType((type) a op b);       \
     } while (false)
 
 #ifdef YAPL_DEBUG_TRACE_EXECUTION
@@ -101,25 +161,63 @@ static ResultCode run() {
                 push(vm.bytecodeChunk->constants.values[index]);
                 break;
             }
+            case OP_FALSE:
+                push(BOOL_VAL(false));
+                break;
+            case OP_TRUE:
+                push(BOOL_VAL(true));
+                break;
+            case OP_NULL:
+                push(NULL_VAL);
+                break;
+
+            /* Relational operations */
+            case OP_NOT:
+                vm.stackTop[-1] = BOOL_VAL(isFalsey(vm.stackTop[-1]));
+                break;
+            case OP_EQUAL: {
+                Value b = pop();
+                vm.stackTop[-1] = BOOL_VAL(valuesEqual(vm.stackTop[-1], b));
+                break;
+            }
+            case OP_GREATER:
+                BINARY_OP(>, BOOL_VAL, double);
+                break;
+            case OP_LESS:
+                BINARY_OP(<, BOOL_VAL, double);
+                break;
 
             /* Arithmetic operations */
-            case OP_ADD:
-                BINARY_OP(+, double);
+            case OP_ADD: {
+                if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
+                    concatenateStrings();
+                } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
+                    double a = AS_NUMBER(pop());
+                    vm.stackTop[-1] = NUMBER_VAL(AS_NUMBER(vm.stackTop[-1]) + a);
+                } else {
+                    runtimeError("Operands must be two numbers or two strings.");
+                    return RUNTIME_ERROR;
+                }
                 break;
+            }
             case OP_SUBTRACT:
-                BINARY_OP(-, double);
+                BINARY_OP(-, NUMBER_VAL, double);
                 break;
             case OP_NEGATE:
-                vm.stackTop[-1] = -vm.stackTop[-1];
+                if (!IS_NUMBER(peek(0))) {
+                    runtimeError("Operand must be a number.");
+                    return RUNTIME_ERROR;
+                }
+                vm.stackTop[-1] = NUMBER_VAL(-AS_NUMBER(vm.stackTop[-1]));
                 break;
             case OP_MULTIPLY:
-                BINARY_OP(*, double);
+                BINARY_OP(*, NUMBER_VAL, double);
                 break;
             case OP_MOD:
-                BINARY_OP(%, int);
+                BINARY_OP(%, NUMBER_VAL, int);
                 break;
             case OP_DIVIDE:
-                BINARY_OP(/, double);
+                BINARY_OP(/, NUMBER_VAL, double);
                 break;
 
             /* Function operations */

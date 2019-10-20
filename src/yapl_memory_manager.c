@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include "../include/commons.h"
 #include "../include/yapl_memory_manager.h"
+#include "../include/yapl_vm.h"
 
 /**
  * Handles all dynamic memory management — allocating memory, freeing it, and changing the size of
@@ -19,4 +20,29 @@ void *reallocate(void *previous, size_t oldSize, size_t newSize) {
     }
 
     return realloc(previous, newSize);
+}
+
+/**
+ * Frees a given allocated object.
+ */
+static void freeObject(Obj *object) {
+    switch (object->type) {
+        case OBJ_STRING: {
+            ObjString *string = (ObjString *) object;
+            reallocate(object, sizeof(ObjString) + string->length + 1, 0);
+            break;
+        }
+    }
+}
+
+/**
+ * Frees all the objects allocated in the virtual machine.
+ */
+void freeObjects() {
+    Obj *object = vm.objects;
+    while (object != NULL) {
+        Obj *next = object->next;
+        freeObject(object);
+        object = next;
+    }
 }
