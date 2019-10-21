@@ -48,8 +48,13 @@ static int byteInstruction(const char *name, BytecodeChunk *bytecodeChunk, int o
  */
 static int constantInstruction(const char *name, BytecodeChunk *bytecodeChunk, int offset) {
     uint8_t constant = bytecodeChunk->code[offset + 1];
+    Value value = bytecodeChunk->constants.values[constant];
+
+    /* Prints the constant */
     printf("%-16s %4d ", name, constant);
-    printValue(bytecodeChunk->constants.values[constant]);
+    if (value.type != VAL_OBJ) printf("'");
+    printValue(value);
+    if (value.type != VAL_OBJ) printf("'");
     printf("\n");
     return offset + 2;
 }
@@ -59,8 +64,13 @@ static int constantInstruction(const char *name, BytecodeChunk *bytecodeChunk, i
  */
 static int constantInstruction16(const char *name, BytecodeChunk *bytecodeChunk, int offset) {
     uint16_t constant = bytecodeChunk->code[offset + 1] | (bytecodeChunk->code[offset + 2] << 8);
+    Value value = bytecodeChunk->constants.values[constant];
+
+    /* Prints the constant */
     printf("%-16s %4d ", name, constant);
-    printValue(bytecodeChunk->constants.values[constant]);
+    if (value.type != VAL_OBJ) printf("'");
+    printValue(value);
+    if (value.type != VAL_OBJ) printf("'");
     printf("\n");
     return offset + 3;
 }
