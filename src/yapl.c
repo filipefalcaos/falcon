@@ -62,7 +62,7 @@ static void repl() {
     printInfo();
     printHelp();
 
-    for (;;) {
+    while (true) {
         inputLine = readline(PROMPT); /* Reads the input line */
         add_history(inputLine);       /* Adds history to the REPL */
 

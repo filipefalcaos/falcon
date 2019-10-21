@@ -40,7 +40,7 @@ typedef enum {
 } Precedence;
 
 /* Function pointer to parse functions */
-typedef void (*ParseFunction)();
+typedef void (*ParseFunction)(bool canAssign);
 
 /* YAPL's parsing rules (prefix function, infix function, precedence function) */
 typedef struct {
@@ -51,6 +51,7 @@ typedef struct {
 
 /* Parser instance */
 Parser parser;
+Table stringConstants;
 BytecodeChunk *compilingBytecodeChunk;
 
 /**
@@ -114,6 +115,20 @@ static void consume(TokenType type, const char *message) {
 }
 
 /**
+ * Checks if the current token if of the given type.
+ */
+static bool check(TokenType type) { return parser.current.type == type; }
+
+/**
+ * Checks if the current token is of the given type. If so, the token is consumed.
+ */
+static bool match(TokenType type) {
+    if (!check(type)) return false;
+    advance();
+    return true;
+}
+
+/**
  * Appends a single byte to the bytecode chunk.
  */
 static void emitByte(uint8_t byte) {
@@ -160,15 +175,53 @@ static void endCompiler() {
 
 /* Forward parser's declarations, since the grammar is recursive */
 static void expression();
+static void statement();
+static void declaration();
 static ParseRule *getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
+
+/**
+ * Checks if an identifier constant was already defined. If so, return its index. If not, set the
+ * identifier in the global names table.
+ */
+static uint8_t identifierConstant(Token *name) {
+    ObjString *string = copyString(name->start, name->length);
+    Value indexValue;
+
+    /* Checks if the identifier was already declared */
+    if (tableGet(&stringConstants, string, &indexValue)) {
+        return (uint16_t) AS_NUMBER(indexValue);
+    }
+
+    /* Adds the identifier to the bytecode chunk and to the "stringConstants" table */
+    // TODO: make it possible to have more than 256 globals per bytecode chunk
+    uint16_t index = addConstant(currentBytecodeChunk(), OBJ_VAL(string));
+    tableSet(&stringConstants, string, NUMBER_VAL((double) index));
+    return index;
+}
+
+/**
+ * Parses a variable by consuming an identifier token and then adds the the token lexeme to the
+ * constants table.
+ */
+static uint8_t parseVariable(const char *errorMessage) {
+    consume(TK_IDENTIFIER, errorMessage);
+    return identifierConstant(&parser.previous);
+}
+
+/**
+ * Records the existence of a variable declaration.
+ */
+static void defineVariable(uint8_t global) {
+    emitBytes(OP_DEFINE_GLOBAL, global);
+}
 
 /**
  * Handles a binary (infix) expression, by compiling the right operand of the expression (the left
  * one was already compiled). Then, emits the bytecode instruction that performs the binary
  * operation.
  */
-static void binary() {
+static void binary(bool canAssign) {
     TokenType operatorType = parser.previous.type;
     ParseRule *rule = getRule(operatorType); /* Gets the current rule */
     parsePrecedence(rule->precedence + 1);   /* Compiles with the correct precedence */
@@ -216,7 +269,7 @@ static void binary() {
 /**
  * Handles a literal (booleans or null) expression by outputting the proper instruction.
  */
-static void literal() {
+static void literal(bool canAssign) {
     switch (parser.previous.type) {
         case TK_FALSE:
             emitByte(OP_FALSE);
@@ -236,7 +289,7 @@ static void literal() {
  * Handles the opening parenthesis by compiling the expression between the parentheses, and then
  * parsing the closing parenthesis.
  */
-static void grouping() {
+static void grouping(bool canAssign) {
     expression();
     consume(TK_RIGHT_PAREN, "Expected ')' after expression.");
 }
@@ -245,7 +298,7 @@ static void grouping() {
  * Handles a numeric expression by converting a string to a double number and then generates the
  * code to load that value by calling 'emitConstant'.
  */
-static void number() {
+static void number(bool canAssign) {
     double value = strtod(parser.previous.start, NULL);
     emitConstant(NUMBER_VAL(value));
 }
@@ -254,15 +307,37 @@ static void number() {
  * Handles a string expression by creating a string object, wrapping it in a Value, and then
  * adding it to the constants table.
  */
-static void string() {
+static void string(bool canAssign) {
     emitConstant(OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.length - 2)));
+}
+
+/**
+ * Gets the index of a variable in the constants table and emits the the bytecode to perform the
+ * load of the global/local variable.
+ */
+static void namedVariable(Token name, bool canAssign) {
+    uint8_t arg = identifierConstant(&name);
+
+    if (canAssign && match(TK_EQUAL)) {
+        expression();
+        emitBytes(OP_SET_GLOBAL, arg);
+    } else {
+        emitBytes(OP_GET_GLOBAL, arg);
+    }
+}
+
+/**
+ * Handles a variable access.
+ */
+static void variable(bool canAssign) {
+    namedVariable(parser.previous, canAssign);
 }
 
 /**
  * Handles a unary expression by compiling the operand and then emitting the bytecode to perform
  * the unary operation itself.
  */
-static void unary() {
+static void unary(bool canAssign) {
     TokenType operatorType = parser.previous.type;
     parsePrecedence(PREC_UNARY); /* Compiles the operand */
 
@@ -320,7 +395,7 @@ ParseRule rules[] = {
     EMPTY_RULE,                       /* TK_MOD_EQUAL */
     EMPTY_RULE,                       /* TK_AND */
     EMPTY_RULE,                       /* TK_OR */
-    EMPTY_RULE,                       /* TK_IDENTIFIER */
+    PREFIX_RULE(variable),            /* TK_IDENTIFIER */
     PREFIX_RULE(string),              /* TK_STRING */
     PREFIX_RULE(number),              /* TK_NUMBER */
     EMPTY_RULE,                       /* TK_CLASS */
@@ -355,16 +430,26 @@ ParseRule rules[] = {
 static void parsePrecedence(Precedence precedence) {
     advance();
     ParseFunction prefixRule = getRule(parser.previous.type)->prefix;
-    if (prefixRule == NULL) {
+
+    if (prefixRule == NULL) { /* Checks if is a parsing error */
         compilerError(&parser.previous, "Expected expression.");
         return;
     }
 
-    prefixRule();
+    /* Checks if the left side is assignable */
+    bool canAssign = precedence <= PREC_ASSIGN;
+    prefixRule(canAssign);
+
+    /* Looks for an infix parser for the next token */
     while (precedence <= getRule(parser.current.type)->precedence) {
         advance();
         ParseFunction infixRule = getRule(parser.previous.type)->infix;
-        infixRule();
+        infixRule(canAssign);
+    }
+
+    if (canAssign && match(TK_EQUAL)) { /* Checks if is an invalid assignment */
+        compilerError(&parser.previous, "Invalid assignment target.");
+        expression();
     }
 }
 
@@ -380,6 +465,90 @@ static ParseRule *getRule(TokenType type) { return &rules[type]; }
 void expression() { parsePrecedence(PREC_ASSIGN); }
 
 /**
+ * Compiles a variable declaration.
+ */
+static void varDeclaration() {
+    uint8_t global = parseVariable("Expected a variable name."); /* Parses a variable name */
+
+    if (match(TK_EQUAL)) {
+        expression();
+    } else {
+        emitByte(OP_NULL);
+    }
+
+    consume(TK_SEMICOLON, "Expected a ';' after variable declaration.");
+    defineVariable(global);
+}
+
+/**
+ * Compiles an expression statement.
+ */
+static void expressionStatement() {
+    expression();
+    consume(TK_SEMICOLON, "Expected a ';' after expression.");
+    emitByte(OP_POP);
+}
+
+/**
+ * Compiles a 'print' statement.
+ */
+static void printStatement() {
+    expression();
+    consume(TK_SEMICOLON, "Expected a ';' after value.");
+    emitByte(OP_PRINT);
+}
+
+/**
+ * Compiles a statement.
+ */
+static void statement() {
+    if (match(TK_PRINT)) {
+        printStatement();
+    } else {
+        expressionStatement();
+    }
+}
+
+/**
+ * Synchronize error recovery.
+ */
+static void synchronize() {
+    parser.panicMode = false;
+
+    while (parser.current.type != TK_EOF) {
+        if (parser.previous.type == TK_SEMICOLON) return; /* Sync point (expression end) */
+
+        switch (parser.current.type) { /* Sync point (expression begin) */
+            case TK_CLASS:
+            case TK_FUNCTION:
+            case TK_VAR:
+            case TK_FOR:
+            case TK_IF:
+            case TK_WHILE:
+            case TK_PRINT:
+            case TK_RETURN:
+                return;
+            default:; /* Keep skipping tokens */
+        }
+
+        advance();
+    }
+}
+
+/**
+ * Compiles a declaration statement.
+ */
+static void declaration() {
+    if (match(TK_VAR)) {
+        varDeclaration();
+    } else {
+        statement();
+    }
+
+    if (parser.panicMode) synchronize();
+}
+
+/**
  * Compiles a given source code string. The parsing technique used is a Pratt parser, an improved
  * recursive descent parser that associates semantics with tokens instead of grammar rules.
  */
@@ -388,9 +557,14 @@ bool compile(const char *source, BytecodeChunk *bytecodeChunk) {
     parser.panicMode = false;
     compilingBytecodeChunk = bytecodeChunk;
     initScanner(source);
-    advance();
-    expression();
-    consume(TK_EOF, "Expected end of expression.");
+    initTable(&stringConstants);
+
+    advance();               /* Get the first token */
+    while (!match(TK_EOF)) { /* Main compiler loop */
+        declaration();       /* YAPL's grammar entry point */
+    }
+
     endCompiler();
+    freeTable(&stringConstants);
     return !parser.hadError;
 }

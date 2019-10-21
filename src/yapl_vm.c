@@ -6,8 +6,8 @@
 
 #include "../include/yapl_vm.h"
 #include "../include/yapl_compiler.h"
-#include "../include/yapl_object.h"
 #include "../include/yapl_memory_manager.h"
+#include "../include/yapl_object.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -46,13 +46,19 @@ void runtimeError(const char *format, ...) {
  */
 void initVM() {
     resetVMStack();
+    initTable(&vm.strings);
+    initTable(&vm.globals);
     vm.objects = NULL;
 }
 
 /**
  * Frees the YAPL's virtual machine and its allocated objects.
  */
-void freeVM() { freeObjects(); }
+void freeVM() {
+    freeTable(&vm.strings);
+    freeTable(&vm.globals);
+    freeObjects();
+}
 
 /**
  * Pushes a value to the YAPL's virtual machine stack.
@@ -92,13 +98,16 @@ static void concatenateStrings() {
     ObjString *b = AS_STRING(pop());
     ObjString *a = AS_STRING(vm.stackTop[-1]);
 
+    /* Concatenate both strings */
     int length = a->length + b->length;
     ObjString *result = makeString(length);
     memcpy(result->chars, a->chars, a->length);
     memcpy(result->chars + a->length, b->chars, b->length);
     result->chars[length] = '\0';
+    result->hash = hashString(result->chars, length);
 
-    vm.stackTop[-1] = OBJ_VAL(result);
+    vm.stackTop[-1] = OBJ_VAL(result);       /* Update the stack top */
+    tableSet(&vm.strings, result, NULL_VAL); /* Intern the string */
 }
 
 /**
@@ -126,6 +135,7 @@ static ResultCode run() {
 /* Reads the next byte from the bytecode, treats the resulting number as an index, and looks up the
  * corresponding location in the chunk’s constant table */
 #define READ_CONSTANT() (vm.bytecodeChunk->constants.values[READ_BYTE()])
+#define READ_STRING()   AS_STRING(READ_CONSTANT())
 
 /* Performs a binary operation of the 'op' operator on the two elements on the top of the YAPL VM's
  * stack. Then, returns the result */
@@ -220,16 +230,53 @@ static ResultCode run() {
                 BINARY_OP(/, NUMBER_VAL, double);
                 break;
 
-            /* Function operations */
-            case OP_RETURN:
+            /* Variable operations */
+            case OP_DEFINE_GLOBAL:
+                tableSet(&vm.globals, READ_STRING(), peek(0));
+                pop();
+                break;
+            case OP_GET_GLOBAL: {
+                ObjString *name = READ_STRING();
+                Value value;
+
+                if (!tableGet(&vm.globals, name, &value)) {
+                    runtimeError("Undefined variable '%s'.", name->chars);
+                    return RUNTIME_ERROR;
+                }
+
+                push(value);
+                break;
+            }
+            case OP_SET_GLOBAL: {
+                ObjString *name = READ_STRING();
+                if (tableSet(&vm.globals, name, peek(0))) {
+                    tableDelete(&vm.globals, name);
+                    runtimeError("Undefined variable '%s'.", name->chars);
+                    return RUNTIME_ERROR;
+                }
+                break;
+            }
+
+            /* Print operations */
+            case OP_PRINT:
                 printValue(pop());
                 printf("\n");
+                break;
+
+            /* Function operations */
+            case OP_RETURN:
                 return OK;
+
+            /* VM operations */
+            case OP_POP:
+                pop();
+                break;
         }
     }
 
 #undef READ_BYTE
 #undef READ_CONSTANT
+#undef READ_STRING
 #undef BINARY_OP
 }
 

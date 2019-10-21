@@ -9,6 +9,7 @@
 
 #include "yapl.h"
 #include "yapl_bytecode_chunk.h"
+#include "yapl_table.h"
 
 /* YAPL's virtual machine structure */
 typedef struct {
@@ -17,6 +18,8 @@ typedef struct {
     Value stack[YAPL_MAX_SINGLE_BYTE]; /* VM stack */
     Value *stackTop;                   /* Pointer to the stack top */
     Obj *objects;                      /* List of runtime objects */
+    Table strings;                     /* Strings table */
+    Table globals;                     /* Global variables */
 } VM;
 
 /* Interpretation result codes */

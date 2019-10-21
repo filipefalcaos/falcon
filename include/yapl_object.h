@@ -23,7 +23,8 @@ struct sObj {
 struct sObjString {
     Obj obj;
     int length;
-    char chars[];
+    uint32_t hash;
+    char chars[]; /* Flexible array member */
 };
 
 /**
@@ -45,7 +46,8 @@ static inline bool isObjType(Value value, ObjType type) {
 
 /* Object operations */
 void printObject(Value value);
-ObjString *copyString(const char *chars, int length);
+uint32_t hashString(const char *key, int length);
 ObjString *makeString(int length);
+ObjString *copyString(const char *chars, int length);
 
 #endif // YAPL_OBJECT_H

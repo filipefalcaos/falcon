@@ -17,7 +17,7 @@ add_compile_definitions(CMAKE_SYSTEM_NAME="${CMAKE_SYSTEM_NAME}")
 
 # Debugging options
 option(DEBUG_PRINT_CODE "DEBUG_PRINT_CODE" ON)
-option(DEBUG_TRACE_EXECUTION "DEBUG_TRACE_EXECUTION" ON)
+option(DEBUG_TRACE_EXECUTION "DEBUG_TRACE_EXECUTION" OFF)
 
 # Adds YAPL debugging macros if requested
 if (DEBUG_PRINT_CODE)
@@ -42,9 +42,13 @@ add_executable(
         src/yapl_debug.c
         include/yapl_memory_manager.h
         src/yapl_memory_manager.c
+        include/yapl_object.h
+        src/yapl_object.c
         include/yapl_opcodes.h
         include/yapl_scanner.h
         src/yapl_scanner.c
+        include/yapl_table.h
+        src/yapl_table.c
         include/yapl_tokens.h
         include/yapl_utils.h
         src/yapl_utils.c
@@ -52,7 +56,7 @@ add_executable(
         src/yapl_value.c
         include/yapl_vm.h
         src/yapl_vm.c
-        include/yapl_object.h src/yapl_object.c)
+)
 
 # Link the readline library
 find_package(Readline)
