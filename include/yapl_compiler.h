@@ -10,6 +10,6 @@
 #include "yapl_vm.h"
 
 /* Compiler operations */
-bool compile(const char *source, BytecodeChunk *bytecodeChunk);
+ObjFunction *compile(const char *source);
 
 #endif // YAPL_COMPILER_H

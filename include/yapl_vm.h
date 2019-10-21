@@ -9,17 +9,27 @@
 
 #include "yapl.h"
 #include "yapl_bytecode_chunk.h"
+#include "yapl_object.h"
 #include "yapl_table.h"
+
+/* Call frame structure */
+typedef struct {
+    ObjFunction *function; /* Running function */
+    uint8_t *pc;           /* Function's program counter */
+    Value *slots;          /* Function's stack pointer */
+} CallFrame;
 
 /* YAPL's virtual machine structure */
 typedef struct {
-    BytecodeChunk *bytecodeChunk;      /* Bytecode chunk to interpret */
-    uint8_t *pc;                       /* Program counter */
-    Value stack[YAPL_MAX_SINGLE_BYTE]; /* VM stack */
-    Value *stackTop;                   /* Pointer to the stack top */
-    Obj *objects;                      /* List of runtime objects */
-    Table strings;                     /* Strings table */
-    Table globals;                     /* Global variables */
+    CallFrame frames[VM_FRAMES_MAX]; /* VM's call frames */
+    int frameCount;                  /* Call frames count */
+    BytecodeChunk *bytecodeChunk;    /* Bytecode chunk to interpret */
+    uint8_t *pc;                     /* Program counter */
+    Value stack[VM_STACK_MAX];       /* VM's stack */
+    Value *stackTop;                 /* Pointer to the stack top */
+    Obj *objects;                    /* List of runtime objects */
+    Table strings;                   /* Strings table */
+    Table globals;                   /* Global variables */
 } VM;
 
 /* Interpretation result codes */

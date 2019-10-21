@@ -9,15 +9,24 @@
 
 #include "commons.h"
 #include "yapl_value.h"
+#include "yapl_bytecode_chunk.h"
 
 /* Types of objects on YAPL */
-typedef enum { OBJ_STRING } ObjType;
+typedef enum { OBJ_STRING, OBJ_FUNCTION } ObjType;
 
 /* Structure of a YAPL object */
 struct sObj {
     ObjType type;
     struct sObj *next;
 };
+
+/* YAPL's function object */
+typedef struct {
+    Obj obj;
+    int arity;
+    BytecodeChunk bytecodeChunk;
+    ObjString *name;
+} ObjFunction;
 
 /* YAPL's string object */
 struct sObjString {
@@ -38,14 +47,21 @@ static inline bool isObjType(Value value, ObjType type) {
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
 
 /* Checks if a Value is an Obj type */
-#define IS_STRING(value) isObjType(value, OBJ_STRING)
+#define IS_FUNCTION(value) isObjType(value, OBJ_FUNCTION)
+#define IS_STRING(value)   isObjType(value, OBJ_STRING)
 
 /* Gets the object value from a YAPL Value */
+#define AS_FUNCTION(value)     ((ObjFunction*)AS_OBJ(value))
 #define AS_STRING(value)       ((ObjString *) AS_OBJ(value))
 #define AS_CLANG_STRING(value) (((ObjString *) AS_OBJ(value))->chars)
 
 /* Object operations */
 void printObject(Value value);
+
+/* Function object operations */
+ObjFunction *newFunction();
+
+/* String object operations */
 uint32_t hashString(const char *key, int length);
 ObjString *makeString(int length);
 ObjString *copyString(const char *chars, int length);

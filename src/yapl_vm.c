@@ -22,7 +22,10 @@ VM vm;
 /**
  * Resets the virtual machine stack.
  */
-static void resetVMStack() { vm.stackTop = vm.stack; }
+static void resetVMStack() {
+    vm.stackTop = vm.stack;
+    vm.frameCount = 0;
+}
 
 /**
  * Presents a runtime error to the programmer.
@@ -32,12 +35,25 @@ void runtimeError(const char *format, ...) {
     va_start(args, format); /* Gets the arguments */
     va_end(args);
 
-    size_t instruction = vm.pc - vm.bytecodeChunk->code;     /* Gets the instruction */
-    int line = getSourceLine(vm.bytecodeChunk, instruction); /* Gets the line */
-
-    fprintf(stderr, "File \"<stdin>\", line %d, in <script>\n", line);
+    /* Prints the error */
     vfprintf(stderr, format, args);
     fprintf(stderr, "\n");
+
+    /* Prints a stack trace */
+    for (int i = vm.frameCount - 1; i >= 0; i--) {
+        CallFrame *currentFrame = &vm.frames[i];
+        ObjFunction *currentFunction = currentFrame->function;
+        size_t currentInstruction = currentFrame->pc - currentFunction->bytecodeChunk.code - 1;
+        int currentLine = getSourceLine(&currentFrame->function->bytecodeChunk, currentInstruction);
+
+        fprintf(stderr, "\t[line %d] in ", currentLine);
+        if (currentFunction->name == NULL) {
+            fprintf(stderr, "script\n");
+        } else {
+            fprintf(stderr, "%s()\n", currentFunction->name->chars);
+        }
+    }
+
     resetVMStack(); /* Resets the stack due to error */
 }
 
@@ -112,6 +128,44 @@ void printStack() {
 }
 
 /**
+ * Executes a call on the given YAPL function by setting its call frame to be run.
+ */
+static bool call(ObjFunction* function, int argCount) {
+    if (argCount != function->arity) {
+        runtimeError("Expected %d arguments but got %d.", function->arity, argCount);
+        return false;
+    }
+
+    if (vm.frameCount == VM_FRAMES_MAX) {
+        runtimeError("Stack overflow.");
+        return false;
+    }
+
+    CallFrame *frame = &vm.frames[vm.frameCount++];
+    frame->function = function;
+    frame->pc = function->bytecodeChunk.code;
+    frame->slots = vm.stackTop - argCount - 1;
+    return true;
+}
+
+/**
+ * Tries to execute a function call on a given YAPL value.
+ */
+static bool callValue(Value callee, int argCount) {
+    if (IS_OBJ(callee)) {
+        switch (OBJ_TYPE(callee)) {
+            case OBJ_FUNCTION:
+                return call(AS_FUNCTION(callee), argCount);
+            default:
+                break; /* Not callable */
+        }
+    }
+
+    runtimeError("Only functions and classes are callable values.");
+    return false;
+}
+
+/**
  * Takes the logical not (falsiness) of a value (boolean or null). In YAPL, 'null', 'false', the
  * number zero, and an empty string are falsey, while every other value behaves like 'true'.
  */
@@ -145,13 +199,14 @@ static void concatenateStrings() {
  * executes the current bytecode instruction.
  */
 static ResultCode run() {
+    CallFrame *frame = &vm.frames[vm.frameCount - 1]; /* Current call frame */
 
 /* Reads the current byte */
-#define READ_BYTE() (*vm.pc++)
+#define READ_BYTE() (*frame->pc++)
 
 /* Reads the next byte from the bytecode, treats the resulting number as an index, and looks up the
  * corresponding location in the chunk’s constant table */
-#define READ_CONSTANT() (vm.bytecodeChunk->constants.values[READ_BYTE()])
+#define READ_CONSTANT() (frame->function->bytecodeChunk.constants.values[READ_BYTE()])
 #define READ_STRING()   AS_STRING(READ_CONSTANT())
 
 /* Performs a binary operation of the 'op' operator on the two elements on the top of the YAPL VM's
@@ -174,7 +229,8 @@ static ResultCode run() {
     while (true) {
 #ifdef YAPL_DEBUG_TRACE_EXECUTION
         if (vm.stack != vm.stackTop) printStack();
-        disassembleInstruction(vm.bytecodeChunk, (int) (vm.pc - vm.bytecodeChunk->code));
+        disassembleInstruction(&frame->function->bytecodeChunk,
+                               (int) (frame->pc - frame->function->bytecodeChunk.code));
 #endif
 
         switch (READ_BYTE()) { /* Reads the next byte and switches through the opcodes */
@@ -273,12 +329,12 @@ static ResultCode run() {
             }
             case OP_GET_LOCAL: {
                 uint8_t slot = READ_BYTE();
-                push(vm.stack[slot]);
+                push(frame->slots[slot]);
                 break;
             }
             case OP_SET_LOCAL: {
                 uint8_t slot = READ_BYTE();
-                vm.stack[slot] = peek(0);
+                frame->slots[slot] = peek(0);
                 break;
             }
 
@@ -289,8 +345,26 @@ static ResultCode run() {
                 break;
 
             /* Function operations */
-            case OP_RETURN:
-                return OK;
+            case OP_CALL: {
+                int argCount = READ_BYTE();
+                if (!callValue(peek(argCount), argCount)) return RUNTIME_ERROR;
+                frame = &vm.frames[vm.frameCount - 1]; /* Updates the current frame */
+                break;
+            }
+            case OP_RETURN: {
+                Value result = pop(); /* Gets the function's return value */
+                vm.frameCount--;
+
+                if (vm.frameCount == 0) { /* Checks if top level code is finished */
+                    pop();                /* Pops "script" from the stack */
+                    return OK;
+                }
+
+                vm.stackTop = frame->slots;            /* Resets the stack top */
+                push(result);                          /* Pushes the function's return value */
+                frame = &vm.frames[vm.frameCount - 1]; /* Updates the current frame */
+                break;
+            }
 
             /* VM operations */
             case OP_POP:
@@ -315,17 +389,12 @@ static ResultCode run() {
  * chunk is set for the YAPL's virtual machine to execute.
  */
 ResultCode interpret(const char *source) {
-    BytecodeChunk bytecodeChunk;
-    initBytecodeChunk(&bytecodeChunk);
+    ObjFunction *function = compile(source); /* Compiles the source code */
+    if (function == NULL) return COMPILE_ERROR;
 
-    if (!compile(source, &bytecodeChunk)) { /* Compiles the source code */
-        freeBytecodeChunk(&bytecodeChunk);
-        return COMPILE_ERROR;
-    }
+    /* Set the script to run */
+    push(OBJ_VAL(function));
+    callValue(OBJ_VAL(function), 0);
 
-    vm.bytecodeChunk = &bytecodeChunk;
-    vm.pc = vm.bytecodeChunk->code;
-    ResultCode resultCode = run(); /* Executes the bytecode chunk */
-    freeBytecodeChunk(&bytecodeChunk);
-    return resultCode;
+    return run(); /* Executes the bytecode chunk */
 }

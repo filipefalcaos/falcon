@@ -56,9 +56,15 @@ typedef struct {
     int depth;
 } Local;
 
+/* YAPL's function types */
+typedef enum { TYPE_FUNCTION, TYPE_SCRIPT } FunctionType;
+
 /* YAPL's compiler representation */
 typedef struct Compiler {
-    Local locals[YAPL_MAX_SINGLE_BYTE]; // TODO: make it possible to have more than 256
+    struct Compiler *enclosing;
+    ObjFunction *function;
+    FunctionType type;             // TODO: change to a bitfield?
+    Local locals[MAX_SINGLE_BYTE]; // TODO: make it possible to have more than 256
     int localCount;
     int scopeDepth;
 } Compiler;
@@ -66,14 +72,12 @@ typedef struct Compiler {
 /* Parser instance */
 Parser parser;
 Table globalNames;
-Table constantsNames;
 Compiler *current = NULL;
-BytecodeChunk *compilingBytecodeChunk;
 
 /**
  * Returns the compiling bytecode chunk.
  */
-static BytecodeChunk *currentBytecodeChunk() { return compilingBytecodeChunk; }
+static BytecodeChunk *currentBytecodeChunk() { return &current->function->bytecodeChunk; }
 
 /**
  * Presents a syntax/compiler error to the programmer.
@@ -162,7 +166,20 @@ static void emitBytes(uint8_t byte_1, uint8_t byte_2) {
 /**
  * Emits the OP_RETURN bytecode instruction.
  */
-static void emitReturn() { emitByte(OP_RETURN); }
+static void emitReturn() { emitBytes(OP_NULL, OP_RETURN); }
+
+/**
+ * Adds a constant to the bytecode chunk constants table.
+ */
+static uint8_t makeConstant(Value value) {
+    int constant = addConstant(currentBytecodeChunk(), value);
+    if (constant > UINT8_MAX) {
+        compilerError(&parser.previous, "Too many constants in one chunk.");
+        return 0;
+    }
+
+    return (uint8_t) constant;
+}
 
 /**
  * Inserts a constant in the constants table of the current bytecode chunk. Before inserting,
@@ -176,26 +193,46 @@ static void emitConstant(Value value) {
 /**
  * Starts a new compilation process.
  */
-static void initCompiler(Compiler *compiler) {
+static void initCompiler(Compiler *compiler, FunctionType type) {
+    compiler->enclosing = current;
+    compiler->function = NULL;
+    compiler->type = type;
     compiler->localCount = 0;
     compiler->scopeDepth = 0;
+    compiler->function = newFunction();
     current = compiler;
+
+    if (type != TYPE_SCRIPT)
+        current->function->name =
+            copyString(parser.previous.start, parser.previous.length); /* Sets function name */
+
+    /* Set stack slot zero for the VM's internal use */
+    Local *local = &current->locals[current->localCount++];
+    local->depth = 0;
+    local->name.start = "";
+    local->name.length = 0;
 }
 
 /**
  * Ends the compilation process.
  */
-static void endCompiler() {
+static ObjFunction *endCompiler() {
     emitReturn();
+    ObjFunction *function = current->function;
+
 #ifdef YAPL_DEBUG_PRINT_CODE
     if (!parser.hadError) {
         printOpcodesHeader();
-        disassembleBytecodeChunk(currentBytecodeChunk(), "Source code");
+        disassembleBytecodeChunk(currentBytecodeChunk(),
+                                 function->name != NULL ? function->name->chars : "<script>");
 #ifdef YAPL_DEBUG_TRACE_EXECUTION
         printf("\n");
 #endif
     }
 #endif
+
+    current = current->enclosing;
+    return function;
 }
 
 /**
@@ -238,19 +275,7 @@ static void parsePrecedence(Precedence precedence);
  * identifier in the global names table.
  */
 static uint8_t identifierConstant(Token *name) {
-    ObjString *string = copyString(name->start, name->length);
-    Value indexValue;
-
-    /* Checks if the identifier was already declared */
-    if (tableGet(&globalNames, string, &indexValue)) {
-        return (uint16_t) AS_NUMBER(indexValue);
-    }
-
-    /* Adds the identifier to the bytecode chunk and to the "globalNames" table */
-    // TODO: make it possible to have more than 256 globals per bytecode chunk
-    uint16_t index = addConstant(currentBytecodeChunk(), OBJ_VAL(string));
-    tableSet(&globalNames, string, NUMBER_VAL((double) index));
-    return index;
+    return makeConstant(OBJ_VAL(copyString(name->start, name->length)));
 }
 
 /**
@@ -282,7 +307,7 @@ static int resolveLocal(Compiler *compiler, Token *name) {
  * Adds a local variable to the list of variables in a scope depth.
  */
 static void addLocal(Token name) {
-    if (current->localCount == YAPL_MAX_SINGLE_BYTE) {
+    if (current->localCount == MAX_SINGLE_BYTE) {
         compilerError(&parser.previous, "Too many local variables in scope.");
         return;
     }
@@ -325,6 +350,7 @@ static uint8_t parseVariable(const char *errorMessage) {
  * Marks a local variable as initialized and available for use.
  */
 static void markInitialized() {
+    if (current->scopeDepth == 0) return;
     current->locals[current->localCount - 1].depth = current->scopeDepth;
 }
 
@@ -338,6 +364,25 @@ static void defineVariable(uint8_t global) {
     }
 
     emitBytes(OP_DEFINE_GLOBAL, global);
+}
+
+/**
+ * Compiles the list of arguments in a function call.
+ */
+static uint8_t argumentList() {
+    uint8_t argCount = 0;
+
+    if (!check(TK_RIGHT_PAREN)) {
+        do {
+            expression();
+            if (argCount == 255)
+                compilerError(&parser.previous, "Cannot have more than 255 arguments.");
+            argCount++;
+        } while (match(TK_COMMA));
+    }
+
+    consume(TK_RIGHT_PAREN, "Expected a ')' after arguments.");
+    return argCount;
 }
 
 /**
@@ -391,6 +436,15 @@ static void binary(bool canAssign) {
 }
 
 /**
+ * Handles a function call expression by parsing its arguments list and emitting the instruction to
+ * proceed with the execution of the function.
+ */
+static void call(bool canAssign) {
+    uint8_t argCount = argumentList();
+    emitBytes(OP_CALL, argCount);
+}
+
+/**
  * Handles a literal (booleans or null) expression by outputting the proper instruction.
  */
 static void literal(bool canAssign) {
@@ -420,7 +474,7 @@ static void grouping(bool canAssign) {
 
 /**
  * Handles a numeric expression by converting a string to a double number and then generates the
- * code to load that value by calling 'emitConstant'.
+ * code to load that value by calling "emitConstant".
  */
 static void number(bool canAssign) {
     double value = strtod(parser.previous.start, NULL);
@@ -453,11 +507,10 @@ static void namedVariable(Token name, bool canAssign) {
     }
 
     if (canAssign && match(TK_EQUAL)) {
-
         expression();
-        emitBytes(setOpcode, arg);
+        emitBytes(setOpcode, (uint8_t) arg);
     } else {
-        emitBytes(getOpcode, arg);
+        emitBytes(getOpcode, (uint8_t) arg);
     }
 }
 
@@ -499,56 +552,56 @@ static void unary(bool canAssign) {
     { prefix, infix, prec }
 
 ParseRule rules[] = {
-    PREFIX_RULE(grouping),            /* TK_LEFT_PAREN */
-    EMPTY_RULE,                       /* TK_RIGHT_PAREN */
-    EMPTY_RULE,                       /* TK_LEFT_BRACE */
-    EMPTY_RULE,                       /* TK_RIGHT_BRACE */
-    EMPTY_RULE,                       /* TK_COMMA */
-    EMPTY_RULE,                       /* TK_DOT */
-    EMPTY_RULE,                       /* TK_SEMICOLON */
-    RULE(unary, binary, PREC_TERM),   /* TK_MINUS */
-    INFIX_RULE(binary, PREC_TERM),    /* TK_PLUS */
-    INFIX_RULE(binary, PREC_FACTOR),  /* TK_DIV */
-    INFIX_RULE(binary, PREC_FACTOR),  /* TK_MOD */
-    INFIX_RULE(binary, PREC_FACTOR),  /* TK_MULTIPLY */
-    PREFIX_RULE(unary),               /* TK_NOT */
-    INFIX_RULE(binary, PREC_EQUAL),   /* TK_NOT_EQUAL */
-    EMPTY_RULE,                       /* TK_EQUAL */
-    INFIX_RULE(binary, PREC_EQUAL),   /* TK_EQUAL_EQUAL */
-    INFIX_RULE(binary, PREC_COMPARE), /* TK_GREATER */
-    INFIX_RULE(binary, PREC_COMPARE), /* TK_GREATER_EQUAL */
-    INFIX_RULE(binary, PREC_COMPARE), /* TK_LESS */
-    INFIX_RULE(binary, PREC_COMPARE), /* TK_LESS_EQUAL */
-    EMPTY_RULE,                       /* TK_DECREMENT */
-    EMPTY_RULE,                       /* TK_INCREMENT */
-    EMPTY_RULE,                       /* TK_PLUS_EQUAL */
-    EMPTY_RULE,                       /* TK_MINUS_EQUAL */
-    EMPTY_RULE,                       /* TK_MULTIPLY_EQUAL */
-    EMPTY_RULE,                       /* TK_DIV_EQUAL */
-    EMPTY_RULE,                       /* TK_MOD_EQUAL */
-    EMPTY_RULE,                       /* TK_AND */
-    EMPTY_RULE,                       /* TK_OR */
-    PREFIX_RULE(variable),            /* TK_IDENTIFIER */
-    PREFIX_RULE(string),              /* TK_STRING */
-    PREFIX_RULE(number),              /* TK_NUMBER */
-    EMPTY_RULE,                       /* TK_CLASS */
-    EMPTY_RULE,                       /* TK_ELSE */
-    PREFIX_RULE(literal),             /* TK_FALSE */
-    EMPTY_RULE,                       /* TK_FOR */
-    EMPTY_RULE,                       /* TK_FUNCTION */
-    EMPTY_RULE,                       /* TK_IF */
-    PREFIX_RULE(literal),             /* TK_NULL */
-    EMPTY_RULE,                       /* TK_PRINT */
-    EMPTY_RULE,                       /* TK_PUTS */
-    EMPTY_RULE,                       /* TK_RETURN */
-    EMPTY_RULE,                       /* TK_SUPER */
-    EMPTY_RULE,                       /* TK_THIS */
-    PREFIX_RULE(literal),             /* TK_TRUE */
-    EMPTY_RULE,                       /* TK_UNLESS */
-    EMPTY_RULE,                       /* TK_VAR */
-    EMPTY_RULE,                       /* TK_WHILE */
-    EMPTY_RULE,                       /* TK_ERROR */
-    EMPTY_RULE                        /* TK_EOF */
+    RULE(grouping, call, PREC_POSTFIX), /* TK_LEFT_PAREN */
+    EMPTY_RULE,                         /* TK_RIGHT_PAREN */
+    EMPTY_RULE,                         /* TK_LEFT_BRACE */
+    EMPTY_RULE,                         /* TK_RIGHT_BRACE */
+    EMPTY_RULE,                         /* TK_COMMA */
+    EMPTY_RULE,                         /* TK_DOT */
+    EMPTY_RULE,                         /* TK_SEMICOLON */
+    RULE(unary, binary, PREC_TERM),     /* TK_MINUS */
+    INFIX_RULE(binary, PREC_TERM),      /* TK_PLUS */
+    INFIX_RULE(binary, PREC_FACTOR),    /* TK_DIV */
+    INFIX_RULE(binary, PREC_FACTOR),    /* TK_MOD */
+    INFIX_RULE(binary, PREC_FACTOR),    /* TK_MULTIPLY */
+    PREFIX_RULE(unary),                 /* TK_NOT */
+    INFIX_RULE(binary, PREC_EQUAL),     /* TK_NOT_EQUAL */
+    EMPTY_RULE,                         /* TK_EQUAL */
+    INFIX_RULE(binary, PREC_EQUAL),     /* TK_EQUAL_EQUAL */
+    INFIX_RULE(binary, PREC_COMPARE),   /* TK_GREATER */
+    INFIX_RULE(binary, PREC_COMPARE),   /* TK_GREATER_EQUAL */
+    INFIX_RULE(binary, PREC_COMPARE),   /* TK_LESS */
+    INFIX_RULE(binary, PREC_COMPARE),   /* TK_LESS_EQUAL */
+    EMPTY_RULE,                         /* TK_DECREMENT */
+    EMPTY_RULE,                         /* TK_INCREMENT */
+    EMPTY_RULE,                         /* TK_PLUS_EQUAL */
+    EMPTY_RULE,                         /* TK_MINUS_EQUAL */
+    EMPTY_RULE,                         /* TK_MULTIPLY_EQUAL */
+    EMPTY_RULE,                         /* TK_DIV_EQUAL */
+    EMPTY_RULE,                         /* TK_MOD_EQUAL */
+    EMPTY_RULE,                         /* TK_AND */
+    EMPTY_RULE,                         /* TK_OR */
+    PREFIX_RULE(variable),              /* TK_IDENTIFIER */
+    PREFIX_RULE(string),                /* TK_STRING */
+    PREFIX_RULE(number),                /* TK_NUMBER */
+    EMPTY_RULE,                         /* TK_CLASS */
+    EMPTY_RULE,                         /* TK_ELSE */
+    PREFIX_RULE(literal),               /* TK_FALSE */
+    EMPTY_RULE,                         /* TK_FOR */
+    EMPTY_RULE,                         /* TK_FUNCTION */
+    EMPTY_RULE,                         /* TK_IF */
+    PREFIX_RULE(literal),               /* TK_NULL */
+    EMPTY_RULE,                         /* TK_PRINT */
+    EMPTY_RULE,                         /* TK_PUTS */
+    EMPTY_RULE,                         /* TK_RETURN */
+    EMPTY_RULE,                         /* TK_SUPER */
+    EMPTY_RULE,                         /* TK_THIS */
+    PREFIX_RULE(literal),               /* TK_TRUE */
+    EMPTY_RULE,                         /* TK_UNLESS */
+    EMPTY_RULE,                         /* TK_VAR */
+    EMPTY_RULE,                         /* TK_WHILE */
+    EMPTY_RULE,                         /* TK_ERROR */
+    EMPTY_RULE                          /* TK_EOF */
 };
 
 #undef EMPTY_RULE
@@ -626,6 +679,46 @@ static void varDeclaration() {
 }
 
 /**
+ * Compiles a function body and its parameters.
+ */
+static void function(FunctionType type) {
+    Compiler compiler;
+    initCompiler(&compiler, type);
+    beginScope();
+
+    /* Compiles the parameter list */
+    consume(TK_LEFT_PAREN, "Expected a '(' after function name.");
+    if (!check(TK_RIGHT_PAREN)) {
+        do {
+            current->function->arity++;
+            if (current->function->arity > 255)
+                compilerError(&parser.current, "Cannot have more than 255 parameters.");
+            uint8_t paramConstant = parseVariable("Expected a parameter name.");
+            defineVariable(paramConstant);
+        } while (match(TK_COMMA));
+    }
+    consume(TK_RIGHT_PAREN, "Expected a ')' after parameters.");
+
+    /* Compiles the function body */
+    consume(TK_LEFT_BRACE, "Expected a '{' before function body.");
+    block();
+
+    /* Create the function object */
+    ObjFunction *function = endCompiler();
+    writeConstant(currentBytecodeChunk(), OBJ_VAL(function), parser.previous.line);
+}
+
+/**
+ * Compiles a function declaration.
+ */
+static void funDeclaration() {
+    uint8_t global = parseVariable("Expected a function name.");
+    markInitialized();
+    function(TYPE_FUNCTION);
+    defineVariable(global);
+}
+
+/**
  * Compiles an expression statement.
  */
 static void expressionStatement() {
@@ -635,7 +728,7 @@ static void expressionStatement() {
 }
 
 /**
- * Compiles a 'print' statement.
+ * Compiles a "print" statement.
  */
 static void printStatement() {
     expression();
@@ -644,11 +737,29 @@ static void printStatement() {
 }
 
 /**
+ * Compiles a "return" statement.
+ */
+static void returnStatement() {
+    if (current->type == TYPE_SCRIPT) /* Checks if in top level code */
+        compilerError(&parser.previous, "Cannot return from top level code.");
+
+    if (match(TK_SEMICOLON)) {
+        emitReturn();
+    } else {
+        expression();
+        consume(TK_SEMICOLON, "Expected a ';' after return value.");
+        emitByte(OP_RETURN);
+    }
+}
+
+/**
  * Compiles a statement.
  */
 static void statement() {
     if (match(TK_PRINT)) {
         printStatement();
+    } else if (match(TK_RETURN)) {
+        returnStatement();
     } else if (match(TK_LEFT_BRACE)) {
         beginScope();
         block();
@@ -690,6 +801,8 @@ static void synchronize() {
 static void declaration() {
     if (match(TK_VAR)) {
         varDeclaration();
+    } else if (match(TK_FUNCTION)) {
+        funDeclaration();
     } else {
         statement();
     }
@@ -701,23 +814,22 @@ static void declaration() {
  * Compiles a given source code string. The parsing technique used is a Pratt parser, an improved
  * recursive descent parser that associates semantics with tokens instead of grammar rules.
  */
-bool compile(const char *source, BytecodeChunk *bytecodeChunk) {
-    parser.hadError = false;
-    parser.panicMode = false;
-    compilingBytecodeChunk = bytecodeChunk;
+ObjFunction *compile(const char *source) {
     Compiler compiler;
-    initCompiler(&compiler);
+    initCompiler(&compiler, TYPE_SCRIPT);
     initScanner(source);
     initTable(&globalNames);
-    initTable(&constantsNames);
+
+    /* No panic mode yet */
+    parser.hadError = false;
+    parser.panicMode = false;
 
     advance();               /* Get the first token */
     while (!match(TK_EOF)) { /* Main compiler loop */
         declaration();       /* YAPL's grammar entry point */
     }
 
-    endCompiler();
     freeTable(&globalNames);
-    freeTable(&constantsNames);
-    return !parser.hadError;
+    ObjFunction *function = endCompiler();
+    return parser.hadError ? NULL : function;
 }

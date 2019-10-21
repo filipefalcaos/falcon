@@ -11,11 +11,28 @@
 #include <stdio.h>
 #include <string.h>
 
+/* Allocates an object of a given type */
+#define ALLOCATE_OBJ(type, objectType) (type *) allocateObject(sizeof(type), objectType)
+
+/**
+ * Prints a YAPL function name.
+ */
+static void printFunction(ObjFunction *function) {
+    if (function->name == NULL) { /* Checks if in top level code */
+        printf("<script>");
+        return;
+    }
+    printf("<fn %s>", function->name->chars);
+}
+
 /**
  * Prints a single YAPL object.
  */
 void printObject(Value value) {
     switch (OBJ_TYPE(value)) {
+        case OBJ_FUNCTION:
+            printFunction(AS_FUNCTION(value));
+            break;
         case OBJ_STRING:
             printf("\"%s\"", AS_CLANG_STRING(value));
             break;
@@ -31,6 +48,17 @@ Obj *allocateObject(size_t size, ObjType type) {
     object->next = vm.objects;                       /* Adds the new object to the object list */
     vm.objects = object;
     return object;
+}
+
+/**
+ * Allocates a new YAPL function object.
+ */
+ObjFunction *newFunction() {
+    ObjFunction *function = ALLOCATE_OBJ(ObjFunction, OBJ_FUNCTION);
+    function->arity = 0;
+    function->name = NULL;
+    initBytecodeChunk(&function->bytecodeChunk);
+    return function;
 }
 
 /**

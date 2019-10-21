@@ -46,6 +46,7 @@ typedef enum {
     OP_PRINT, /* "print" statement */
 
     /* Function operations */
+    OP_CALL,   /* Perform a function call */
     OP_RETURN, /* "return" statement */
 
     /* VM operations */

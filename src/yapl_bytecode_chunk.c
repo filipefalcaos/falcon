@@ -104,7 +104,7 @@ int addConstant(BytecodeChunk *bytecodeChunk, Value value) {
 int writeConstant(BytecodeChunk *bytecodeChunk, Value value, int line) {
     int index = addConstant(bytecodeChunk, value);
 
-    if (index < YAPL_MAX_SINGLE_BYTE) {
+    if (index < MAX_SINGLE_BYTE) {
         writeToBytecodeChunk(bytecodeChunk, OP_CONSTANT, line);
         writeToBytecodeChunk(bytecodeChunk, (uint8_t) index, line);
     } else {

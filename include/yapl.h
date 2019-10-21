@@ -34,6 +34,8 @@
 #define MORE_INFO      "See full license in the \"LICENSE\" file"
 
 /* Limits */
-#define YAPL_MAX_SINGLE_BYTE (UINT8_MAX + 1) /* 256 */
+#define MAX_SINGLE_BYTE (UINT8_MAX + 1) /* 256 */
+#define VM_FRAMES_MAX   64
+#define VM_STACK_MAX    (VM_FRAMES_MAX * MAX_SINGLE_BYTE)
 
 #endif // YAPL_H

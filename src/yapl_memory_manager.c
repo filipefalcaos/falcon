@@ -27,6 +27,12 @@ void *reallocate(void *previous, size_t oldSize, size_t newSize) {
  */
 static void freeObject(Obj *object) {
     switch (object->type) {
+        case OBJ_FUNCTION: {
+            ObjFunction *function = (ObjFunction *) object;
+            freeBytecodeChunk(&function->bytecodeChunk);
+            FREE(ObjFunction, object);
+            break;
+        }
         case OBJ_STRING: {
             ObjString *string = (ObjString *) object;
             reallocate(object, sizeof(ObjString) + string->length + 1, 0);
