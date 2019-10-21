@@ -39,6 +39,8 @@ typedef enum {
     OP_DEFINE_GLOBAL, /* Define global variable */
     OP_GET_GLOBAL,    /* Get global variable value */
     OP_SET_GLOBAL,    /* Set global variable value */
+    OP_GET_LOCAL,     /* Get local variable value */
+    OP_SET_LOCAL,     /* Set local variable value */
 
     /* Print operations */
     OP_PRINT, /* "print" statement */
@@ -47,7 +49,8 @@ typedef enum {
     OP_RETURN, /* "return" statement */
 
     /* VM operations */
-    OP_POP, /* Pop from VM stack */
+    OP_POP,  /* Pop from VM stack */
+    OP_POP_N /* Pop from VM stack "n" times */
 
 } OpCodes;
 

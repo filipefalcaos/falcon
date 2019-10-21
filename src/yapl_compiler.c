@@ -11,6 +11,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef YAPL_DEBUG_PRINT_CODE
 #include "../include/yapl_debug.h"
@@ -49,9 +50,24 @@ typedef struct {
     Precedence precedence;
 } ParseRule;
 
+/* Local variable representation */
+typedef struct {
+    Token name;
+    int depth;
+} Local;
+
+/* YAPL's compiler representation */
+typedef struct Compiler {
+    Local locals[YAPL_MAX_SINGLE_BYTE]; // TODO: make it possible to have more than 256
+    int localCount;
+    int scopeDepth;
+} Compiler;
+
 /* Parser instance */
 Parser parser;
-Table stringConstants;
+Table globalNames;
+Table constantsNames;
+Compiler *current = NULL;
 BytecodeChunk *compilingBytecodeChunk;
 
 /**
@@ -158,6 +174,15 @@ static void emitConstant(Value value) {
 }
 
 /**
+ * Starts a new compilation process.
+ */
+static void initCompiler(Compiler *compiler) {
+    compiler->localCount = 0;
+    compiler->scopeDepth = 0;
+    current = compiler;
+}
+
+/**
  * Ends the compilation process.
  */
 static void endCompiler() {
@@ -171,6 +196,34 @@ static void endCompiler() {
 #endif
     }
 #endif
+}
+
+/**
+ * Begins a new scope by incrementing the current scope depth.
+ */
+static void beginScope() { current->scopeDepth++; }
+
+/**
+ * Ends an existing scope by decrementing the current scope depth and popping all local variables
+ * declared in the scope.
+ */
+static void endScope() {
+    int end, start = current->localCount;
+    current->scopeDepth--;
+
+    /* Finds the number of locals in the scope */
+    while (current->localCount > 0 &&
+           current->locals[current->localCount - 1].depth > current->scopeDepth) {
+        current->localCount--;
+    }
+
+    end = start - current->localCount; /* Number of locals to remove */
+    if (end == 1) {                    /* Single variable in scope */
+        emitByte(OP_POP);
+    } else if (end > 1) { /* More than one variable in scope */
+        emitConstant(NUMBER_VAL(end));
+        emitByte(OP_POP_N); // TODO: make it work with an operand
+    }
 }
 
 /* Forward parser's declarations, since the grammar is recursive */
@@ -189,15 +242,72 @@ static uint8_t identifierConstant(Token *name) {
     Value indexValue;
 
     /* Checks if the identifier was already declared */
-    if (tableGet(&stringConstants, string, &indexValue)) {
+    if (tableGet(&globalNames, string, &indexValue)) {
         return (uint16_t) AS_NUMBER(indexValue);
     }
 
-    /* Adds the identifier to the bytecode chunk and to the "stringConstants" table */
+    /* Adds the identifier to the bytecode chunk and to the "globalNames" table */
     // TODO: make it possible to have more than 256 globals per bytecode chunk
     uint16_t index = addConstant(currentBytecodeChunk(), OBJ_VAL(string));
-    tableSet(&stringConstants, string, NUMBER_VAL((double) index));
+    tableSet(&globalNames, string, NUMBER_VAL((double) index));
     return index;
+}
+
+/**
+ * Checks if two identifiers match.
+ */
+static bool identifiersEqual(Token *a, Token *b) {
+    if (a->length != b->length) return false;
+    return memcmp(a->start, b->start, a->length) == 0;
+}
+
+/**
+ * Resolves a local variable by looping through the list of locals that are currently in the scope.
+ * If one has the same name as the identifier token, the variable is resolved.
+ */
+static int resolveLocal(Compiler *compiler, Token *name) {
+    for (int i = compiler->localCount - 1; i >= 0; i--) {
+        Local *local = &compiler->locals[i];
+        if (identifiersEqual(name, &local->name)) { /* Checks if identifier matches */
+            if (local->depth == -1)
+                compilerError(&parser.previous, "Cannot read variable in its own initializer.");
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+/**
+ * Adds a local variable to the list of variables in a scope depth.
+ */
+static void addLocal(Token name) {
+    if (current->localCount == YAPL_MAX_SINGLE_BYTE) {
+        compilerError(&parser.previous, "Too many local variables in scope.");
+        return;
+    }
+
+    Local *local = &current->locals[current->localCount++];
+    local->name = name;
+    local->depth = -1;
+}
+
+/**
+ * Records the existence of a variable declaration.
+ */
+static void declareVariable() {
+    if (current->scopeDepth == 0) return; /* Globals are late bound, exit */
+    Token *name = &parser.previous;
+
+    /* Verifies if variable was previously declared */
+    for (int i = current->localCount - 1; i >= 0; i--) {
+        Local *local = &current->locals[i];
+        if (local->depth != -1 && local->depth < current->scopeDepth) break;
+        if (identifiersEqual(name, &local->name)) /* Checks if already declared */
+            compilerError(&parser.previous, "Variable already declared in this scope.");
+    }
+
+    addLocal(*name);
 }
 
 /**
@@ -206,13 +316,27 @@ static uint8_t identifierConstant(Token *name) {
  */
 static uint8_t parseVariable(const char *errorMessage) {
     consume(TK_IDENTIFIER, errorMessage);
+    declareVariable();                     /* Declares the variables */
+    if (current->scopeDepth > 0) return 0; /* Locals are not looked up by name, exit */
     return identifierConstant(&parser.previous);
 }
 
 /**
- * Records the existence of a variable declaration.
+ * Marks a local variable as initialized and available for use.
+ */
+static void markInitialized() {
+    current->locals[current->localCount - 1].depth = current->scopeDepth;
+}
+
+/**
+ * Handles a variable declaration by emitting the bytecode to perform a global variable declaration.
  */
 static void defineVariable(uint8_t global) {
+    if (current->scopeDepth > 0) {
+        markInitialized(); /* Mark as initialized */
+        return;            /* Only globals are defined at runtime */
+    }
+
     emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
@@ -316,22 +440,31 @@ static void string(bool canAssign) {
  * load of the global/local variable.
  */
 static void namedVariable(Token name, bool canAssign) {
-    uint8_t arg = identifierConstant(&name);
+    uint8_t getOpcode, setOpcode;
+    int arg = resolveLocal(current, &name);
+
+    if (arg != -1) {
+        getOpcode = OP_GET_LOCAL;
+        setOpcode = OP_SET_LOCAL;
+    } else {
+        arg = identifierConstant(&name);
+        getOpcode = OP_GET_GLOBAL;
+        setOpcode = OP_SET_GLOBAL;
+    }
 
     if (canAssign && match(TK_EQUAL)) {
+
         expression();
-        emitBytes(OP_SET_GLOBAL, arg);
+        emitBytes(setOpcode, arg);
     } else {
-        emitBytes(OP_GET_GLOBAL, arg);
+        emitBytes(getOpcode, arg);
     }
 }
 
 /**
  * Handles a variable access.
  */
-static void variable(bool canAssign) {
-    namedVariable(parser.previous, canAssign);
-}
+static void variable(bool canAssign) { namedVariable(parser.previous, canAssign); }
 
 /**
  * Handles a unary expression by compiling the operand and then emitting the bytecode to perform
@@ -465,6 +598,18 @@ static ParseRule *getRule(TokenType type) { return &rules[type]; }
 void expression() { parsePrecedence(PREC_ASSIGN); }
 
 /**
+ * Compiles a block of code by parsing declarations and statements until a closing brace (end of
+ * block) is found.
+ */
+static void block() {
+    while (!check(TK_RIGHT_BRACE) && !check(TK_EOF)) {
+        declaration();
+    }
+
+    consume(TK_RIGHT_BRACE, "Expected a '}' after block.");
+}
+
+/**
  * Compiles a variable declaration.
  */
 static void varDeclaration() {
@@ -504,6 +649,10 @@ static void printStatement() {
 static void statement() {
     if (match(TK_PRINT)) {
         printStatement();
+    } else if (match(TK_LEFT_BRACE)) {
+        beginScope();
+        block();
+        endScope();
     } else {
         expressionStatement();
     }
@@ -556,8 +705,11 @@ bool compile(const char *source, BytecodeChunk *bytecodeChunk) {
     parser.hadError = false;
     parser.panicMode = false;
     compilingBytecodeChunk = bytecodeChunk;
+    Compiler compiler;
+    initCompiler(&compiler);
     initScanner(source);
-    initTable(&stringConstants);
+    initTable(&globalNames);
+    initTable(&constantsNames);
 
     advance();               /* Get the first token */
     while (!match(TK_EOF)) { /* Main compiler loop */
@@ -565,6 +717,7 @@ bool compile(const char *source, BytecodeChunk *bytecodeChunk) {
     }
 
     endCompiler();
-    freeTable(&stringConstants);
+    freeTable(&globalNames);
+    freeTable(&constantsNames);
     return !parser.hadError;
 }

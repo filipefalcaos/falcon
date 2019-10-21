@@ -24,11 +24,11 @@ declaration -> class_declaration
             | variable_declaration 
             | statement ;
 
-class_declaration           -> "class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}" ;
-function_declaration        -> "function" function ;
-variable_declaration        -> "var" variable_declaration_list ";" ;
-variable_declaration_list   -> single_variable_declaration (  "," single_variable_declaration )* ;
-single_variable_declaration -> IDENTIFIER ( "=" expression )? ;
+class_declaration    -> "class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}" ;
+function_declaration -> "fun" function ;
+variable_declaration -> "var" declaration_list ";" ;
+declaration_list     -> single_declaration (  "," single_declaration )* ;
+single_declaration   -> IDENTIFIER ( "=" expression )? ;
 ```
 
 ### Statements

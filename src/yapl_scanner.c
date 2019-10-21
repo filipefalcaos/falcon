@@ -161,7 +161,7 @@ static TokenType findType() {
                     case 'o':
                         return checkKeyword(2, 1, "r", TK_FOR);
                     case 'u':
-                        return checkKeyword(2, 6, "nction", TK_FUNCTION);
+                        return checkKeyword(2, 1, "n", TK_FUNCTION);
                 }
             }
             break;

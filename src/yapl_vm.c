@@ -42,6 +42,23 @@ void runtimeError(const char *format, ...) {
 }
 
 /**
+ * Presents a runtime error when a global variable is undefined.
+ */
+static ResultCode undefinedVariableError(ObjString *name, bool delete) {
+    if (delete) tableDelete(&vm.globals, name);
+    runtimeError("Undefined variable '%s'.", name->chars);
+    return RUNTIME_ERROR;
+}
+
+/**
+ * Presents a runtime error when a global variable is already declared.
+ */
+static ResultCode declaredVariableError(ObjString *name) {
+    runtimeError("Global variable '%s' already declared.", name->chars);
+    return RUNTIME_ERROR;
+}
+
+/**
  * Initializes the YAPL's virtual machine.
  */
 void initVM() {
@@ -82,6 +99,19 @@ Value pop() {
 static Value peek(int distance) { return vm.stackTop[-1 - distance]; }
 
 /**
+ * Prints the YAPL's virtual machine stack.
+ */
+void printStack() {
+    printf("          ");
+    for (Value *slot = vm.stack; slot < vm.stackTop; slot++) {
+        printf("[ ");
+        printValue(*slot);
+        printf(" ]");
+    }
+    printf("\n");
+}
+
+/**
  * Takes the logical not (falsiness) of a value (boolean or null). In YAPL, 'null', 'false', the
  * number zero, and an empty string are falsey, while every other value behaves like 'true'.
  */
@@ -108,19 +138,6 @@ static void concatenateStrings() {
 
     vm.stackTop[-1] = OBJ_VAL(result);       /* Update the stack top */
     tableSet(&vm.strings, result, NULL_VAL); /* Intern the string */
-}
-
-/**
- * Prints the YAPL's virtual machine stack.
- */
-void printStack() {
-    printf("          ");
-    for (Value *slot = vm.stack; slot < vm.stackTop; slot++) {
-        printf("[ ");
-        printValue(*slot);
-        printf(" ]");
-    }
-    printf("\n");
 }
 
 /**
@@ -231,29 +248,37 @@ static ResultCode run() {
                 break;
 
             /* Variable operations */
-            case OP_DEFINE_GLOBAL:
-                tableSet(&vm.globals, READ_STRING(), peek(0));
+            case OP_DEFINE_GLOBAL: {
+                ObjString *name = READ_STRING();
+                Value value;
+                if (tableGet(&vm.globals, name, &value)) /* Checks if already declared */
+                    return declaredVariableError(name);
+                tableSet(&vm.globals, name, peek(0));
                 pop();
                 break;
+            }
             case OP_GET_GLOBAL: {
                 ObjString *name = READ_STRING();
                 Value value;
-
-                if (!tableGet(&vm.globals, name, &value)) {
-                    runtimeError("Undefined variable '%s'.", name->chars);
-                    return RUNTIME_ERROR;
-                }
-
+                if (!tableGet(&vm.globals, name, &value)) /* Checks if variable is undefined */
+                    return undefinedVariableError(name, false);
                 push(value);
                 break;
             }
             case OP_SET_GLOBAL: {
                 ObjString *name = READ_STRING();
-                if (tableSet(&vm.globals, name, peek(0))) {
-                    tableDelete(&vm.globals, name);
-                    runtimeError("Undefined variable '%s'.", name->chars);
-                    return RUNTIME_ERROR;
-                }
+                if (!tableSet(&vm.globals, name, peek(0))) /* Checks if variable is undefined */
+                    return undefinedVariableError(name, true);
+                break;
+            }
+            case OP_GET_LOCAL: {
+                uint8_t slot = READ_BYTE();
+                push(vm.stack[slot]);
+                break;
+            }
+            case OP_SET_LOCAL: {
+                uint8_t slot = READ_BYTE();
+                vm.stack[slot] = peek(0);
                 break;
             }
 
@@ -271,6 +296,11 @@ static ResultCode run() {
             case OP_POP:
                 pop();
                 break;
+            case OP_POP_N: {
+                int toPop = AS_NUMBER(pop());
+                for (int i = 0; i < toPop; i++) pop();
+                break;
+            }
         }
     }
 
