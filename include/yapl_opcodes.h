@@ -42,6 +42,11 @@ typedef enum {
     OP_GET_LOCAL,     /* Get local variable value */
     OP_SET_LOCAL,     /* Set local variable value */
 
+    /* Jump/loop operations */
+    OP_JUMP,          /* Jump an instruction on the VM */
+    OP_JUMP_IF_FALSE, /* Jump an instruction if falsey on the VM */
+    OP_LOOP,          /* Loop backwards instruction */
+
     /* Function operations */
     OP_CALL,   /* Perform a function call */
     OP_RETURN, /* "return" statement */

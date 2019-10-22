@@ -47,7 +47,7 @@ void runtimeError(const char *format, ...) {
         size_t currentInstruction = currentFrame->pc - currentFunction->bytecodeChunk.code - 1;
         int currentLine = getSourceLine(&currentFrame->function->bytecodeChunk, currentInstruction);
 
-        fprintf(stderr, "\t[line %d] in ", currentLine);
+        fprintf(stderr, "    [line %d] in ", currentLine);
         if (currentFunction->name == NULL) {
             fprintf(stderr, "script\n");
         } else {
@@ -223,8 +223,9 @@ static void concatenateStrings() {
 static ResultCode run() {
     CallFrame *frame = &vm.frames[vm.frameCount - 1]; /* Current call frame */
 
-/* Reads the current byte */
-#define READ_BYTE() (*frame->pc++)
+/* Reads the current 8 bits (byte) or 16 bits (2 bytes) */
+#define READ_BYTE()  (*frame->pc++)
+#define READ_SHORT() (frame->pc += 2, (uint16_t) ((frame->pc[-2] << 8) | frame->pc[-1]))
 
 /* Reads the next byte from the bytecode, treats the resulting number as an index, and looks up the
  * corresponding location in the chunk’s constant table */
@@ -277,6 +278,22 @@ static ResultCode run() {
                 break;
 
             /* Relational operations */
+            case OP_AND: {
+                uint16_t offset = READ_SHORT();
+                if (isFalsey(peek(0)))
+                    frame->pc += offset;
+                else
+                    pop();
+                break;
+            }
+            case OP_OR: {
+                uint16_t offset = READ_SHORT();
+                if (isFalsey(peek(0)))
+                    pop();
+                else
+                    frame->pc += offset;
+                break;
+            }
             case OP_NOT:
                 vm.stackTop[-1] = BOOL_VAL(isFalsey(vm.stackTop[-1]));
                 break;
@@ -345,7 +362,7 @@ static ResultCode run() {
             }
             case OP_SET_GLOBAL: {
                 ObjString *name = READ_STRING();
-                if (!tableSet(&vm.globals, name, peek(0))) /* Checks if variable is undefined */
+                if (tableSet(&vm.globals, name, peek(0))) /* Checks if variable is undefined */
                     return undefinedVariableError(name, true);
                 break;
             }
@@ -357,6 +374,23 @@ static ResultCode run() {
             case OP_SET_LOCAL: {
                 uint8_t slot = READ_BYTE();
                 frame->slots[slot] = peek(0);
+                break;
+            }
+
+            /* Jump/loop operations */
+            case OP_JUMP: {
+                uint16_t offset = READ_SHORT();
+                frame->pc += offset;
+                break;
+            }
+            case OP_JUMP_IF_FALSE: {
+                uint16_t offset = READ_SHORT();
+                if (isFalsey(peek(0))) frame->pc += offset;
+                break;
+            }
+            case OP_LOOP: {
+                uint16_t offset = READ_SHORT();
+                frame->pc -= offset;
                 break;
             }
 
@@ -395,6 +429,7 @@ static ResultCode run() {
     }
 
 #undef READ_BYTE
+#undef READ_SHORT
 #undef READ_CONSTANT
 #undef READ_STRING
 #undef BINARY_OP

@@ -44,6 +44,16 @@ static int byteInstruction(const char *name, BytecodeChunk *bytecodeChunk, int o
 }
 
 /**
+ * Displays a jump (conditional) instruction.
+ */
+static int jumpInstruction(const char *name, int sign, BytecodeChunk *bytecodeChunk, int offset) {
+    uint16_t jump = (uint16_t) (bytecodeChunk->code[offset + 1] << 8);
+    jump |= bytecodeChunk->code[offset + 2];
+    printf("%-16s %4d -> %d\n", name, offset, offset + 3 + sign * jump);
+    return offset + 3;
+}
+
+/**
  * Displays a constant instruction (8 bits).
  */
 static int constantInstruction(const char *name, BytecodeChunk *bytecodeChunk, int offset) {
@@ -131,6 +141,12 @@ int disassembleInstruction(BytecodeChunk *bytecodeChunk, int offset) {
             return byteInstruction("OP_GET_LOCAL", bytecodeChunk, offset);
         case OP_SET_LOCAL:
             return byteInstruction("OP_SET_LOCAL", bytecodeChunk, offset);
+        case OP_JUMP:
+            return jumpInstruction("OP_JUMP", 1, bytecodeChunk, offset);
+        case OP_JUMP_IF_FALSE:
+            return jumpInstruction("OP_JUMP_IF_FALSE", 1, bytecodeChunk, offset);
+        case OP_LOOP:
+            return jumpInstruction("OP_LOOP", -1, bytecodeChunk, offset);
         case OP_CALL:
             return byteInstruction("OP_CALL", bytecodeChunk, offset);
         case OP_RETURN:

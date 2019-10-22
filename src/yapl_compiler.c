@@ -164,6 +164,27 @@ static void emitBytes(uint8_t byte_1, uint8_t byte_2) {
 }
 
 /**
+ * Emits a new 'loop back' instruction which jumps backwards by a given offset.
+ */
+static void emitLoop(int loopStart) {
+    emitByte(OP_LOOP);
+    int offset = currentBytecodeChunk()->count - loopStart + 2;
+    if (offset > UINT16_MAX) compilerError(&parser.previous, "Loop body is too large.");
+    emitByte((offset >> 8) & 0xff);
+    emitByte(offset & 0xff);
+}
+
+/**
+ * Emits the bytecode of a given instruction and reserve two bytes for a jump offset.
+ */
+static int emitJump(uint8_t instruction) {
+    emitByte(instruction);
+    emitByte(0xff);
+    emitByte(0xff);
+    return currentBytecodeChunk()->count - 2;
+}
+
+/**
  * Emits the OP_RETURN bytecode instruction.
  */
 static void emitReturn() { emitBytes(OP_NULL, OP_RETURN); }
@@ -186,8 +207,19 @@ static uint8_t makeConstant(Value value) {
  * checks if the constant limit was exceeded.
  */
 static void emitConstant(Value value) {
-    uint16_t constant = writeConstant(currentBytecodeChunk(), value, parser.previous.line);
-    if (constant > UINT16_MAX) compilerError(&parser.previous, "Too many constants in one chunk.");
+    emitBytes(OP_CONSTANT, makeConstant(value));
+}
+
+/**
+ * Replaces the operand at the given location with the calculated jump offset. This function
+ * should be called right before the emission of the next instruction that the jump should
+ * land on.
+ */
+static void patchJump(int offset) {
+    int jump = currentBytecodeChunk()->count - offset - 2; /* -2 to adjust by offset */
+    if (jump > UINT16_MAX) compilerError(&parser.previous, "Conditional branch is too large.");
+    currentBytecodeChunk()->code[offset] = (jump >> 8) & 0xff;
+    currentBytecodeChunk()->code[offset + 1] = jump & 0xff;
 }
 
 /**
@@ -386,6 +418,24 @@ static uint8_t argumentList() {
 }
 
 /**
+ * Handles the "and" logical operator with short-circuit.
+ */
+static void and_(bool canAssign) {
+    int jump = emitJump(OP_AND);
+    parsePrecedence(PREC_AND);
+    patchJump(jump);
+}
+
+/**
+ * Handles the "or" logical operator with short-circuit.
+ */
+static void or_(bool canAssign) {
+    int jump = emitJump(OP_OR);
+    parsePrecedence(PREC_OR);
+    patchJump(jump);
+}
+
+/**
  * Handles a binary (infix) expression, by compiling the right operand of the expression (the left
  * one was already compiled). Then, emits the bytecode instruction that performs the binary
  * operation.
@@ -580,8 +630,8 @@ ParseRule rules[] = {
     EMPTY_RULE,                         /* TK_MULTIPLY_EQUAL */
     EMPTY_RULE,                         /* TK_DIV_EQUAL */
     EMPTY_RULE,                         /* TK_MOD_EQUAL */
-    EMPTY_RULE,                         /* TK_AND */
-    EMPTY_RULE,                         /* TK_OR */
+    INFIX_RULE(and_, PREC_AND),         /* TK_AND */
+    INFIX_RULE(or_, PREC_OR),           /* TK_OR */
     PREFIX_RULE(variable),              /* TK_IDENTIFIER */
     PREFIX_RULE(string),                /* TK_STRING */
     PREFIX_RULE(number),                /* TK_NUMBER */
@@ -704,7 +754,7 @@ static void function(FunctionType type) {
 
     /* Create the function object */
     ObjFunction *function = endCompiler();
-    writeConstant(currentBytecodeChunk(), OBJ_VAL(function), parser.previous.line);
+    emitBytes(OP_CONSTANT, makeConstant(OBJ_VAL(function)));
 }
 
 /**
@@ -727,6 +777,108 @@ static void expressionStatement() {
 }
 
 /**
+ * Compiles an "if" conditional statement.
+ */
+static void ifStatement() {
+    expression(); /* Compiles condition */
+    consume(TK_LEFT_BRACE, "Expected a '{' after 'if' condition.");
+    int thenJump = emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP);
+
+    /* Compiles the "if" block */
+    beginScope();
+    block();
+    endScope();
+
+    int elseJump = emitJump(OP_JUMP);
+    patchJump(thenJump);
+    emitByte(OP_POP);
+
+    /* Compiles the "else" block */
+    if (match(TK_ELSE)) {
+        if (match(TK_IF)) {
+            ifStatement(); /* "else if ..." form */
+        } else if (match(TK_LEFT_BRACE)) {
+            beginScope();
+            block(); /* Compiles the "else" branch */
+            endScope();
+        }
+    }
+
+    patchJump(elseJump);
+}
+
+/**
+ * Compiles a "while" loop statement.
+ */
+static void whileStatement() {
+    int loopStart = currentBytecodeChunk()->count; /* Loop entry point */
+    expression();                                  /* Compiles condition */
+    consume(TK_LEFT_BRACE, "Expected a '{' after 'while' condition.");
+    int exitJump = emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP);
+
+    /* Compiles the "while" block */
+    beginScope();
+    block();
+    endScope();
+
+    emitLoop(loopStart);
+    patchJump(exitJump);
+    emitByte(OP_POP);
+}
+
+/**
+ * Compiles a "for" loop statement.
+ */
+static void forStatement() {
+    beginScope(); /* Begins the loop scope */
+
+    /* Compiles the initializer clause */
+    if (match(TK_SEMICOLON)) {
+        /* Empty initializer */
+    } else if (match(TK_VAR)) {
+        varDeclaration(); /* Variable declaration initializer */
+    } else {
+        expressionStatement(); /* Expression initializer */
+    }
+
+    int loopStart = currentBytecodeChunk()->count; /* Loop entry point */
+    int exitJump = -1;
+
+    /* Compiles the conditional clause */
+    if (!match(TK_SEMICOLON)) {
+        expression();
+        consume(TK_SEMICOLON, "Expected a ';' after 'for' loop condition.");
+        exitJump = emitJump(OP_JUMP_IF_FALSE);
+        emitByte(OP_POP); /* Pops condition */
+    }
+
+    /* Compiles the increment clause */
+    if (!match(TK_LEFT_BRACE)) {
+        int bodyJump = emitJump(OP_JUMP);
+        int incrementStart = currentBytecodeChunk()->count;
+        expression();
+        emitByte(OP_POP); /* Pops increment */
+        consume(TK_LEFT_BRACE, "Expected a '{' after an increment clause.");
+        emitLoop(loopStart);
+        loopStart = incrementStart;
+        patchJump(bodyJump);
+    }
+
+    block(); /* Compiles the "for" block */
+
+    emitLoop(loopStart);
+    if (exitJump != -1) {
+        patchJump(exitJump);
+        emitByte(OP_POP); /* Pops condition */
+    }
+
+    endScope(); /* Ends the loop scope */
+}
+
+
+/**
  * Compiles a "return" statement.
  */
 static void returnStatement() {
@@ -746,7 +898,13 @@ static void returnStatement() {
  * Compiles a statement.
  */
 static void statement() {
-    if (match(TK_RETURN)) {
+    if (match(TK_IF)) {
+        ifStatement();
+    } else if (match(TK_WHILE)) {
+        whileStatement();
+    } else if (match(TK_FOR)) {
+        forStatement();
+    } else if (match(TK_RETURN)) {
         returnStatement();
     } else if (match(TK_LEFT_BRACE)) {
         beginScope();

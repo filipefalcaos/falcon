@@ -16,7 +16,7 @@ add_compile_definitions(CMAKE_C_COMPILER_VERSION="${CMAKE_C_COMPILER_VERSION}")
 add_compile_definitions(CMAKE_SYSTEM_NAME="${CMAKE_SYSTEM_NAME}")
 
 # Debugging options
-option(DEBUG_PRINT_CODE "DEBUG_PRINT_CODE" OFF)
+option(DEBUG_PRINT_CODE "DEBUG_PRINT_CODE" ON)
 option(DEBUG_TRACE_EXECUTION "DEBUG_TRACE_EXECUTION" OFF)
 
 # Adds YAPL debugging macros if requested
