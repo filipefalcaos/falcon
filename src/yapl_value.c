@@ -8,7 +8,6 @@
 #include "../include/yapl_memory_manager.h"
 #include "../include/yapl_object.h"
 #include <stdio.h>
-#include <string.h>
 
 /**
  * Initializes an empty ValueArray.
@@ -46,7 +45,7 @@ void writeValueArray(ValueArray *valueArray, Value value) {
 /**
  * Prints a single YAPL Value.
  */
-void printValue(Value value) {
+void printValue(Value value, bool newLine) {
     switch (value.type) {
         case VAL_BOOL:
             printf(AS_BOOL(value) ? "true" : "false");
@@ -60,7 +59,11 @@ void printValue(Value value) {
         case VAL_OBJ:
             printObject(value);
             break;
+        default:
+            break;
     }
+
+    if (newLine) printf("\n");
 }
 
 /**
@@ -78,5 +81,7 @@ bool valuesEqual(Value a, Value b) {
             return AS_NUMBER(a) == AS_NUMBER(b);
         case VAL_OBJ:
             return AS_OBJ(a) == AS_OBJ(b);
+        default:
+            return false;
     }
 }

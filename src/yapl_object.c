@@ -33,6 +33,9 @@ void printObject(Value value) {
         case OBJ_FUNCTION:
             printFunction(AS_FUNCTION(value));
             break;
+        case OBJ_NATIVE:
+            printf("<native fn>");
+            break;
         case OBJ_STRING:
             printf("\"%s\"", AS_CLANG_STRING(value));
             break;
@@ -59,6 +62,15 @@ ObjFunction *newFunction() {
     function->name = NULL;
     initBytecodeChunk(&function->bytecodeChunk);
     return function;
+}
+
+/**
+ * Allocates a new YAPL native function object.
+ */
+ObjNative *newNative(NativeFn function) {
+    ObjNative *native = ALLOCATE_OBJ(ObjNative, OBJ_NATIVE);
+    native->function = function;
+    return native;
 }
 
 /**

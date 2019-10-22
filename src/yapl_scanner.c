@@ -7,6 +7,7 @@
 #include "../include/yapl_scanner.h"
 #include "../include/commons.h"
 #include <string.h>
+#include <stdio.h>
 
 /* YAPL's scanner representation (lexical analysis) */
 typedef struct {
@@ -171,16 +172,6 @@ static TokenType findType() {
             return checkKeyword(1, 3, "ull", TK_NULL);
         case 'o':
             return checkKeyword(1, 1, "r", TK_OR);
-        case 'p':
-            if (scanner.current - scanner.start > 1) {
-                switch (scanner.start[1]) {
-                    case 'r':
-                        return checkKeyword(2, 3, "int", TK_PRINT);
-                    case 'u':
-                        return checkKeyword(2, 2, "ts", TK_PUTS);
-                }
-            }
-            break;
         case 'r':
             return checkKeyword(1, 5, "eturn", TK_RETURN);
         case 's':

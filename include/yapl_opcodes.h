@@ -42,9 +42,6 @@ typedef enum {
     OP_GET_LOCAL,     /* Get local variable value */
     OP_SET_LOCAL,     /* Set local variable value */
 
-    /* Print operations */
-    OP_PRINT, /* "print" statement */
-
     /* Function operations */
     OP_CALL,   /* Perform a function call */
     OP_RETURN, /* "return" statement */

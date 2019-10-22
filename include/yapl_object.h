@@ -12,7 +12,7 @@
 #include "yapl_bytecode_chunk.h"
 
 /* Types of objects on YAPL */
-typedef enum { OBJ_STRING, OBJ_FUNCTION } ObjType;
+typedef enum { OBJ_STRING, OBJ_FUNCTION, OBJ_NATIVE } ObjType;
 
 /* Structure of a YAPL object */
 struct sObj {
@@ -27,6 +27,15 @@ typedef struct {
     BytecodeChunk bytecodeChunk;
     ObjString *name;
 } ObjFunction;
+
+/* Native functions implementations */
+typedef Value (*NativeFn)(int argCount, Value *args);
+
+/* YAPL's native functions objects */
+typedef struct {
+    Obj obj;
+    NativeFn function;
+} ObjNative;
 
 /* YAPL's string object */
 struct sObjString {
@@ -48,10 +57,12 @@ static inline bool isObjType(Value value, ObjType type) {
 
 /* Checks if a Value is an Obj type */
 #define IS_FUNCTION(value) isObjType(value, OBJ_FUNCTION)
+#define IS_NATIVE(value)   isObjType(value, OBJ_NATIVE)
 #define IS_STRING(value)   isObjType(value, OBJ_STRING)
 
 /* Gets the object value from a YAPL Value */
-#define AS_FUNCTION(value)     ((ObjFunction*)AS_OBJ(value))
+#define AS_FUNCTION(value)     ((ObjFunction *) AS_OBJ(value))
+#define AS_NATIVE(value)       (((ObjNative *) AS_OBJ(value))->function)
 #define AS_STRING(value)       ((ObjString *) AS_OBJ(value))
 #define AS_CLANG_STRING(value) (((ObjString *) AS_OBJ(value))->chars)
 
@@ -60,6 +71,7 @@ void printObject(Value value);
 
 /* Function object operations */
 ObjFunction *newFunction();
+ObjNative *newNative(NativeFn function);
 
 /* String object operations */
 uint32_t hashString(const char *key, int length);

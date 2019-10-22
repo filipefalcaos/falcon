@@ -42,6 +42,8 @@ add_executable(
         src/yapl_debug.c
         include/yapl_memory_manager.h
         src/yapl_memory_manager.c
+        include/yapl_natives.h
+        src/yapl_natives.c
         include/yapl_object.h
         src/yapl_object.c
         include/yapl_opcodes.h

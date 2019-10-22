@@ -53,7 +53,7 @@ static int constantInstruction(const char *name, BytecodeChunk *bytecodeChunk, i
     /* Prints the constant */
     printf("%-16s %4d ", name, constant);
     if (value.type != VAL_OBJ) printf("'");
-    printValue(value);
+    printValue(value, false);
     if (value.type != VAL_OBJ) printf("'");
     printf("\n");
     return offset + 2;
@@ -69,7 +69,7 @@ static int constantInstruction16(const char *name, BytecodeChunk *bytecodeChunk,
     /* Prints the constant */
     printf("%-16s %4d ", name, constant);
     if (value.type != VAL_OBJ) printf("'");
-    printValue(value);
+    printValue(value, false);
     if (value.type != VAL_OBJ) printf("'");
     printf("\n");
     return offset + 3;
@@ -131,8 +131,6 @@ int disassembleInstruction(BytecodeChunk *bytecodeChunk, int offset) {
             return byteInstruction("OP_GET_LOCAL", bytecodeChunk, offset);
         case OP_SET_LOCAL:
             return byteInstruction("OP_SET_LOCAL", bytecodeChunk, offset);
-        case OP_PRINT:
-            return simpleInstruction("OP_PRINT", offset);
         case OP_CALL:
             return byteInstruction("OP_CALL", bytecodeChunk, offset);
         case OP_RETURN:

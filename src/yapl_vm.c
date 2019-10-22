@@ -7,6 +7,7 @@
 #include "../include/yapl_vm.h"
 #include "../include/yapl_compiler.h"
 #include "../include/yapl_memory_manager.h"
+#include "../include/yapl_natives.h"
 #include "../include/yapl_object.h"
 #include <stdarg.h>
 #include <stdio.h>
@@ -75,6 +76,17 @@ static ResultCode declaredVariableError(ObjString *name) {
 }
 
 /**
+ * Defines a new native function for YAPL.
+ */
+static void defineNative(const char *name, NativeFn function) {
+    push(OBJ_VAL(copyString(name, (int) strlen(name))));
+    push(OBJ_VAL(newNative(function)));
+    tableSet(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
+    pop();
+    pop();
+}
+
+/**
  * Initializes the YAPL's virtual machine.
  */
 void initVM() {
@@ -82,6 +94,9 @@ void initVM() {
     initTable(&vm.strings);
     initTable(&vm.globals);
     vm.objects = NULL;
+    defineNative("clock", clockNative);
+    defineNative("print", printNative);
+    defineNative("puts", putsNative);
 }
 
 /**
@@ -121,7 +136,7 @@ void printStack() {
     printf("          ");
     for (Value *slot = vm.stack; slot < vm.stackTop; slot++) {
         printf("[ ");
-        printValue(*slot);
+        printValue(*slot, false);
         printf(" ]");
     }
     printf("\n");
@@ -156,6 +171,13 @@ static bool callValue(Value callee, int argCount) {
         switch (OBJ_TYPE(callee)) {
             case OBJ_FUNCTION:
                 return call(AS_FUNCTION(callee), argCount);
+            case OBJ_NATIVE: {
+                NativeFn native = AS_NATIVE(callee);
+                Value result = native(argCount, vm.stackTop - argCount);
+                vm.stackTop -= argCount + 1;
+                push(result);
+                return true;
+            }
             default:
                 break; /* Not callable */
         }
@@ -337,12 +359,6 @@ static ResultCode run() {
                 frame->slots[slot] = peek(0);
                 break;
             }
-
-            /* Print operations */
-            case OP_PRINT:
-                printValue(pop());
-                printf("\n");
-                break;
 
             /* Function operations */
             case OP_CALL: {

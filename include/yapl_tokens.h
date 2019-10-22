@@ -19,6 +19,9 @@ typedef enum {
     TK_DOT,
     TK_SEMICOLON,
 
+    /* Escape characters */
+    TK_NL,
+
     /* Operators */
     TK_MINUS,
     TK_PLUS,
@@ -56,8 +59,6 @@ typedef enum {
     TK_FUNCTION,
     TK_IF,
     TK_NULL,
-    TK_PRINT,
-    TK_PUTS,
     TK_RETURN,
     TK_SUPER,
     TK_THIS,

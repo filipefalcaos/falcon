@@ -559,6 +559,7 @@ ParseRule rules[] = {
     EMPTY_RULE,                         /* TK_COMMA */
     EMPTY_RULE,                         /* TK_DOT */
     EMPTY_RULE,                         /* TK_SEMICOLON */
+    EMPTY_RULE,                         /* TK_NL */
     RULE(unary, binary, PREC_TERM),     /* TK_MINUS */
     INFIX_RULE(binary, PREC_TERM),      /* TK_PLUS */
     INFIX_RULE(binary, PREC_FACTOR),    /* TK_DIV */
@@ -591,8 +592,6 @@ ParseRule rules[] = {
     EMPTY_RULE,                         /* TK_FUNCTION */
     EMPTY_RULE,                         /* TK_IF */
     PREFIX_RULE(literal),               /* TK_NULL */
-    EMPTY_RULE,                         /* TK_PRINT */
-    EMPTY_RULE,                         /* TK_PUTS */
     EMPTY_RULE,                         /* TK_RETURN */
     EMPTY_RULE,                         /* TK_SUPER */
     EMPTY_RULE,                         /* TK_THIS */
@@ -728,15 +727,6 @@ static void expressionStatement() {
 }
 
 /**
- * Compiles a "print" statement.
- */
-static void printStatement() {
-    expression();
-    consume(TK_SEMICOLON, "Expected a ';' after value.");
-    emitByte(OP_PRINT);
-}
-
-/**
  * Compiles a "return" statement.
  */
 static void returnStatement() {
@@ -756,9 +746,7 @@ static void returnStatement() {
  * Compiles a statement.
  */
 static void statement() {
-    if (match(TK_PRINT)) {
-        printStatement();
-    } else if (match(TK_RETURN)) {
+    if (match(TK_RETURN)) {
         returnStatement();
     } else if (match(TK_LEFT_BRACE)) {
         beginScope();
@@ -785,7 +773,6 @@ static void synchronize() {
             case TK_FOR:
             case TK_IF:
             case TK_WHILE:
-            case TK_PRINT:
             case TK_RETURN:
                 return;
             default:; /* Keep skipping tokens */
