@@ -31,33 +31,33 @@ endif (DEBUG_TRACE_EXECUTION)
 # Build config
 add_executable(
         yapl
-        include/commons.h
-        include/yapl.h
+        src/commons.h
+        src/yapl.h
         src/yapl.c
-        include/yapl_bytecode_chunk.h
-        src/yapl_bytecode_chunk.c
-        include/yapl_compiler.h
-        src/yapl_compiler.c
-        include/yapl_debug.h
-        src/yapl_debug.c
-        include/yapl_memory_manager.h
-        src/yapl_memory_manager.c
-        include/yapl_natives.h
-        src/yapl_natives.c
-        include/yapl_object.h
-        src/yapl_object.c
-        include/yapl_opcodes.h
-        include/yapl_scanner.h
-        src/yapl_scanner.c
-        include/yapl_table.h
-        src/yapl_table.c
-        include/yapl_tokens.h
-        include/yapl_utils.h
-        src/yapl_utils.c
-        include/yapl_value.h
-        src/yapl_value.c
-        include/yapl_vm.h
-        src/yapl_vm.c
+        src/vm/yapl_bytecode_chunk.h
+        src/vm/yapl_bytecode_chunk.c
+        src/compiler/yapl_compiler.h
+        src/compiler/yapl_compiler.c
+        src/lib/yapl_debug.h
+        src/lib/yapl_debug.c
+        src/vm/yapl_memory_manager.h
+        src/vm/yapl_memory_manager.c
+        src/lib/yapl_natives.h
+        src/lib/yapl_natives.c
+        src/vm/yapl_object.h
+        src/vm/yapl_object.c
+        src/vm/yapl_opcodes.h
+        src/compiler/yapl_scanner.h
+        src/compiler/yapl_scanner.c
+        src/utils/yapl_table.h
+        src/utils/yapl_table.c
+        src/compiler/yapl_tokens.h
+        src/utils/yapl_utils.h
+        src/utils/yapl_utils.c
+        src/vm/yapl_value.h
+        src/vm/yapl_value.c
+        src/vm/yapl_vm.h
+        src/vm/yapl_vm.c
 )
 
 # Link the readline library

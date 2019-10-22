@@ -4,7 +4,7 @@
  * See YAPL's license in the LICENSE file
  */
 
-#include "../include/yapl_utils.h"
+#include "yapl_utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

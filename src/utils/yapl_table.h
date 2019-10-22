@@ -7,8 +7,8 @@
 #ifndef YAPL_TABLE_H
 #define YAPL_TABLE_H
 
-#include "commons.h"
-#include "yapl_value.h"
+#include "../commons.h"
+#include "../vm/yapl_value.h"
 
 /* Hashtable entry representation */
 typedef struct {

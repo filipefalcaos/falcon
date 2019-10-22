@@ -4,10 +4,10 @@
  * See YAPL's license in the LICENSE file
  */
 
-#include "../include/yapl_scanner.h"
-#include "../include/commons.h"
-#include <string.h>
+#include "yapl_scanner.h"
+#include "../commons.h"
 #include <stdio.h>
+#include <string.h>
 
 /* YAPL's scanner representation (lexical analysis) */
 typedef struct {

@@ -7,7 +7,7 @@
 #ifndef YAPL_UTILS_H
 #define YAPL_UTILS_H
 
-#include "commons.h"
+#include "../commons.h"
 
 /* String/Char utilities */
 bool areStrEqual(const char *str1, const char *str2);

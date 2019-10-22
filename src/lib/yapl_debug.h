@@ -7,7 +7,7 @@
 #ifndef YAPL_DEBUG_H
 #define YAPL_DEBUG_H
 
-#include "yapl_bytecode_chunk.h"
+#include "../vm/yapl_bytecode_chunk.h"
 
 /* Virtual machine debugging operations */
 void disassembleBytecodeChunk(BytecodeChunk *bytecodeChunk, const char *name);

@@ -4,17 +4,16 @@
  * See YAPL's license in the LICENSE file
  */
 
-#include "../include/yapl_compiler.h"
-#include "../include/commons.h"
-#include "../include/yapl_object.h"
-#include "../include/yapl_scanner.h"
+#include "yapl_compiler.h"
+#include "../vm/yapl_object.h"
+#include "yapl_scanner.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #ifdef YAPL_DEBUG_PRINT_CODE
-#include "../include/yapl_debug.h"
+#include "../lib/yapl_debug.h"
 #endif
 
 /* YAPL's parser representation */

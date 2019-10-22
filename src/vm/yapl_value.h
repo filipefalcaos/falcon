@@ -7,7 +7,7 @@
 #ifndef YAPL_VALUE_H
 #define YAPL_VALUE_H
 
-#include "commons.h"
+#include "../commons.h"
 
 /* YAPL object types */
 typedef struct sObj Obj;

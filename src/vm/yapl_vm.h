@@ -7,10 +7,10 @@
 #ifndef YAPL_VM_H
 #define YAPL_VM_H
 
-#include "yapl.h"
+#include "../utils/yapl_table.h"
+#include "../yapl.h"
 #include "yapl_bytecode_chunk.h"
 #include "yapl_object.h"
-#include "yapl_table.h"
 
 /* Call frame structure */
 typedef struct {

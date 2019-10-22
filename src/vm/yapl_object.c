@@ -4,10 +4,10 @@
  * See YAPL's license in the LICENSE file
  */
 
-#include "../include/yapl_object.h"
-#include "../include/yapl_memory_manager.h"
-#include "../include/yapl_value.h"
-#include "../include/yapl_vm.h"
+#include "yapl_object.h"
+#include "yapl_memory_manager.h"
+#include "yapl_value.h"
+#include "yapl_vm.h"
 #include <stdio.h>
 #include <string.h>
 

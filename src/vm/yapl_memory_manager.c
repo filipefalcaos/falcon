@@ -4,10 +4,10 @@
  * See YAPL's license in the LICENSE file
  */
 
+#include "yapl_memory_manager.h"
+#include "../commons.h"
+#include "yapl_vm.h"
 #include <stdlib.h>
-#include "../include/commons.h"
-#include "../include/yapl_memory_manager.h"
-#include "../include/yapl_vm.h"
 
 /**
  * Handles all dynamic memory management — allocating memory, freeing it, and changing the size of

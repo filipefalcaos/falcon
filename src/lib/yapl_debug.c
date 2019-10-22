@@ -4,8 +4,8 @@
  * See YAPL's license in the LICENSE file
  */
 
-#include "../include/yapl_debug.h"
-#include "../include/yapl_value.h"
+#include "yapl_debug.h"
+#include "../vm/yapl_value.h"
 #include <stdio.h>
 
 /**

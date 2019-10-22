@@ -4,7 +4,7 @@
  * See YAPL's license in the LICENSE file
  */
 
-#include "../include/yapl_natives.h"
+#include "yapl_natives.h"
 #include <time.h>
 
 /**

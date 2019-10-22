@@ -7,7 +7,7 @@
 #ifndef YAPL_COMPILER_H
 #define YAPL_COMPILER_H
 
-#include "yapl_vm.h"
+#include "../vm/yapl_vm.h"
 
 /* Compiler operations */
 ObjFunction *compile(const char *source);

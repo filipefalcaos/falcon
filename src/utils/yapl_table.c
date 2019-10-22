@@ -4,8 +4,8 @@
  * See YAPL's license in the LICENSE file
  */
 
-#include "../include/yapl_table.h"
-#include "../include/yapl_memory_manager.h"
+#include "yapl_table.h"
+#include "../vm/yapl_memory_manager.h"
 #include <string.h>
 
 /* The hashtable max load factor */

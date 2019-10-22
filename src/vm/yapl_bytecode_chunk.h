@@ -7,7 +7,7 @@
 #ifndef YAPL_BYTECODE_CHUNK_H
 #define YAPL_BYTECODE_CHUNK_H
 
-#include "commons.h"
+#include "../commons.h"
 #include "yapl_opcodes.h"
 #include "yapl_value.h"
 

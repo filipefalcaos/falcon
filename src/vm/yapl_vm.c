@@ -4,17 +4,17 @@
  * See YAPL's license in the LICENSE file
  */
 
-#include "../include/yapl_vm.h"
-#include "../include/yapl_compiler.h"
-#include "../include/yapl_memory_manager.h"
-#include "../include/yapl_natives.h"
-#include "../include/yapl_object.h"
+#include "yapl_vm.h"
+#include "../compiler/yapl_compiler.h"
+#include "../lib/yapl_natives.h"
+#include "yapl_memory_manager.h"
+#include "yapl_object.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
 #ifdef YAPL_DEBUG_TRACE_EXECUTION
-#include "../include/yapl_debug.h"
+#include "../lib/yapl_debug.h"
 #endif
 
 /* VM instance */

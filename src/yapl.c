@@ -4,9 +4,9 @@
  * See YAPL's license in the LICENSE file
  */
 
-#include "../include/yapl.h"
-#include "../include/yapl_utils.h"
-#include "../include/yapl_vm.h"
+#include "yapl.h"
+#include "utils/yapl_utils.h"
+#include "vm/yapl_vm.h"
 #include <readline/readline.h>
 #include <stdio.h>
 #include <stdlib.h>

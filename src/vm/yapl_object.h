@@ -7,9 +7,9 @@
 #ifndef YAPL_OBJECT_H
 #define YAPL_OBJECT_H
 
-#include "commons.h"
-#include "yapl_value.h"
+#include "../commons.h"
 #include "yapl_bytecode_chunk.h"
+#include "yapl_value.h"
 
 /* Types of objects on YAPL */
 typedef enum { OBJ_STRING, OBJ_FUNCTION, OBJ_NATIVE } ObjType;

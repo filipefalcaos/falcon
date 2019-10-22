@@ -7,7 +7,7 @@
 #ifndef YAPL_NATIVES_H
 #define YAPL_NATIVES_H
 
-#include "yapl_value.h"
+#include "../vm/yapl_value.h"
 
 /* Native functions */
 Value clockNative(int argCount, Value *args);
