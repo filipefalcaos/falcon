@@ -7,7 +7,7 @@
 #ifndef YAPL_VM_H
 #define YAPL_VM_H
 
-#include "../utils/yapl_table.h"
+#include "../lib/yapl_table.h"
 #include "../yapl.h"
 #include "yapl_bytecode_chunk.h"
 #include "yapl_object.h"

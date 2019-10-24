@@ -49,8 +49,8 @@ add_executable(
         src/vm/yapl_opcodes.h
         src/compiler/yapl_scanner.h
         src/compiler/yapl_scanner.c
-        src/utils/yapl_table.h
-        src/utils/yapl_table.c
+        src/lib/yapl_table.h
+        src/lib/yapl_table.c
         src/compiler/yapl_tokens.h
         src/utils/yapl_utils.h
         src/utils/yapl_utils.c
