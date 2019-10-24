@@ -20,6 +20,11 @@ typedef struct {
 
 /* Scanning operations */
 void initScanner(const char *source);
+const char *getSourceFromLine();
 Token scanToken();
+
+/* Scanning error messages */
+#define UNTERMINATED_STR_ERR "Unterminated string."
+#define UNEXPECTED_TK_ERR    "Unexpected token."
 
 #endif // YAPL_SCANNER_H

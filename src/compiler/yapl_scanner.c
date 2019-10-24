@@ -6,13 +6,13 @@
 
 #include "yapl_scanner.h"
 #include "../commons.h"
-#include <stdio.h>
 #include <string.h>
 
 /* YAPL's scanner representation (lexical analysis) */
 typedef struct {
     const char *start;
     const char *current;
+    const char *lineContent;
     int line;
     int column;
 } Scanner;
@@ -26,8 +26,15 @@ Scanner scanner;
 void initScanner(const char *source) {
     scanner.start = source;
     scanner.current = source;
+    scanner.lineContent = source;
     scanner.line = 1;
+    scanner.column = 0;
 }
+
+/**
+ * Gets the current line in the scanner.
+ */
+const char *getSourceFromLine() { return scanner.lineContent; }
 
 /**
  * Check if a character is a valid alpha.
@@ -122,6 +129,8 @@ static void preProcessSource() {
             case '\n':
                 scanner.line++;
                 advance();
+                scanner.column = 0;
+                scanner.lineContent = scanner.current;
                 break;
             case '#':
                 while (peek() != '\n' && !reachedEOF()) /* Loop on comments */
@@ -225,12 +234,17 @@ static Token number() {
  */
 static Token string() {
     while (peek() != '"' && !reachedEOF()) {
-        if (peek() == '\n') scanner.line++;
+        if (peek() == '\n') {
+            scanner.line++;
+            scanner.column = 0;
+            scanner.lineContent = scanner.current;
+        }
+
         advance();
     }
 
     if (reachedEOF()) /* Checks if is an unterminated string */
-        return errorToken("Unterminated string.");
+        return errorToken(UNTERMINATED_STR_ERR);
 
     advance();
     return makeToken(TK_STRING);
@@ -294,6 +308,6 @@ Token scanToken() {
         case '"':
             return string();
         default:
-            return errorToken("Unexpected character.");
+            return errorToken(UNEXPECTED_TK_ERR);
     }
 }

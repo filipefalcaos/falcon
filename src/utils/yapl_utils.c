@@ -5,6 +5,7 @@
  */
 
 #include "yapl_utils.h"
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +13,11 @@
 /* File errors */
 #define ERROR_OPEN "Could not open file"
 #define ERROR_READ "Could not read file"
+
+/**
+ * Gets the number of digits in an integer.
+ */
+int getDigits(int n) { return floor(log10(n) + 1); }
 
 /**
  * Checks if two strings are equal.

@@ -21,6 +21,7 @@ typedef struct {
 
 /* YAPL's virtual machine structure */
 typedef struct {
+    const char *fileName;            /* The name of the running file */
     CallFrame frames[VM_FRAMES_MAX]; /* VM's call frames */
     int frameCount;                  /* Call frames count */
     BytecodeChunk *bytecodeChunk;    /* Bytecode chunk to interpret */
@@ -39,10 +40,19 @@ typedef enum { OK, COMPILE_ERROR, RUNTIME_ERROR } ResultCode;
 extern VM vm;
 
 /* Virtual machine operations */
-void initVM();
+void initVM(const char *fileName);
 void freeVM();
 void push(Value value);
 Value pop();
 ResultCode interpret(const char *source);
+
+/* Runtime error messages */
+#define STACK_OVERFLOW      "Stack overflow."
+#define UNDEF_VAR_ERR       "Undefined variable '%s'."
+#define GLB_VAR_REDECL_ERR  "Global variable '%s' already declared."
+#define ARGS_COUNT_ERR      "Expected %d arguments but got %d."
+#define VALUE_NOT_CALL_ERR  "Cannot call value. Only functions and classes are callable values."
+#define OPR_NOT_NUM_ERR     "Operand must be a number."
+#define OPR_NOT_NUM_STR_ERR "Operands must be two numbers or two strings."
 
 #endif // YAPL_VM_H

@@ -19,9 +19,10 @@
 #define YAPL_AUTHORS         "Filipe Falcão, UFAL, Brazil"
 
 /* REPL macros */
-#define PROMPT        ">> "
-#define YAPL_USAGE    "Usage: yapl [options] [file]"
-#define HELP_OPTION   "-h, --help   output usage information"
+#define PROMPT         ">>> "
+#define SCRIPT_TAG     "<script>"
+#define YAPL_USAGE     "Usage: yapl [options] [file]"
+#define HELP_OPTION    "-h, --help   output usage information"
 #define VERSION_OPTION "-v, --version   output version information"
 #define YAPL_OPTIONS   HELP_OPTION "\n" VERSION_OPTION
 #define FILE_ARG       "file   script file to interpret"

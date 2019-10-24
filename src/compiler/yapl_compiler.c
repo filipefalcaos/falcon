@@ -5,9 +5,9 @@
  */
 
 #include "yapl_compiler.h"
+#include "../utils/yapl_utils.h"
 #include "../vm/yapl_object.h"
 #include "yapl_scanner.h"
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -81,28 +81,20 @@ static BytecodeChunk *currentBytecodeChunk() { return &current->function->byteco
 /**
  * Presents a syntax/compiler error to the programmer.
  */
-void compilerError(Token *token, const char *message, ...) {
-    va_list args;
-    va_start(args, message); /* Gets the arguments */
-    va_end(args);
-
-    /* Checks and sets error recovery */
-    if (parser.panicMode) return;
+void compilerError(Token *token, const char *message) {
+    if (parser.panicMode) return; /* Checks and sets error recovery */
     parser.panicMode = true;
 
-    fprintf(stderr, "[%d:%d] Syntax error", token->line, token->column); /* Prints the line */
-    switch (token->type) {
-        case TK_ERROR:
-            break;
-        case TK_EOF:
-            fprintf(stderr, ": ");
-            break;
-        default:
-            fprintf(stderr, " at '%.*s': ", token->length, token->start); /* Prints the error */
-    }
+    int tkLine = token->line;
+    int tkColumn = token->column;
+    const char *fileName = vm.fileName;
+    const char *sourceLine = getSourceFromLine();
 
-    vfprintf(stderr, message, args); /* Prints the error message */
-    fprintf(stderr, "\n");
+    fprintf(stderr, "%s:%d:%d => ", fileName, tkLine, tkColumn); /* Prints the file and line */
+    fprintf(stderr, "CompilerError: %s\n", message);             /* Prints the error message */
+    fprintf(stderr, "%d | %s\n", tkLine, sourceLine);
+    fprintf(stderr, "%*c^\n", tkColumn + getDigits(tkLine) + 2, ' ');
+
     parser.hadError = true;
 }
 
@@ -168,7 +160,7 @@ static void emitBytes(uint8_t byte_1, uint8_t byte_2) {
 static void emitLoop(int loopStart) {
     emitByte(OP_LOOP);
     int offset = currentBytecodeChunk()->count - loopStart + 2;
-    if (offset > UINT16_MAX) compilerError(&parser.previous, "Loop body is too large.");
+    if (offset > UINT16_MAX) compilerError(&parser.previous, LOOP_LIMIT_ERR);
     emitByte((offset >> 8) & 0xff);
     emitByte(offset & 0xff);
 }
@@ -194,7 +186,7 @@ static void emitReturn() { emitBytes(OP_NULL, OP_RETURN); }
 static uint8_t makeConstant(Value value) {
     int constant = addConstant(currentBytecodeChunk(), value);
     if (constant > UINT8_MAX) {
-        compilerError(&parser.previous, "Too many constants in one chunk.");
+        compilerError(&parser.previous, CONST_LIMIT_ERR);
         return 0;
     }
 
@@ -205,9 +197,7 @@ static uint8_t makeConstant(Value value) {
  * Inserts a constant in the constants table of the current bytecode chunk. Before inserting,
  * checks if the constant limit was exceeded.
  */
-static void emitConstant(Value value) {
-    emitBytes(OP_CONSTANT, makeConstant(value));
-}
+static void emitConstant(Value value) { emitBytes(OP_CONSTANT, makeConstant(value)); }
 
 /**
  * Replaces the operand at the given location with the calculated jump offset. This function
@@ -216,7 +206,7 @@ static void emitConstant(Value value) {
  */
 static void patchJump(int offset) {
     int jump = currentBytecodeChunk()->count - offset - 2; /* -2 to adjust by offset */
-    if (jump > UINT16_MAX) compilerError(&parser.previous, "Conditional branch is too large.");
+    if (jump > UINT16_MAX) compilerError(&parser.previous, JUMP_LIMIT_ERR);
     currentBytecodeChunk()->code[offset] = (jump >> 8) & 0xff;
     currentBytecodeChunk()->code[offset + 1] = jump & 0xff;
 }
@@ -255,7 +245,7 @@ static ObjFunction *endCompiler() {
     if (!parser.hadError) {
         printOpcodesHeader();
         disassembleBytecodeChunk(currentBytecodeChunk(),
-                                 function->name != NULL ? function->name->chars : "<script>");
+                                 function->name != NULL ? function->name->chars : SCRIPT_TAG);
 #ifdef YAPL_DEBUG_TRACE_EXECUTION
         printf("\n");
 #endif
@@ -326,7 +316,7 @@ static int resolveLocal(Compiler *compiler, Token *name) {
         Local *local = &compiler->locals[i];
         if (identifiersEqual(name, &local->name)) { /* Checks if identifier matches */
             if (local->depth == -1)
-                compilerError(&parser.previous, "Cannot read variable in its own initializer.");
+                compilerError(&parser.previous, RED_INIT_ERR);
             return i;
         }
     }
@@ -339,7 +329,7 @@ static int resolveLocal(Compiler *compiler, Token *name) {
  */
 static void addLocal(Token name) {
     if (current->localCount == MAX_SINGLE_BYTE) {
-        compilerError(&parser.previous, "Too many local variables in scope.");
+        compilerError(&parser.previous, VAR_LIMIT_ERR);
         return;
     }
 
@@ -360,7 +350,7 @@ static void declareVariable() {
         Local *local = &current->locals[i];
         if (local->depth != -1 && local->depth < current->scopeDepth) break;
         if (identifiersEqual(name, &local->name)) /* Checks if already declared */
-            compilerError(&parser.previous, "Variable already declared in this scope.");
+            compilerError(&parser.previous, VAR_REDECL_ERR);
     }
 
     addLocal(*name);
@@ -406,13 +396,12 @@ static uint8_t argumentList() {
     if (!check(TK_RIGHT_PAREN)) {
         do {
             expression();
-            if (argCount == 255)
-                compilerError(&parser.previous, "Cannot have more than 255 arguments.");
+            if (argCount == 255) compilerError(&parser.previous, ARGS_LIMIT_ERR);
             argCount++;
         } while (match(TK_COMMA));
     }
 
-    consume(TK_RIGHT_PAREN, "Expected a ')' after arguments.");
+    consume(TK_RIGHT_PAREN, CALL_LIST_PAREN_ERR);
     return argCount;
 }
 
@@ -518,7 +507,7 @@ static void literal(bool canAssign) {
  */
 static void grouping(bool canAssign) {
     expression();
-    consume(TK_RIGHT_PAREN, "Expected ')' after expression.");
+    consume(TK_RIGHT_PAREN, GRP_EXPR_ERR);
 }
 
 /**
@@ -666,7 +655,7 @@ static void parsePrecedence(Precedence precedence) {
     ParseFunction prefixRule = getRule(parser.previous.type)->prefix;
 
     if (prefixRule == NULL) { /* Checks if is a parsing error */
-        compilerError(&parser.previous, "Expected expression.");
+        compilerError(&parser.previous, EXPR_ERR);
         return;
     }
 
@@ -682,7 +671,7 @@ static void parsePrecedence(Precedence precedence) {
     }
 
     if (canAssign && match(TK_EQUAL)) { /* Checks if is an invalid assignment */
-        compilerError(&parser.previous, "Invalid assignment target.");
+        compilerError(&parser.previous, INV_ASSG_ERR);
         expression();
     }
 }
@@ -707,14 +696,14 @@ static void block() {
         declaration();
     }
 
-    consume(TK_RIGHT_BRACE, "Expected a '}' after block.");
+    consume(TK_RIGHT_BRACE, BLOCK_BRACE_ERR);
 }
 
 /**
  * Compiles a variable declaration.
  */
 static void varDeclaration() {
-    uint8_t global = parseVariable("Expected a variable name."); /* Parses a variable name */
+    uint8_t global = parseVariable(VAR_NAME_ERR); /* Parses a variable name */
 
     if (match(TK_EQUAL)) {
         expression();
@@ -722,7 +711,7 @@ static void varDeclaration() {
         emitByte(OP_NULL);
     }
 
-    consume(TK_SEMICOLON, "Expected a ';' after variable declaration.");
+    consume(TK_SEMICOLON, VAR_DECL_ERR);
     defineVariable(global);
 }
 
@@ -735,20 +724,20 @@ static void function(FunctionType type) {
     beginScope();
 
     /* Compiles the parameter list */
-    consume(TK_LEFT_PAREN, "Expected a '(' after function name.");
+    consume(TK_LEFT_PAREN, FUNC_NAME_PAREN_ERR);
     if (!check(TK_RIGHT_PAREN)) {
         do {
             current->function->arity++;
             if (current->function->arity > 255)
-                compilerError(&parser.current, "Cannot have more than 255 parameters.");
-            uint8_t paramConstant = parseVariable("Expected a parameter name.");
+                compilerError(&parser.current, PARAMS_LIMIT_ERR);
+            uint8_t paramConstant = parseVariable(PARAM_NAME_ERR);
             defineVariable(paramConstant);
         } while (match(TK_COMMA));
     }
-    consume(TK_RIGHT_PAREN, "Expected a ')' after parameters.");
+    consume(TK_RIGHT_PAREN, FUNC_LIST_PAREN_ERR);
 
     /* Compiles the function body */
-    consume(TK_LEFT_BRACE, "Expected a '{' before function body.");
+    consume(TK_LEFT_BRACE, FUNC_BODY_BRACE_ERR);
     block();
 
     /* Create the function object */
@@ -760,7 +749,7 @@ static void function(FunctionType type) {
  * Compiles a function declaration.
  */
 static void funDeclaration() {
-    uint8_t global = parseVariable("Expected a function name.");
+    uint8_t global = parseVariable(FUNC_NAME_ERR);
     markInitialized();
     function(TYPE_FUNCTION);
     defineVariable(global);
@@ -771,7 +760,7 @@ static void funDeclaration() {
  */
 static void expressionStatement() {
     expression();
-    consume(TK_SEMICOLON, "Expected a ';' after expression.");
+    consume(TK_SEMICOLON, EXPR_STMT_ERR);
     emitByte(OP_POP);
 }
 
@@ -780,7 +769,7 @@ static void expressionStatement() {
  */
 static void ifStatement() {
     expression(); /* Compiles condition */
-    consume(TK_LEFT_BRACE, "Expected a '{' after 'if' condition.");
+    consume(TK_LEFT_BRACE, IF_STMT_ERR);
     int thenJump = emitJump(OP_JUMP_IF_FALSE);
     emitByte(OP_POP);
 
@@ -813,7 +802,7 @@ static void ifStatement() {
 static void whileStatement() {
     int loopStart = currentBytecodeChunk()->count; /* Loop entry point */
     expression();                                  /* Compiles condition */
-    consume(TK_LEFT_BRACE, "Expected a '{' after 'while' condition.");
+    consume(TK_LEFT_BRACE, WHILE_STMT_ERR);
     int exitJump = emitJump(OP_JUMP_IF_FALSE);
     emitByte(OP_POP);
 
@@ -848,7 +837,7 @@ static void forStatement() {
     /* Compiles the conditional clause */
     if (!match(TK_SEMICOLON)) {
         expression();
-        consume(TK_SEMICOLON, "Expected a ';' after 'for' loop condition.");
+        consume(TK_SEMICOLON, FOR_STMT_COND_ERR);
         exitJump = emitJump(OP_JUMP_IF_FALSE);
         emitByte(OP_POP); /* Pops condition */
     }
@@ -859,7 +848,7 @@ static void forStatement() {
         int incrementStart = currentBytecodeChunk()->count;
         expression();
         emitByte(OP_POP); /* Pops increment */
-        consume(TK_LEFT_BRACE, "Expected a '{' after an increment clause.");
+        consume(TK_LEFT_BRACE, FOR_STMT_INC_ERR);
         emitLoop(loopStart);
         loopStart = incrementStart;
         patchJump(bodyJump);
@@ -882,13 +871,13 @@ static void forStatement() {
  */
 static void returnStatement() {
     if (current->type == TYPE_SCRIPT) /* Checks if in top level code */
-        compilerError(&parser.previous, "Cannot return from top level code.");
+        compilerError(&parser.previous, RETURN_TOP_LEVEL_ERR);
 
     if (match(TK_SEMICOLON)) {
         emitReturn();
     } else {
         expression();
-        consume(TK_SEMICOLON, "Expected a ';' after return value.");
+        consume(TK_SEMICOLON, RETURN_STMT_ERR);
         emitByte(OP_RETURN);
     }
 }

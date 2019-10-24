@@ -94,6 +94,7 @@ static void repl() {
  */
 static void processArgs(int argc, char const **argv) {
     if (argc == 1) {
+        initVM("repl");
         repl(); /* Starts the REPL */
     } else if (argc == 2) {
         if (areCharEqual(argv[1][0], '-') ||
@@ -109,6 +110,7 @@ static void processArgs(int argc, char const **argv) {
                 exit(1);
             }
         } else {
+            initVM(argv[1]);
             runFile(argv[1]); /* Interprets the input file */
         }
     } else { /* Unknown option: prints the usage */
@@ -119,7 +121,6 @@ static void processArgs(int argc, char const **argv) {
 }
 
 int main(int argc, char const **argv) {
-    initVM();
     processArgs(argc, argv);
     freeVM();
     return 0;

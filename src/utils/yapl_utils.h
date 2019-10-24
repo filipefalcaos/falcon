@@ -9,6 +9,9 @@
 
 #include "../commons.h"
 
+/* Numerical utilities */
+int getDigits(int n);
+
 /* String/Char utilities */
 bool areStrEqual(const char *str1, const char *str2);
 bool areCharEqual(char chr1, char chr2);

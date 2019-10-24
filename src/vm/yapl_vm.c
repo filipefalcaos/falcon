@@ -37,19 +37,21 @@ void runtimeError(const char *format, ...) {
     va_end(args);
 
     /* Prints the error */
+    fprintf(stderr, "RuntimeError: ");
     vfprintf(stderr, format, args);
     fprintf(stderr, "\n");
 
     /* Prints a stack trace */
+    fprintf(stderr, "Stack trace (last call first):\n");
     for (int i = vm.frameCount - 1; i >= 0; i--) {
         CallFrame *currentFrame = &vm.frames[i];
         ObjFunction *currentFunction = currentFrame->function;
         size_t currentInstruction = currentFrame->pc - currentFunction->bytecodeChunk.code - 1;
         int currentLine = getSourceLine(&currentFrame->function->bytecodeChunk, currentInstruction);
 
-        fprintf(stderr, "    [line %d] in ", currentLine);
+        fprintf(stderr, "    [Line %d] in ", currentLine);
         if (currentFunction->name == NULL) {
-            fprintf(stderr, "script\n");
+            fprintf(stderr, "%s\n", SCRIPT_TAG);
         } else {
             fprintf(stderr, "%s()\n", currentFunction->name->chars);
         }
@@ -63,7 +65,7 @@ void runtimeError(const char *format, ...) {
  */
 static ResultCode undefinedVariableError(ObjString *name, bool delete) {
     if (delete) tableDelete(&vm.globals, name);
-    runtimeError("Undefined variable '%s'.", name->chars);
+    runtimeError(UNDEF_VAR_ERR, name->chars);
     return RUNTIME_ERROR;
 }
 
@@ -71,7 +73,7 @@ static ResultCode undefinedVariableError(ObjString *name, bool delete) {
  * Presents a runtime error when a global variable is already declared.
  */
 static ResultCode declaredVariableError(ObjString *name) {
-    runtimeError("Global variable '%s' already declared.", name->chars);
+    runtimeError(GLB_VAR_REDECL_ERR, name->chars);
     return RUNTIME_ERROR;
 }
 
@@ -89,11 +91,14 @@ static void defineNative(const char *name, NativeFn function) {
 /**
  * Initializes the YAPL's virtual machine.
  */
-void initVM() {
+void initVM(const char *fileName) {
     resetVMStack();
     initTable(&vm.strings);
     initTable(&vm.globals);
+    vm.fileName = fileName;
     vm.objects = NULL;
+
+    /* Set native functions */
     defineNative("clock", clockNative);
     defineNative("print", printNative);
     defineNative("puts", putsNative);
@@ -147,12 +152,12 @@ void printStack() {
  */
 static bool call(ObjFunction* function, int argCount) {
     if (argCount != function->arity) {
-        runtimeError("Expected %d arguments but got %d.", function->arity, argCount);
+        runtimeError(ARGS_COUNT_ERR, function->arity, argCount);
         return false;
     }
 
     if (vm.frameCount == VM_FRAMES_MAX) {
-        runtimeError("Stack overflow.");
+        runtimeError(STACK_OVERFLOW);
         return false;
     }
 
@@ -183,7 +188,7 @@ static bool callValue(Value callee, int argCount) {
         }
     }
 
-    runtimeError("Only functions and classes are callable values.");
+    runtimeError(VALUE_NOT_CALL_ERR);
     return false;
 }
 
@@ -237,7 +242,7 @@ static ResultCode run() {
 #define BINARY_OP(op, valueType, type)                    \
     do {                                                  \
         if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
-            runtimeError("Operands must be numbers.");    \
+            runtimeError(OPR_NOT_NUM_ERR);    \
             return RUNTIME_ERROR;                         \
         }                                                 \
         type b = AS_NUMBER(pop());                        \
@@ -317,7 +322,7 @@ static ResultCode run() {
                     double a = AS_NUMBER(pop());
                     vm.stackTop[-1] = NUMBER_VAL(AS_NUMBER(vm.stackTop[-1]) + a);
                 } else {
-                    runtimeError("Operands must be two numbers or two strings.");
+                    runtimeError(OPR_NOT_NUM_STR_ERR);
                     return RUNTIME_ERROR;
                 }
                 break;
@@ -327,7 +332,7 @@ static ResultCode run() {
                 break;
             case OP_NEGATE:
                 if (!IS_NUMBER(peek(0))) {
-                    runtimeError("Operand must be a number.");
+                    runtimeError(OPR_NOT_NUM_ERR);
                     return RUNTIME_ERROR;
                 }
                 vm.stackTop[-1] = NUMBER_VAL(-AS_NUMBER(vm.stackTop[-1]));
