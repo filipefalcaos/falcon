@@ -14,7 +14,7 @@ remove_build_files() {
 # Debugging: cmake CMakeLists.txt -DDEBUG_PRINT_CODE=ON -DDEBUG_TRACE_EXECUTION=ON
 remove_build_files
 printf "Building YAPL with CMake...\n"
-cmake CMakeLists.txt
+cmake -DCMAKE_BUILD_TYPE=Debug CMakeLists.txt
 printf "\nRunning Make...\n"
 make
 remove_build_files

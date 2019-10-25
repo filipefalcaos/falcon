@@ -1,3 +1,7 @@
+# Run in dir "/yapl"
+# Debug build:   cmake -DCMAKE_BUILD_TYPE=Debug CMakeLists.txt
+# Release build: cmake -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
+
 # Project basic config
 cmake_minimum_required(VERSION 3.13)
 project(yapl C)
