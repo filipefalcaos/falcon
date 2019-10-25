@@ -161,8 +161,8 @@ static void emitLoop(int loopStart) {
     emitByte(OP_LOOP);
     int offset = currentBytecodeChunk()->count - loopStart + 2;
     if (offset > UINT16_MAX) compilerError(&parser.previous, LOOP_LIMIT_ERR);
-    emitByte((offset >> 8) & 0xff);
-    emitByte(offset & 0xff);
+    emitByte((uint8_t) ((offset >> 8) & 0xff));
+    emitByte((uint8_t) (offset & 0xff));
 }
 
 /**
@@ -207,8 +207,8 @@ static void emitConstant(Value value) { emitBytes(OP_CONSTANT, makeConstant(valu
 static void patchJump(int offset) {
     int jump = currentBytecodeChunk()->count - offset - 2; /* -2 to adjust by offset */
     if (jump > UINT16_MAX) compilerError(&parser.previous, JUMP_LIMIT_ERR);
-    currentBytecodeChunk()->code[offset] = (jump >> 8) & 0xff;
-    currentBytecodeChunk()->code[offset + 1] = jump & 0xff;
+    currentBytecodeChunk()->code[offset] = (uint8_t) ((jump >> 8) & 0xff);
+    currentBytecodeChunk()->code[offset + 1] = (uint8_t) (jump & 0xff);
 }
 
 /**
@@ -304,7 +304,7 @@ static uint8_t identifierConstant(Token *name) {
  */
 static bool identifiersEqual(Token *a, Token *b) {
     if (a->length != b->length) return false;
-    return memcmp(a->start, b->start, a->length) == 0;
+    return memcmp(a->start, b->start, (size_t) a->length) == 0;
 }
 
 /**

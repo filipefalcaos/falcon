@@ -31,7 +31,6 @@ typedef struct {
 #define IS_NULL(value)   ((value).type == VAL_NULL)
 #define IS_NUMBER(value) ((value).type == VAL_NUMBER)
 #define IS_OBJ(value)    ((value).type == VAL_OBJ)
-#define IS_ERROR(value)  ((value).type == VAL_ERROR)
 
 /* Gets the C value from a YAPL Value */
 #define AS_BOOL(value)   ((value).as.boolean)
@@ -39,10 +38,10 @@ typedef struct {
 #define AS_OBJ(value)    ((value).as.obj)
 
 /* Sets a native C value to a YAPL Value */
-#define BOOL_VAL(value)   ((Value) {VAL_BOOL, {.boolean = value}})
+#define BOOL_VAL(value)   ((Value) {VAL_BOOL, {.boolean = (value)}})
 #define NULL_VAL          ((Value) {VAL_NULL, {.number = 0}})
-#define NUMBER_VAL(value) ((Value) {VAL_NUMBER, {.number = value}})
-#define OBJ_VAL(object)   ((Value) {VAL_OBJ, {.obj = (Obj*)object}})
+#define NUMBER_VAL(value) ((Value) {VAL_NUMBER, {.number = (value)}})
+#define OBJ_VAL(object)   ((Value) {VAL_OBJ, {.obj = (Obj *) (object)}})
 
 /* Array of Values */
 typedef struct {

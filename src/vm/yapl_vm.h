@@ -47,6 +47,8 @@ Value pop();
 ResultCode interpret(const char *source);
 
 /* Runtime error messages */
+#define UNKNOWN_OPCODE_ERR \
+    "Unknown opcode %d. This is most likely a bug in YAPL itself. Please provide a bug report."
 #define STACK_OVERFLOW      "Stack overflow."
 #define UNDEF_VAR_ERR       "Undefined variable '%s'."
 #define GLB_VAR_REDECL_ERR  "Global variable '%s' already declared."

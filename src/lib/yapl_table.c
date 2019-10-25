@@ -135,7 +135,7 @@ ObjString *tableFindStr(Table *table, const char *chars, int length, uint32_t ha
         if (entry->key == NULL) {
             if (IS_NULL(entry->value)) return NULL;
         } else if (entry->key->length == length && entry->key->hash == hash &&
-                   memcmp(entry->key->chars, chars, length) ==
+                   memcmp(entry->key->chars, chars, (size_t) length) ==
                        0) { /* Checks if length, hash, and content match */
             return entry->key;
         }

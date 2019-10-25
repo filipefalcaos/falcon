@@ -17,7 +17,7 @@
 /**
  * Gets the number of digits in an integer.
  */
-int getDigits(int n) { return floor(log10(n) + 1); }
+int getDigits(int n) { return (int) floor(log10(n) + 1); }
 
 /**
  * Checks if two strings are equal.

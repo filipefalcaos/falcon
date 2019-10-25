@@ -47,7 +47,8 @@ void runtimeError(const char *format, ...) {
         CallFrame *currentFrame = &vm.frames[i];
         ObjFunction *currentFunction = currentFrame->function;
         size_t currentInstruction = currentFrame->pc - currentFunction->bytecodeChunk.code - 1;
-        int currentLine = getSourceLine(&currentFrame->function->bytecodeChunk, currentInstruction);
+        int currentLine =
+            getSourceLine(&currentFrame->function->bytecodeChunk, (int) currentInstruction);
 
         fprintf(stderr, "    [Line %d] in ", currentLine);
         if (currentFunction->name == NULL) {
@@ -261,7 +262,8 @@ static ResultCode run() {
                                (int) (frame->pc - frame->function->bytecodeChunk.code));
 #endif
 
-        switch (READ_BYTE()) { /* Reads the next byte and switches through the opcodes */
+        uint8_t instruction = READ_BYTE();
+        switch (instruction) { /* Reads the next byte and switches through the opcodes */
 
             /* Constants and literals */
             case OP_CONSTANT:
@@ -426,10 +428,15 @@ static ResultCode run() {
                 pop();
                 break;
             case OP_POP_N: {
-                int toPop = AS_NUMBER(pop());
+                int toPop = (int) AS_NUMBER(pop());
                 for (int i = 0; i < toPop; i++) pop();
                 break;
             }
+
+            /* Unknown opcode */
+            default:
+                runtimeError(UNKNOWN_OPCODE_ERR, instruction);
+                break;
         }
     }
 
