@@ -68,6 +68,10 @@ bool tableGet(Table *table, ObjString *key, Value *value) {
  */
 static void adjustCapacity(Table *table, int capacity) {
     Entry *entries = ALLOCATE(Entry, capacity); /* Allocates a new set of HashTable entries */
+    if (entries == NULL) { /* Checks if the allocation failed */
+        memoryError();
+        return;
+    }
 
     for (int i = 0; i < capacity; i++) { /* Allocates the new entries */
         entries[i].key = NULL;

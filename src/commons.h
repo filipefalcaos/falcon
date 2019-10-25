@@ -1,6 +1,6 @@
 /*
  * YAPL version 0.0.1 (master, Oct 18 2019)
- * commons.h: Header commonly used in YAPL compiler/vm
+ * commons.h: Headers commonly used in YAPL compiler/vm
  * See YAPL's license in the LICENSE file
  */
 

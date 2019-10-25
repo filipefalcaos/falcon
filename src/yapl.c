@@ -7,8 +7,8 @@
 #include "yapl.h"
 #include "utils/yapl_utils.h"
 #include "vm/yapl_vm.h"
+#include <stdio.h> /* MUST be included before readline */
 #include <readline/readline.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 /**

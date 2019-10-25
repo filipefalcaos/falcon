@@ -13,7 +13,7 @@ if(Readline_INCLUDE_DIR AND Readline_LIBRARY AND Ncurses_LIBRARY)
 else(Readline_INCLUDE_DIR AND Readline_LIBRARY AND Ncurses_LIBRARY)
     FIND_LIBRARY(Readline_LIBRARY NAMES readline)
     include(FindPackageHandleStandardArgs)
-    FIND_PACKAGE_HANDLE_STANDARD_ARGS(Readline DEFAULT_MSG Readline_INCLUDE_DIR Readline_LIBRARY )
+    FIND_PACKAGE_HANDLE_STANDARD_ARGS(Readline DEFAULT_MSG Readline_INCLUDE_DIR Readline_LIBRARY)
     MARK_AS_ADVANCED(Readline_INCLUDE_DIR Readline_LIBRARY)
 endif(Readline_INCLUDE_DIR AND Readline_LIBRARY AND Ncurses_LIBRARY)
 

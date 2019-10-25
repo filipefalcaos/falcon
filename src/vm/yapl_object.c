@@ -47,8 +47,14 @@ void printObject(Value value) {
  */
 Obj *allocateObject(size_t size, ObjType type) {
     Obj *object = (Obj *) reallocate(NULL, 0, size); /* Creates a new object */
-    object->type = type;                             /* Sets the object type */
-    object->next = vm.objects;                       /* Adds the new object to the object list */
+
+    if (object == NULL) { /* Checks if the allocation failed */
+        memoryError();
+        return NULL;
+    }
+
+    object->type = type;       /* Sets the object type */
+    object->next = vm.objects; /* Adds the new object to the object list */
     vm.objects = object;
     return object;
 }

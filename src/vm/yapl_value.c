@@ -36,6 +36,11 @@ void writeValueArray(ValueArray *valueArray, Value value) {
         valueArray->capacity = INCREASE_CAPACITY(oldCapacity);
         valueArray->values =
             INCREASE_ARRAY(valueArray->values, Value, oldCapacity, valueArray->capacity);
+
+        if (valueArray->values == NULL) { /* Checks if the allocation failed */
+            memoryError();
+            return;
+        }
     }
 
     valueArray->values[valueArray->count] = value;

@@ -3,6 +3,7 @@
 # Remove CMake build files
 remove_build_files() {
   rm -rf CMakeFiles/
+  rm -rf cmake-build-debug/
   rm -f cmake_install.cmake
   rm -f CMakeCache.txt
   rm -f Makefile

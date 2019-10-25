@@ -26,7 +26,11 @@
  * "reallocate" function */
 #define FREE_ARRAY(type, pointer, oldCount) reallocate(pointer, sizeof(type) * (oldCount), 0)
 
+/* Out of memory error */
+#define OUT_OF_MEM_ERR "MemoryError: Failed to allocate memory."
+
 /* Memory management operations */
+void memoryError();
 void *reallocate(void *previous, size_t oldSize, size_t newSize);
 void freeObjects();
 

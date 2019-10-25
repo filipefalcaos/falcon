@@ -7,7 +7,17 @@
 #include "yapl_memory_manager.h"
 #include "../commons.h"
 #include "yapl_vm.h"
+#include <stdio.h>
 #include <stdlib.h>
+
+/**
+ * Presents a message indicating that a memory allocation error occurred.
+ */
+void memoryError() {
+    fprintf(stderr, OUT_OF_MEM_ERR);
+    fprintf(stderr, "\n");
+    exit(1);
+}
 
 /**
  * Handles all dynamic memory management — allocating memory, freeing it, and changing the size of

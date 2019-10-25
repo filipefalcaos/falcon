@@ -42,6 +42,11 @@ void writeToBytecodeChunk(BytecodeChunk *bytecodeChunk, uint8_t byte, int line) 
         bytecodeChunk->code =
             INCREASE_ARRAY(bytecodeChunk->code, uint8_t, oldCapacity,
                            bytecodeChunk->capacity); /* Increase the bytecode chunk */
+
+        if (bytecodeChunk->code == NULL) { /* Checks if the allocation failed */
+            memoryError();
+            return;
+        }
     }
 
     bytecodeChunk->code[bytecodeChunk->count] = byte; /* Set byte */
@@ -59,6 +64,11 @@ void writeToBytecodeChunk(BytecodeChunk *bytecodeChunk, uint8_t byte, int line) 
         bytecodeChunk->lines =
             INCREASE_ARRAY(bytecodeChunk->lines, SourceLine, oldCapacity,
                            bytecodeChunk->lineCapacity); /* Increases the lines list */
+
+        if (bytecodeChunk->lines == NULL) { /* Checks if the allocation failed */
+            memoryError();
+            return;
+        }
     }
 
     SourceLine *sourceLine = &bytecodeChunk->lines[bytecodeChunk->lineCount++]; /* Sets the line */
