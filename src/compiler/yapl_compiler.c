@@ -755,22 +755,22 @@ static void block() {
 }
 
 /**
- * Compiles a variable declaration.
+ * Compiles a variable declaration list.
  */
 static void varDeclaration() {
-    uint8_t global = parseVariable(VAR_NAME_ERR); /* Parses a variable name */
-    if (match(TK_EQUAL)) {
-        expression(); /* Compiles the variable initializer */
-    } else {
-        emitByte(OP_NULL);
+    if (!check(TK_SEMICOLON)) {
+        do {
+            uint8_t global = parseVariable(VAR_NAME_ERR); /* Parses a variable name */
+            if (match(TK_EQUAL)) {
+                expression(); /* Compiles the variable initializer */
+            } else {
+                emitByte(OP_NULL);
+            }
+            defineVariable(global); /* Emits the declaration bytecode */
+        } while (match(TK_COMMA));
     }
 
-    defineVariable(global); /* Emits the declaration bytecode */
-    if (match(TK_COMMA)) {
-        varDeclaration(); /* More variable declarations */
-    } else {
-        consume(TK_SEMICOLON, VAR_DECL_ERR);
-    }
+    consume(TK_SEMICOLON, VAR_DECL_ERR);
 }
 
 /**
