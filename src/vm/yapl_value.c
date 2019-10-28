@@ -50,7 +50,7 @@ void writeValueArray(ValueArray *valueArray, Value value) {
 /**
  * Prints a single YAPL Value.
  */
-void printValue(Value value, bool newLine) {
+void printValue(Value value) {
     switch (value.type) {
         case VAL_BOOL:
             printf(AS_BOOL(value) ? "true" : "false");
@@ -67,8 +67,6 @@ void printValue(Value value, bool newLine) {
         default:
             break;
     }
-
-    if (newLine) printf("\n");
 }
 
 /**

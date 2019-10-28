@@ -53,7 +53,14 @@ typedef struct {
 typedef struct {
     Token name;
     int depth;
+    bool isCaptured;
 } Local;
+
+/* Upvalue representation */
+typedef struct {
+    uint8_t index;
+    bool isLocal;
+} Upvalue;
 
 /* YAPL's function types */
 typedef enum { TYPE_FUNCTION, TYPE_SCRIPT } FunctionType;
@@ -62,8 +69,9 @@ typedef enum { TYPE_FUNCTION, TYPE_SCRIPT } FunctionType;
 typedef struct Compiler {
     struct Compiler *enclosing;
     ObjFunction *function;
-    FunctionType type;             // TODO: change to a bitfield?
+    FunctionType type;
     Local locals[MAX_SINGLE_BYTE]; // TODO: make it possible to have more than 256
+    Upvalue upvalues[MAX_SINGLE_BYTE];
     int localCount;
     int scopeDepth;
 } Compiler;
@@ -230,6 +238,7 @@ static void initCompiler(Compiler *compiler, FunctionType type) {
     /* Set stack slot zero for the VM's internal use */
     Local *local = &current->locals[current->localCount++];
     local->depth = 0;
+    local->isCaptured = false;
     local->name.start = "";
     local->name.length = 0;
 }
@@ -266,21 +275,18 @@ static void beginScope() { current->scopeDepth++; }
  * declared in the scope.
  */
 static void endScope() {
-    int end, start = current->localCount;
     current->scopeDepth--;
 
-    /* Finds the number of locals in the scope */
+    /* Closes locals and upvalues in the scope */
     while (current->localCount > 0 &&
            current->locals[current->localCount - 1].depth > current->scopeDepth) {
-        current->localCount--;
-    }
+        if (current->locals[current->localCount - 1].isCaptured) {
+            emitByte(OP_CLOSE_UPVALUE);
+        } else {
+            emitByte(OP_POP);
+        }
 
-    end = start - current->localCount; /* Number of locals to remove */
-    if (end == 1) {                    /* Single variable in scope */
-        emitByte(OP_POP);
-    } else if (end > 1) { /* More than one variable in scope */
-        emitConstant(NUMBER_VAL(end));
-        emitByte(OP_POP_N); // TODO: make it work with an operand
+        current->localCount--;
     }
 }
 
@@ -325,6 +331,50 @@ static int resolveLocal(Compiler *compiler, Token *name) {
 }
 
 /**
+ * Adds a new upvalue to the upvalue list and returns the index of the created upvalue.
+ */
+static int addUpvalue(Compiler *compiler, uint8_t index, bool isLocal) {
+    int upvalueCount = compiler->function->upvalueCount;
+
+    /* Checks if the upvalue is already in the upvalue list */
+    for (int i = 0; i < upvalueCount; i++) {
+        Upvalue *upvalue = &compiler->upvalues[i];
+        if (upvalue->index == index && upvalue->isLocal == isLocal) return i;
+    }
+
+    if (upvalueCount == MAX_SINGLE_BYTE) {
+        compilerError(&parser.previous, CLOSURE_LIMIT_ERR);
+        return 0;
+    }
+
+    /* Adds the new upvalue */
+    compiler->upvalues[upvalueCount].isLocal = isLocal;
+    compiler->upvalues[upvalueCount].index = index;
+    return compiler->function->upvalueCount++;
+}
+
+/**
+ * Resolves an upvalue by looking for a local variable declared in any of the surrounding scopes. If
+ * found, an upvalue index for that variable is returned.
+ */
+static int resolveUpvalue(Compiler *compiler, Token *name) {
+    if (compiler->enclosing == NULL) return -1; /* Global variable */
+
+    /* Looks for a local variable in the enclosing scope */
+    int local = resolveLocal(compiler->enclosing, name);
+    if (local != -1) {
+        compiler->enclosing->locals[local].isCaptured = true;
+        return addUpvalue(compiler, (uint8_t) local, true);
+    }
+
+    /* Looks for an upvalue in the enclosing scope */
+    int upvalue = resolveUpvalue(compiler->enclosing, name);
+    if (upvalue != -1) return addUpvalue(compiler, (uint8_t)upvalue, false);
+
+    return -1;
+}
+
+/**
  * Adds a local variable to the list of variables in a scope depth.
  */
 static void addLocal(Token name) {
@@ -336,6 +386,7 @@ static void addLocal(Token name) {
     Local *local = &current->locals[current->localCount++];
     local->name = name;
     local->depth = -1;
+    local->isCaptured = false;
 }
 
 /**
@@ -535,10 +586,14 @@ static void namedVariable(Token name, bool canAssign) {
     uint8_t getOpcode, setOpcode;
     int arg = resolveLocal(current, &name);
 
-    if (arg != -1) {
+    /* Finds the current scope */
+    if (arg != -1) { /* Local variable? */
         getOpcode = OP_GET_LOCAL;
         setOpcode = OP_SET_LOCAL;
-    } else {
+    } else if ((arg = resolveUpvalue(current, &name)) != -1) { /* Upvalue? */
+        getOpcode = OP_GET_UPVALUE;
+        setOpcode = OP_SET_UPVALUE;
+    } else { /* Global variable */
         arg = identifierConstant(&name);
         getOpcode = OP_GET_GLOBAL;
         setOpcode = OP_SET_GLOBAL;
@@ -742,7 +797,13 @@ static void function(FunctionType type) {
 
     /* Create the function object */
     ObjFunction *function = endCompiler();
-    emitBytes(OP_CONSTANT, makeConstant(OBJ_VAL(function)));
+    emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
+
+    /* Emits the captured upvalues */
+    for (int i = 0; i < function->upvalueCount; i++) {
+        emitByte(compiler.upvalues[i].isLocal ? 1 : 0);
+        emitByte(compiler.upvalues[i].index);
+    }
 }
 
 /**

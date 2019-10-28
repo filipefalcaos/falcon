@@ -56,7 +56,7 @@ void freeValueArray(ValueArray *valueArray);
 void writeValueArray(ValueArray *valueArray, Value value);
 
 /* Value operations */
-void printValue(Value value, bool newLine);
+void printValue(Value value);
 bool valuesEqual(Value a, Value b);
 
 #endif // YAPL_VALUE_H

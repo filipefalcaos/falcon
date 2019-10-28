@@ -5,6 +5,7 @@
  */
 
 #include "yapl_natives.h"
+#include <stdio.h>
 #include <time.h>
 
 /**
@@ -18,7 +19,7 @@ Value clockNative(int argCount, Value *args) {
  * Native YAPL function to print an YAPL value.
  */
 Value printNative(int argCount, Value *args) {
-    printValue(*args, false);
+    printValue(*args);
     return NULL_VAL;
 }
 
@@ -26,6 +27,7 @@ Value printNative(int argCount, Value *args) {
  * Native YAPL function to print (with a new line) an YAPL value.
  */
 Value putsNative(int argCount, Value *args) {
-    printValue(*args, true);
+    printValue(*args);
+    printf("\n");
     return NULL_VAL;
 }

@@ -14,9 +14,9 @@
 
 /* Call frame structure */
 typedef struct {
-    ObjFunction *function; /* Running function */
-    uint8_t *pc;           /* Function's program counter */
-    Value *slots;          /* Function's stack pointer */
+    ObjClosure *closure; /* Running closure */
+    uint8_t *pc;         /* Function's program counter */
+    Value *slots;        /* Function's stack pointer */
 } CallFrame;
 
 /* YAPL's virtual machine structure */
@@ -24,6 +24,7 @@ typedef struct {
     const char *fileName;            /* The name of the running file */
     CallFrame frames[VM_FRAMES_MAX]; /* VM's call frames */
     int frameCount;                  /* Call frames count */
+    ObjUpvalue *openUpvalues;        /* List of open upvalues */
     BytecodeChunk *bytecodeChunk;    /* Bytecode chunk to interpret */
     uint8_t *pc;                     /* Program counter */
     Value stack[VM_STACK_MAX];       /* VM's stack */

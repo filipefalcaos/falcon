@@ -39,6 +39,9 @@ typedef enum {
     OP_DEFINE_GLOBAL, /* Define global variable */
     OP_GET_GLOBAL,    /* Get global variable value */
     OP_SET_GLOBAL,    /* Set global variable value */
+    OP_GET_UPVALUE,   /* Get upvalue value */
+    OP_SET_UPVALUE,   /* Set upvalue value */
+    OP_CLOSE_UPVALUE, /* Close upvalue */
     OP_GET_LOCAL,     /* Get local variable value */
     OP_SET_LOCAL,     /* Set local variable value */
 
@@ -47,13 +50,13 @@ typedef enum {
     OP_JUMP_IF_FALSE, /* Jump an instruction if falsey on the VM */
     OP_LOOP,          /* Loop backwards instruction */
 
-    /* Function operations */
-    OP_CALL,   /* Perform a function call */
-    OP_RETURN, /* "return" statement */
+    /* Closures/functions operations */
+    OP_CLOSURE, /* Closure declaration */
+    OP_CALL,    /* Perform a function call */
+    OP_RETURN,  /* "return" statement */
 
     /* VM operations */
-    OP_POP,  /* Pop from VM stack */
-    OP_POP_N /* Pop from VM stack "n" times */
+    OP_POP /* Pop from VM stack */
 
 } OpCodes;
 

@@ -25,6 +25,7 @@ VM vm;
  */
 static void resetVMStack() {
     vm.stackTop = vm.stack;
+    vm.openUpvalues = NULL;
     vm.frameCount = 0;
 }
 
@@ -45,10 +46,10 @@ void runtimeError(const char *format, ...) {
     fprintf(stderr, "Stack trace (last call first):\n");
     for (int i = vm.frameCount - 1; i >= 0; i--) {
         CallFrame *currentFrame = &vm.frames[i];
-        ObjFunction *currentFunction = currentFrame->function;
+        ObjFunction *currentFunction = currentFrame->closure->function;
         size_t currentInstruction = currentFrame->pc - currentFunction->bytecodeChunk.code - 1;
-        int currentLine =
-            getSourceLine(&currentFrame->function->bytecodeChunk, (int) currentInstruction);
+        int currentLine = getSourceLine(&currentFrame->closure->function->bytecodeChunk,
+                                        (int) currentInstruction);
 
         fprintf(stderr, "    [Line %d] in ", currentLine);
         if (currentFunction->name == NULL) {
@@ -142,7 +143,7 @@ void printStack() {
     printf("          ");
     for (Value *slot = vm.stack; slot < vm.stackTop; slot++) {
         printf("[ ");
-        printValue(*slot, false);
+        printValue(*slot);
         printf(" ]");
     }
     printf("\n");
@@ -151,9 +152,9 @@ void printStack() {
 /**
  * Executes a call on the given YAPL function by setting its call frame to be run.
  */
-static bool call(ObjFunction* function, int argCount) {
-    if (argCount != function->arity) {
-        runtimeError(ARGS_COUNT_ERR, function->arity, argCount);
+static bool call(ObjClosure *closure, int argCount) {
+    if (argCount != closure->function->arity) {
+        runtimeError(ARGS_COUNT_ERR, closure->function->arity, argCount);
         return false;
     }
 
@@ -163,8 +164,8 @@ static bool call(ObjFunction* function, int argCount) {
     }
 
     CallFrame *frame = &vm.frames[vm.frameCount++];
-    frame->function = function;
-    frame->pc = function->bytecodeChunk.code;
+    frame->closure = closure;
+    frame->pc = closure->function->bytecodeChunk.code;
     frame->slots = vm.stackTop - argCount - 1;
     return true;
 }
@@ -175,8 +176,8 @@ static bool call(ObjFunction* function, int argCount) {
 static bool callValue(Value callee, int argCount) {
     if (IS_OBJ(callee)) {
         switch (OBJ_TYPE(callee)) {
-            case OBJ_FUNCTION:
-                return call(AS_FUNCTION(callee), argCount);
+            case OBJ_CLOSURE:
+                return call(AS_CLOSURE(callee), argCount);
             case OBJ_NATIVE: {
                 NativeFn native = AS_NATIVE(callee);
                 Value result = native(argCount, vm.stackTop - argCount);
@@ -191,6 +192,46 @@ static bool callValue(Value callee, int argCount) {
 
     runtimeError(VALUE_NOT_CALL_ERR);
     return false;
+}
+
+/**
+ * Captures a given local upvalue.
+ */
+static ObjUpvalue *captureUpvalue(Value *local) {
+    ObjUpvalue *prevUpvalue = NULL;
+    ObjUpvalue *upvalue = vm.openUpvalues;
+
+    /* Iterate past upvalues pointing to slots above the given one */
+    while (upvalue != NULL && upvalue->slot > local) {
+        prevUpvalue = upvalue;
+        upvalue = upvalue->next;
+    }
+
+    if (upvalue != NULL && upvalue->slot == local) /* Checks if already exists in the list */
+        return upvalue;
+
+    ObjUpvalue *createdUpvalue = newUpvalue(local); /* Creates a new upvalue */
+    createdUpvalue->next = upvalue;                 /* Adds to the list */
+
+    if (prevUpvalue == NULL) {
+        vm.openUpvalues = createdUpvalue;
+    } else {
+        prevUpvalue->next = createdUpvalue;
+    }
+
+    return createdUpvalue;
+}
+
+/**
+ * Closes the upvalues for a given stack slot.
+ */
+static void closeUpvalues(Value *last) {
+    while (vm.openUpvalues != NULL && vm.openUpvalues->slot >= last) {
+        ObjUpvalue *upvalue = vm.openUpvalues;
+        upvalue->closed = *upvalue->slot;
+        upvalue->slot = &upvalue->closed;
+        vm.openUpvalues = upvalue->next;
+    }
 }
 
 /**
@@ -235,7 +276,7 @@ static ResultCode run() {
 
 /* Reads the next byte from the bytecode, treats the resulting number as an index, and looks up the
  * corresponding location in the chunk’s constant table */
-#define READ_CONSTANT() (frame->function->bytecodeChunk.constants.values[READ_BYTE()])
+#define READ_CONSTANT() (frame->closure->function->bytecodeChunk.constants.values[READ_BYTE()])
 #define READ_STRING()   AS_STRING(READ_CONSTANT())
 
 /* Performs a binary operation of the 'op' operator on the two elements on the top of the YAPL VM's
@@ -258,8 +299,8 @@ static ResultCode run() {
     while (true) {
 #ifdef YAPL_DEBUG_TRACE_EXECUTION
         if (vm.stack != vm.stackTop) printStack();
-        disassembleInstruction(&frame->function->bytecodeChunk,
-                               (int) (frame->pc - frame->function->bytecodeChunk.code));
+        disassembleInstruction(&frame->closure->function->bytecodeChunk,
+                               (int) (frame->pc - frame->closure->function->bytecodeChunk.code));
 #endif
 
         uint8_t instruction = READ_BYTE();
@@ -271,7 +312,7 @@ static ResultCode run() {
                 break;
             case OP_CONSTANT_16: {
                 uint16_t index = READ_BYTE() | READ_BYTE() << 8;
-                push(vm.bytecodeChunk->constants.values[index]);
+                push(frame->closure->function->bytecodeChunk.constants.values[index]);
                 break;
             }
             case OP_FALSE:
@@ -373,6 +414,20 @@ static ResultCode run() {
                     return undefinedVariableError(name, true);
                 break;
             }
+            case OP_GET_UPVALUE: {
+                uint8_t slot = READ_BYTE();
+                push(*frame->closure->upvalues[slot]->slot);
+                break;
+            }
+            case OP_SET_UPVALUE: {
+                uint8_t slot = READ_BYTE();
+                *frame->closure->upvalues[slot]->slot = peek(0);
+                break;
+            }
+            case OP_CLOSE_UPVALUE:
+                closeUpvalues(vm.stackTop - 1);
+                pop();
+                break;
             case OP_GET_LOCAL: {
                 uint8_t slot = READ_BYTE();
                 push(frame->slots[slot]);
@@ -402,6 +457,25 @@ static ResultCode run() {
             }
 
             /* Function operations */
+            case OP_CLOSURE: {
+                ObjFunction *function = AS_FUNCTION(READ_CONSTANT());
+                ObjClosure *closure = newClosure(function);
+                push(OBJ_VAL(closure));
+
+                /* Capture upvalues */
+                for (int i = 0; i < closure->upvalueCount; i++) {
+                    uint8_t isLocal = READ_BYTE();
+                    uint8_t index = READ_BYTE();
+
+                    if (isLocal) {
+                        closure->upvalues[i] = captureUpvalue(frame->slots + index);
+                    } else {
+                        closure->upvalues[i] = frame->closure->upvalues[index];
+                    }
+                }
+
+                break;
+            }
             case OP_CALL: {
                 int argCount = READ_BYTE();
                 if (!callValue(peek(argCount), argCount)) return RUNTIME_ERROR;
@@ -409,7 +483,8 @@ static ResultCode run() {
                 break;
             }
             case OP_RETURN: {
-                Value result = pop(); /* Gets the function's return value */
+                Value result = pop();        /* Gets the function's return value */
+                closeUpvalues(frame->slots); /* Closes upvalues */
                 vm.frameCount--;
 
                 if (vm.frameCount == 0) { /* Checks if top level code is finished */
@@ -427,11 +502,6 @@ static ResultCode run() {
             case OP_POP:
                 pop();
                 break;
-            case OP_POP_N: {
-                int toPop = (int) AS_NUMBER(pop());
-                for (int i = 0; i < toPop; i++) pop();
-                break;
-            }
 
             /* Unknown opcode */
             default:
@@ -457,7 +527,10 @@ ResultCode interpret(const char *source) {
 
     /* Set the script to run */
     push(OBJ_VAL(function));
-    callValue(OBJ_VAL(function), 0);
+    ObjClosure* closure = newClosure(function);
+    pop();
+    push(OBJ_VAL(closure));
+    callValue(OBJ_VAL(closure), 0);
 
     return run(); /* Executes the bytecode chunk */
 }

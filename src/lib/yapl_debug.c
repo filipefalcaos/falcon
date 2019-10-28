@@ -5,6 +5,7 @@
  */
 
 #include "yapl_debug.h"
+#include "../vm/yapl_object.h"
 #include "../vm/yapl_value.h"
 #include <stdio.h>
 
@@ -63,7 +64,7 @@ static int constantInstruction(const char *name, BytecodeChunk *bytecodeChunk, i
     /* Prints the constant */
     printf("%-16s %4d ", name, constant);
     if (value.type != VAL_OBJ) printf("'");
-    printValue(value, false);
+    printValue(value);
     if (value.type != VAL_OBJ) printf("'");
     printf("\n");
     return offset + 2;
@@ -79,10 +80,31 @@ static int constantInstruction16(const char *name, BytecodeChunk *bytecodeChunk,
     /* Prints the constant */
     printf("%-16s %4d ", name, constant);
     if (value.type != VAL_OBJ) printf("'");
-    printValue(value, false);
+    printValue(value);
     if (value.type != VAL_OBJ) printf("'");
     printf("\n");
     return offset + 3;
+}
+
+/**
+ * Displays a closure instruction.
+ */
+static int closureInstruction(const char *name, BytecodeChunk *bytecodeChunk, int offset) {
+    offset++;
+    uint8_t constant = bytecodeChunk->code[offset++];
+    printf("%-16s %4d ", name, constant);
+    printValue(bytecodeChunk->constants.values[constant]);
+    printf("\n");
+
+    ObjFunction *function = AS_FUNCTION(bytecodeChunk->constants.values[constant]);
+    for (int i = 0; i < function->upvalueCount; i++) {
+        int isLocal = bytecodeChunk->code[offset++];
+        int index = bytecodeChunk->code[offset++];
+        printf("%04d    |                     %s %d\n", offset - 2,
+               isLocal ? "local" : "upvalue", index);
+    }
+
+    return offset;
 }
 
 /**
@@ -137,6 +159,12 @@ int disassembleInstruction(BytecodeChunk *bytecodeChunk, int offset) {
             return constantInstruction("OP_GET_GLOBAL", bytecodeChunk, offset);
         case OP_SET_GLOBAL:
             return constantInstruction("OP_SET_GLOBAL", bytecodeChunk, offset);
+        case OP_GET_UPVALUE:
+            return byteInstruction("OP_GET_UPVALUE", bytecodeChunk, offset);
+        case OP_SET_UPVALUE:
+            return byteInstruction("OP_SET_UPVALUE", bytecodeChunk, offset);
+        case OP_CLOSE_UPVALUE:
+            return simpleInstruction("OP_CLOSE_UPVALUE", offset);
         case OP_GET_LOCAL:
             return byteInstruction("OP_GET_LOCAL", bytecodeChunk, offset);
         case OP_SET_LOCAL:
@@ -147,14 +175,14 @@ int disassembleInstruction(BytecodeChunk *bytecodeChunk, int offset) {
             return jumpInstruction("OP_JUMP_IF_FALSE", 1, bytecodeChunk, offset);
         case OP_LOOP:
             return jumpInstruction("OP_LOOP", -1, bytecodeChunk, offset);
+        case OP_CLOSURE:
+            return closureInstruction("OP_CLOSURE", bytecodeChunk, offset);
         case OP_CALL:
             return byteInstruction("OP_CALL", bytecodeChunk, offset);
         case OP_RETURN:
             return simpleInstruction("OP_RETURN", offset);
         case OP_POP:
             return simpleInstruction("OP_POP", offset);
-        case OP_POP_N:
-            return simpleInstruction("OP_POP_N", offset);
         default:
             printf("Unknown opcode %d\n", instruction);
             return offset + 1;

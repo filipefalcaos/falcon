@@ -30,14 +30,19 @@ static void printFunction(ObjFunction *function) {
  */
 void printObject(Value value) {
     switch (OBJ_TYPE(value)) {
+        case OBJ_STRING:
+            printf("\"%s\"", AS_CLANG_STRING(value));
+            break;
+        case OBJ_UPVALUE:
+            break; /* Upvalues cannot be printed */
+        case OBJ_CLOSURE:
+            printFunction(AS_CLOSURE(value)->function);
+            break;
         case OBJ_FUNCTION:
             printFunction(AS_FUNCTION(value));
             break;
         case OBJ_NATIVE:
             printf("<native fn>");
-            break;
-        case OBJ_STRING:
-            printf("\"%s\"", AS_CLANG_STRING(value));
             break;
     }
 }
@@ -60,11 +65,44 @@ Obj *allocateObject(size_t size, ObjType type) {
 }
 
 /**
+ * Allocates a new YAPL upvalue object.
+ */
+ObjUpvalue *newUpvalue(Value *slot) {
+    ObjUpvalue *upvalue = ALLOCATE_OBJ(ObjUpvalue, OBJ_UPVALUE);
+    upvalue->slot = slot;
+    upvalue->next = NULL;
+    upvalue->closed = NULL_VAL;
+    return upvalue;
+}
+
+/**
+ * Allocates a new YAPL closure object.
+ */
+ObjClosure *newClosure(ObjFunction *function) {
+    ObjUpvalue **upvalues = ALLOCATE(ObjUpvalue *, function->upvalueCount); /* Sets upvalue list */
+//    if (upvalues == NULL) { /* Checks if the allocation failed */
+//        memoryError();
+//        return NULL;
+//    }
+
+    for (int i = 0; i < function->upvalueCount; i++) {
+        upvalues[i] = NULL; /* Initialize current upvalue */
+    }
+
+    ObjClosure *closure = ALLOCATE_OBJ(ObjClosure, OBJ_CLOSURE);
+    closure->function = function;
+    closure->upvalues = upvalues;
+    closure->upvalueCount = function->upvalueCount;
+    return closure;
+}
+
+/**
  * Allocates a new YAPL function object.
  */
 ObjFunction *newFunction() {
     ObjFunction *function = ALLOCATE_OBJ(ObjFunction, OBJ_FUNCTION);
     function->arity = 0;
+    function->upvalueCount = 0;
     function->name = NULL;
     initBytecodeChunk(&function->bytecodeChunk);
     return function;

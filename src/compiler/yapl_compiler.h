@@ -43,11 +43,12 @@ ObjFunction *compile(const char *source);
 #define RETURN_TOP_LEVEL_ERR "Cannot return from top level code."
 
 /* Limits */
-#define CONST_LIMIT_ERR  "Limit of 255 constants reached."
-#define LOOP_LIMIT_ERR   "Limit of 65535 instructions in loop body reached."
-#define JUMP_LIMIT_ERR   "Limit of 65535 instructions in conditional branch reached."
-#define VAR_LIMIT_ERR    "Limit of 255 local variables in scope reached."
-#define ARGS_LIMIT_ERR   "Limit of 255 arguments reached."
-#define PARAMS_LIMIT_ERR "Limit of 255 parameters reached."
+#define CONST_LIMIT_ERR   "Limit of 255 constants reached."
+#define LOOP_LIMIT_ERR    "Limit of 65535 instructions in loop body reached."
+#define JUMP_LIMIT_ERR    "Limit of 65535 instructions in conditional branch reached."
+#define VAR_LIMIT_ERR     "Limit of 255 local variables in scope reached."
+#define CLOSURE_LIMIT_ERR "Limit of 255 closure variables reached."
+#define ARGS_LIMIT_ERR    "Limit of 255 arguments reached."
+#define PARAMS_LIMIT_ERR  "Limit of 255 parameters reached."
 
 #endif // YAPL_COMPILER_H

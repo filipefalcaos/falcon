@@ -12,7 +12,7 @@
 #include "yapl_value.h"
 
 /* Types of objects on YAPL */
-typedef enum { OBJ_STRING, OBJ_FUNCTION, OBJ_NATIVE } ObjType;
+typedef enum { OBJ_STRING, OBJ_UPVALUE, OBJ_CLOSURE, OBJ_FUNCTION, OBJ_NATIVE } ObjType;
 
 /* Structure of a YAPL object */
 struct sObj {
@@ -24,6 +24,7 @@ struct sObj {
 typedef struct {
     Obj obj;
     int arity;
+    int upvalueCount;
     BytecodeChunk bytecodeChunk;
     ObjString *name;
 } ObjFunction;
@@ -31,11 +32,27 @@ typedef struct {
 /* Native functions implementations */
 typedef Value (*NativeFn)(int argCount, Value *args);
 
-/* YAPL's native functions objects */
+/* YAPL's native functions object */
 typedef struct {
     Obj obj;
     NativeFn function;
 } ObjNative;
+
+/* YAPL's upvalue object */
+typedef struct sUpvalue {
+    Obj obj;
+    Value *slot;
+    Value closed;
+    struct sUpvalue *next;
+} ObjUpvalue;
+
+/* YAPL's closure object */
+typedef struct {
+    Obj obj;
+    ObjFunction *function;
+    ObjUpvalue **upvalues;
+    int upvalueCount;
+} ObjClosure;
 
 /* YAPL's string object */
 struct sObjString {
@@ -56,11 +73,13 @@ static inline bool isObjType(Value value, ObjType type) {
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
 
 /* Checks if a Value is an Obj type */
+#define IS_CLOSURE(value)  isObjType(value, OBJ_CLOSURE)
 #define IS_FUNCTION(value) isObjType(value, OBJ_FUNCTION)
 #define IS_NATIVE(value)   isObjType(value, OBJ_NATIVE)
 #define IS_STRING(value)   isObjType(value, OBJ_STRING)
 
 /* Gets the object value from a YAPL Value */
+#define AS_CLOSURE(value)      ((ObjClosure *) AS_OBJ(value))
 #define AS_FUNCTION(value)     ((ObjFunction *) AS_OBJ(value))
 #define AS_NATIVE(value)       (((ObjNative *) AS_OBJ(value))->function)
 #define AS_STRING(value)       ((ObjString *) AS_OBJ(value))
@@ -69,7 +88,9 @@ static inline bool isObjType(Value value, ObjType type) {
 /* Object operations */
 void printObject(Value value);
 
-/* Function object operations */
+/* Function/closure objects operations */
+ObjUpvalue *newUpvalue(Value *slot);
+ObjClosure* newClosure(ObjFunction *function);
 ObjFunction *newFunction();
 ObjNative *newNative(NativeFn function);
 
