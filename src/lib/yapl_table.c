@@ -5,7 +5,7 @@
  */
 
 #include "yapl_table.h"
-#include "../vm/yapl_memory_manager.h"
+#include "../vm/yapl_memmanager.h"
 #include <string.h>
 
 /* The hashtable max load factor */

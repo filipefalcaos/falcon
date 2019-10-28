@@ -4,7 +4,7 @@ FROM alpine:latest
 RUN apk update
 RUN apk add gcc g++ gdb make readline-dev wget openssl cmake bash
 
-# Run in dir "/yapl/docker":
+# Run in dir "/yapl/docker/gdb-alpine":
 # docker build -t gdb-alpine .
 
 # Run in dir "/yapl"

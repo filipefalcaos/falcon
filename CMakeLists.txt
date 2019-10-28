@@ -38,14 +38,14 @@ add_executable(
         src/commons.h
         src/yapl.h
         src/yapl.c
-        src/vm/yapl_bytecode_chunk.h
-        src/vm/yapl_bytecode_chunk.c
+        src/vm/yapl_bytecodechunk.h
+        src/vm/yapl_bytecodechunk.c
         src/compiler/yapl_compiler.h
         src/compiler/yapl_compiler.c
         src/lib/yapl_debug.h
         src/lib/yapl_debug.c
-        src/vm/yapl_memory_manager.h
-        src/vm/yapl_memory_manager.c
+        src/vm/yapl_memmanager.h
+        src/vm/yapl_memmanager.c
         src/lib/yapl_natives.h
         src/lib/yapl_natives.c
         src/vm/yapl_object.h

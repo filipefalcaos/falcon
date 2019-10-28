@@ -9,7 +9,7 @@
 
 #include "../lib/yapl_table.h"
 #include "../yapl.h"
-#include "yapl_bytecode_chunk.h"
+#include "yapl_bytecodechunk.h"
 #include "yapl_object.h"
 
 /* Call frame structure */

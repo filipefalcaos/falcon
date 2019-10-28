@@ -4,7 +4,7 @@
  * See YAPL's license in the LICENSE file
  */
 
-#include "yapl_memory_manager.h"
+#include "yapl_memmanager.h"
 #include "../commons.h"
 #include "yapl_vm.h"
 #include <stdio.h>

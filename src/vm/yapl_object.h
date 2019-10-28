@@ -8,7 +8,7 @@
 #define YAPL_OBJECT_H
 
 #include "../commons.h"
-#include "yapl_bytecode_chunk.h"
+#include "yapl_bytecodechunk.h"
 #include "yapl_value.h"
 
 /* Types of objects on YAPL */

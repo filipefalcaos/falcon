@@ -7,7 +7,7 @@
 #include "yapl_vm.h"
 #include "../compiler/yapl_compiler.h"
 #include "../lib/yapl_natives.h"
-#include "yapl_memory_manager.h"
+#include "yapl_memmanager.h"
 #include "yapl_object.h"
 #include <stdarg.h>
 #include <stdio.h>

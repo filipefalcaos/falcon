@@ -4,9 +4,9 @@
  * See YAPL's license in the LICENSE file
  */
 
-#include "yapl_bytecode_chunk.h"
+#include "yapl_bytecodechunk.h"
 #include "../yapl.h"
-#include "yapl_memory_manager.h"
+#include "yapl_memmanager.h"
 
 /**
  * Initializes an empty bytecode chunk.

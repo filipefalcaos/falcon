@@ -5,7 +5,7 @@
  */
 
 #include "yapl_object.h"
-#include "yapl_memory_manager.h"
+#include "yapl_memmanager.h"
 #include "yapl_value.h"
 #include "yapl_vm.h"
 #include <stdio.h>
