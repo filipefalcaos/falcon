@@ -759,15 +759,18 @@ static void block() {
  */
 static void varDeclaration() {
     uint8_t global = parseVariable(VAR_NAME_ERR); /* Parses a variable name */
-
     if (match(TK_EQUAL)) {
-        expression();
+        expression(); /* Compiles the variable initializer */
     } else {
         emitByte(OP_NULL);
     }
 
-    consume(TK_SEMICOLON, VAR_DECL_ERR);
-    defineVariable(global);
+    defineVariable(global); /* Emits the declaration bytecode */
+    if (match(TK_COMMA)) {
+        varDeclaration(); /* More variable declarations */
+    } else {
+        consume(TK_SEMICOLON, VAR_DECL_ERR);
+    }
 }
 
 /**

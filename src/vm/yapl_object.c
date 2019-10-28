@@ -80,10 +80,6 @@ ObjUpvalue *newUpvalue(Value *slot) {
  */
 ObjClosure *newClosure(ObjFunction *function) {
     ObjUpvalue **upvalues = ALLOCATE(ObjUpvalue *, function->upvalueCount); /* Sets upvalue list */
-//    if (upvalues == NULL) { /* Checks if the allocation failed */
-//        memoryError();
-//        return NULL;
-//    }
 
     for (int i = 0; i < function->upvalueCount; i++) {
         upvalues[i] = NULL; /* Initialize current upvalue */
