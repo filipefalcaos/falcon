@@ -2,7 +2,8 @@ FROM alpine:latest
 
 # gcc, g++, gdb, make, readline, wget, openssl, and cmake
 RUN apk update
-RUN apk add gcc g++ gdb make readline-dev wget openssl cmake bash
+RUN apk add gcc g++ gdb make readline-dev openssl cmake
+RUN apk add bash vim
 
 # Run in dir "/yapl/docker/gdb-alpine":
 # docker build -t gdb-alpine .
