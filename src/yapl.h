@@ -27,16 +27,23 @@
 #define YAPL_OPTIONS   HELP_OPTION "\n" VERSION_OPTION
 #define FILE_ARG       "file   script file to interpret"
 #define YAPL_ARGS      FILE_ARG
+#define MORE_INFO      "See full license in the \"LICENSE\" file"
 #define EXIT_FUNC      "exit()"
 #define HELP_FUNC      "help()"
 #define LICENSE_FUNC   "license()"
 #define AUTHORS_FUNC   "authors()"
-#define YAPL_HELP      "Type " HELP_FUNC ", " LICENSE_FUNC " or " AUTHORS_FUNC " for more information."
-#define MORE_INFO      "See full license in the \"LICENSE\" file"
+#define YAPL_HELP                                                        \
+    "Type " HELP_FUNC ", " LICENSE_FUNC " or " AUTHORS_FUNC " for more " \
+    "information."
 
 /* Limits */
 #define MAX_SINGLE_BYTE (UINT8_MAX + 1) /* 256 */
 #define VM_FRAMES_MAX   64
 #define VM_STACK_MAX    (VM_FRAMES_MAX * MAX_SINGLE_BYTE)
+
+/* Error codes */
+#define YAPL_ERR_USAGE    1
+#define YAPL_ERR_COMPILER 2
+#define YAPL_ERR_RUNTIME  3
 
 #endif // YAPL_H

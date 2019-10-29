@@ -6,6 +6,7 @@
 
 #include "yapl_vm.h"
 #include "../compiler/yapl_compiler.h"
+#include "../lib/yapl_error.h"
 #include "../lib/yapl_natives.h"
 #include "yapl_memmanager.h"
 #include "yapl_object.h"
@@ -30,35 +31,13 @@ static void resetVMStack() {
 }
 
 /**
- * Presents a runtime error to the programmer.
+ * Presents a runtime error to the programmer and resets the VM stack.
  */
-void runtimeError(const char *format, ...) {
+static void VMError(const char *format, ...) {
     va_list args;
-    va_start(args, format); /* Gets the arguments */
+    va_start(args, format);
+    runtimeError(format, args); /* Presents the error */
     va_end(args);
-
-    /* Prints the error */
-    fprintf(stderr, "RuntimeError: ");
-    vfprintf(stderr, format, args);
-    fprintf(stderr, "\n");
-
-    /* Prints a stack trace */
-    fprintf(stderr, "Stack trace (last call first):\n");
-    for (int i = vm.frameCount - 1; i >= 0; i--) {
-        CallFrame *currentFrame = &vm.frames[i];
-        ObjFunction *currentFunction = currentFrame->closure->function;
-        size_t currentInstruction = currentFrame->pc - currentFunction->bytecodeChunk.code - 1;
-        int currentLine = getSourceLine(&currentFrame->closure->function->bytecodeChunk,
-                                        (int) currentInstruction);
-
-        fprintf(stderr, "    [Line %d] in ", currentLine);
-        if (currentFunction->name == NULL) {
-            fprintf(stderr, "%s\n", SCRIPT_TAG);
-        } else {
-            fprintf(stderr, "%s()\n", currentFunction->name->chars);
-        }
-    }
-
     resetVMStack(); /* Resets the stack due to error */
 }
 
@@ -67,7 +46,7 @@ void runtimeError(const char *format, ...) {
  */
 static ResultCode undefinedVariableError(ObjString *name, bool delete) {
     if (delete) tableDelete(&vm.globals, name);
-    runtimeError(UNDEF_VAR_ERR, name->chars);
+    VMError(UNDEF_VAR_ERR, name->chars);
     return RUNTIME_ERROR;
 }
 
@@ -75,7 +54,7 @@ static ResultCode undefinedVariableError(ObjString *name, bool delete) {
  * Presents a runtime error when a global variable is already declared.
  */
 static ResultCode declaredVariableError(ObjString *name) {
-    runtimeError(GLB_VAR_REDECL_ERR, name->chars);
+    VMError(GLB_VAR_REDECL_ERR, name->chars);
     return RUNTIME_ERROR;
 }
 
@@ -154,12 +133,12 @@ void printStack() {
  */
 static bool call(ObjClosure *closure, int argCount) {
     if (argCount != closure->function->arity) {
-        runtimeError(ARGS_COUNT_ERR, closure->function->arity, argCount);
+        VMError(ARGS_COUNT_ERR, closure->function->arity, argCount);
         return false;
     }
 
     if (vm.frameCount == VM_FRAMES_MAX) {
-        runtimeError(STACK_OVERFLOW);
+        VMError(STACK_OVERFLOW);
         return false;
     }
 
@@ -190,7 +169,7 @@ static bool callValue(Value callee, int argCount) {
         }
     }
 
-    runtimeError(VALUE_NOT_CALL_ERR);
+    VMError(VALUE_NOT_CALL_ERR);
     return false;
 }
 
@@ -284,7 +263,7 @@ static ResultCode run() {
 #define BINARY_OP(op, valueType, type)                    \
     do {                                                  \
         if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
-            runtimeError(OPR_NOT_NUM_ERR);    \
+            VMError(OPR_NOT_NUM_ERR);                     \
             return RUNTIME_ERROR;                         \
         }                                                 \
         type b = AS_NUMBER(pop());                        \
@@ -365,7 +344,7 @@ static ResultCode run() {
                     double a = AS_NUMBER(pop());
                     vm.stackTop[-1] = NUMBER_VAL(AS_NUMBER(vm.stackTop[-1]) + a);
                 } else {
-                    runtimeError(OPR_NOT_NUM_STR_ERR);
+                    VMError(OPR_NOT_NUM_STR_ERR);
                     return RUNTIME_ERROR;
                 }
                 break;
@@ -375,7 +354,7 @@ static ResultCode run() {
                 break;
             case OP_NEGATE:
                 if (!IS_NUMBER(peek(0))) {
-                    runtimeError(OPR_NOT_NUM_ERR);
+                    VMError(OPR_NOT_NUM_ERR);
                     return RUNTIME_ERROR;
                 }
                 vm.stackTop[-1] = NUMBER_VAL(-AS_NUMBER(vm.stackTop[-1]));
@@ -505,7 +484,7 @@ static ResultCode run() {
 
             /* Unknown opcode */
             default:
-                runtimeError(UNKNOWN_OPCODE_ERR, instruction);
+                VMError(UNKNOWN_OPCODE_ERR, instruction);
                 break;
         }
     }

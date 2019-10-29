@@ -5,10 +5,8 @@
  */
 
 #include "yapl_compiler.h"
-#include "../utils/yapl_utils.h"
 #include "../vm/yapl_object.h"
-#include "yapl_scanner.h"
-#include <stdio.h>
+#include "../lib/yapl_error.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -92,17 +90,7 @@ static BytecodeChunk *currentBytecodeChunk() { return &current->function->byteco
 void compilerError(Token *token, const char *message) {
     if (parser.panicMode) return; /* Checks and sets error recovery */
     parser.panicMode = true;
-
-    int tkLine = token->line;
-    int tkColumn = token->column;
-    const char *fileName = vm.fileName;
-    const char *sourceLine = getSourceFromLine();
-
-    fprintf(stderr, "%s:%d:%d => ", fileName, tkLine, tkColumn); /* Prints the file and line */
-    fprintf(stderr, "CompilerError: %s\n", message);             /* Prints the error message */
-    fprintf(stderr, "%d | %s\n", tkLine, sourceLine);
-    fprintf(stderr, "%*c^\n", tkColumn + getDigits(tkLine) + 2, ' ');
-
+    compileTimeError(token, message); /* Presents the error */
     parser.hadError = true;
 }
 

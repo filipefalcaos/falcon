@@ -8,6 +8,7 @@
 #define YAPL_COMPILER_H
 
 #include "../vm/yapl_vm.h"
+#include "yapl_scanner.h"
 
 /* Compiler operations */
 ObjFunction *compile(const char *source);

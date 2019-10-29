@@ -50,8 +50,8 @@ static void runFile(const char *path) {
     char *source = readFile(path); /* Gets the source content */
     ResultCode resultCode = interpret(source); /* Interprets the source code */
     free(source);
-    if (resultCode == COMPILE_ERROR) exit(65);
-    if (resultCode == RUNTIME_ERROR) exit(70);
+    if (resultCode == COMPILE_ERROR) exit(YAPL_ERR_COMPILER);
+    if (resultCode == RUNTIME_ERROR) exit(YAPL_ERR_RUNTIME);
 }
 
 /**
@@ -107,7 +107,7 @@ static void processArgs(int argc, char const **argv) {
             } else {         /* Unknown option: prints the usage */
                 printf("Unknown option '%s'\n", argv[1]);
                 printUsage();
-                exit(1);
+                exit(YAPL_ERR_USAGE);
             }
         } else {
             initVM(argv[1]);
@@ -116,7 +116,7 @@ static void processArgs(int argc, char const **argv) {
     } else { /* Unknown option: prints the usage */
         printf("Wrong arguments order\n");
         printUsage();
-        exit(1);
+        exit(YAPL_ERR_USAGE);
     }
 }
 

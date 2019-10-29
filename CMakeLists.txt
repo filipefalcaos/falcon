@@ -44,6 +44,8 @@ add_executable(
         src/compiler/yapl_compiler.c
         src/lib/yapl_debug.h
         src/lib/yapl_debug.c
+        src/lib/yapl_error.h
+        src/lib/yapl_error.c
         src/vm/yapl_memmanager.h
         src/vm/yapl_memmanager.c
         src/lib/yapl_natives.h
