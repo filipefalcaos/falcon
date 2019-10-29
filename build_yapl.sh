@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Remove CMake build files
+# Removes CMake build files
 remove_build_files() {
   rm -rf CMakeFiles/
   rm -rf cmake-build-debug/
@@ -10,7 +10,7 @@ remove_build_files() {
   rm -f yapl.cbp
 }
 
-# Build YAPL
+# Builds YAPL
 # Debugging: cmake CMakeLists.txt -DDEBUG_PRINT_CODE=ON -DDEBUG_TRACE_EXECUTION=ON
 remove_build_files
 printf "Building YAPL with CMake...\n"
@@ -19,6 +19,6 @@ printf "\nRunning Make...\n"
 make
 remove_build_files
 
-# Start the YAPL's REPL
+# Starts the YAPL's REPL
 printf "\nStarting YAPL's REPL...\n"
 ./bin/yapl
