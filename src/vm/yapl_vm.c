@@ -94,12 +94,21 @@ void freeVM() {
     freeObjects();
 }
 
+/* Returns the count of elements in the VM stack */
+#define STACK_COUNT() (vm.stackTop - &vm.stack[0])
+
 /**
  * Pushes a value to the YAPL's virtual machine stack.
  */
-void push(Value value) {
+bool push(Value value) {
+    if (STACK_COUNT() > VM_STACK_MAX) {
+        VMError(STACK_OVERFLOW);
+        return false;
+    }
+
     *vm.stackTop = value;
     vm.stackTop++;
+    return true;
 }
 
 /**
@@ -119,13 +128,13 @@ static Value peek(int distance) { return vm.stackTop[-1 - distance]; }
  * Prints the YAPL's virtual machine stack.
  */
 void printStack() {
-    printf("          ");
+    printf("Stack: ");
     for (Value *slot = vm.stack; slot < vm.stackTop; slot++) {
         printf("[ ");
         printValue(*slot);
-        printf(" ]");
+        printf(" ] ");
     }
-    printf("\n");
+    printf("\nStack count: %ld\n", STACK_COUNT());
 }
 
 /**
@@ -161,7 +170,7 @@ static bool callValue(Value callee, int argCount) {
                 NativeFn native = AS_NATIVE(callee);
                 Value result = native(argCount, vm.stackTop - argCount);
                 vm.stackTop -= argCount + 1;
-                push(result);
+                if (!push(result)) return false;
                 return true;
             }
             default:
@@ -287,21 +296,22 @@ static ResultCode run() {
 
             /* Constants and literals */
             case OP_CONSTANT:
-                push(READ_CONSTANT());
+                if (!push(READ_CONSTANT())) return RUNTIME_ERROR;
                 break;
             case OP_CONSTANT_16: {
                 uint16_t index = READ_BYTE() | READ_BYTE() << 8;
-                push(frame->closure->function->bytecodeChunk.constants.values[index]);
+                if (!push(frame->closure->function->bytecodeChunk.constants.values[index]))
+                    return RUNTIME_ERROR;
                 break;
             }
             case OP_FALSE:
-                push(BOOL_VAL(false));
+                if (!push(BOOL_VAL(false))) return RUNTIME_ERROR;
                 break;
             case OP_TRUE:
-                push(BOOL_VAL(true));
+                if (!push(BOOL_VAL(true))) return RUNTIME_ERROR;
                 break;
             case OP_NULL:
-                push(NULL_VAL);
+                if (!push(NULL_VAL)) return RUNTIME_ERROR;
                 break;
 
             /* Relational operations */
@@ -384,7 +394,7 @@ static ResultCode run() {
                 Value value;
                 if (!tableGet(&vm.globals, name, &value)) /* Checks if variable is undefined */
                     return undefinedVariableError(name, false);
-                push(value);
+                if (!push(value)) return RUNTIME_ERROR;
                 break;
             }
             case OP_SET_GLOBAL: {
@@ -395,7 +405,7 @@ static ResultCode run() {
             }
             case OP_GET_UPVALUE: {
                 uint8_t slot = READ_BYTE();
-                push(*frame->closure->upvalues[slot]->slot);
+                if (!push(*frame->closure->upvalues[slot]->slot)) return RUNTIME_ERROR;
                 break;
             }
             case OP_SET_UPVALUE: {
@@ -409,7 +419,7 @@ static ResultCode run() {
                 break;
             case OP_GET_LOCAL: {
                 uint8_t slot = READ_BYTE();
-                push(frame->slots[slot]);
+                if (!push(frame->slots[slot])) return RUNTIME_ERROR;
                 break;
             }
             case OP_SET_LOCAL: {
@@ -439,7 +449,7 @@ static ResultCode run() {
             case OP_CLOSURE: {
                 ObjFunction *function = AS_FUNCTION(READ_CONSTANT());
                 ObjClosure *closure = newClosure(function);
-                push(OBJ_VAL(closure));
+                if (!push(OBJ_VAL(closure))) return RUNTIME_ERROR;
 
                 /* Capture upvalues */
                 for (int i = 0; i < closure->upvalueCount; i++) {
@@ -471,9 +481,9 @@ static ResultCode run() {
                     return OK;
                 }
 
-                vm.stackTop = frame->slots;            /* Resets the stack top */
-                push(result);                          /* Pushes the function's return value */
-                frame = &vm.frames[vm.frameCount - 1]; /* Updates the current frame */
+                vm.stackTop = frame->slots;              /* Resets the stack top */
+                if (!push(result)) return RUNTIME_ERROR; /* Pushes the function's return value */
+                frame = &vm.frames[vm.frameCount - 1];   /* Updates the current frame */
                 break;
             }
 

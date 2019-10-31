@@ -43,7 +43,7 @@ extern VM vm;
 /* Virtual machine operations */
 void initVM(const char *fileName);
 void freeVM();
-void push(Value value);
+bool push(Value value);
 Value pop();
 ResultCode interpret(const char *source);
 

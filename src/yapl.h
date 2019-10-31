@@ -37,9 +37,10 @@
     "information."
 
 /* Limits */
+/* TODO: make the last two work as configurable parameters */
 #define MAX_SINGLE_BYTE (UINT8_MAX + 1) /* 256 */
-#define VM_FRAMES_MAX   64
-#define VM_STACK_MAX    (VM_FRAMES_MAX * MAX_SINGLE_BYTE)
+#define VM_FRAMES_MAX   1000
+#define VM_STACK_MAX    (VM_FRAMES_MAX * MAX_SINGLE_BYTE) /* 256000 */
 
 /* Error codes */
 #define YAPL_ERR_USAGE    1
