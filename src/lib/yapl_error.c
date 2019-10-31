@@ -24,16 +24,10 @@ void compileTimeError(Token *token, const char *message) {
 }
 
 /**
- * Presents a runtime error to the programmer.
+ * Prints a stack trace of call frames from a given initial one to a given final one.
  */
-void runtimeError(const char *format, va_list args) {
-    fprintf(stderr, "RuntimeError: ");
-    vfprintf(stderr, format, args); /* Prints the error */
-    fprintf(stderr, "\n");
-
-    /* Prints a stack trace */
-    fprintf(stderr, "Stack trace (last call first):\n");
-    for (int i = vm.frameCount - 1; i >= 0; i--) {
+static void printCallFrames(int initial, int final) {
+    for (int i = initial; i >= final; i--) {
         CallFrame *currentFrame = &vm.frames[i];
         ObjFunction *currentFunction = currentFrame->closure->function;
         size_t currentInstruction = currentFrame->pc - currentFunction->bytecodeChunk.code - 1;
@@ -46,5 +40,25 @@ void runtimeError(const char *format, va_list args) {
         } else {
             fprintf(stderr, "%s()\n", currentFunction->name->chars);
         }
+    }
+}
+
+/**
+ * Presents a runtime error to the programmer.
+ */
+void runtimeError(const char *format, va_list args) {
+    fprintf(stderr, "RuntimeError: ");
+    vfprintf(stderr, format, args); /* Prints the error */
+    fprintf(stderr, "\n");
+
+    /* Prints a stack trace */
+    fprintf(stderr, "Stack trace (last call first):\n");
+    if (vm.frameCount > 20) {
+        printCallFrames(vm.frameCount - 1, vm.frameCount - 10);
+        printf("    ...\n");
+        printCallFrames(9, 0);
+        printf("%d call frames not listed. Run with \"--debug\" to see all.\n", vm.frameCount - 20);
+    } else {
+        printCallFrames(vm.frameCount - 1, 0);
     }
 }
