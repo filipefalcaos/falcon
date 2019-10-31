@@ -6,7 +6,6 @@
 
 #include "yapl_utils.h"
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -28,6 +27,16 @@ bool areStrEqual(const char *str1, const char *str2) { return (strcmp(str1, str2
  * Checks if two characters are equal.
  */
 bool areCharEqual(char chr1, char chr2) { return (chr1 == chr2); }
+
+/**
+ * Prints a string character by character until a specified character is found.
+ */
+void printUntil(FILE *file, const char *str, char delimiter) {
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (str[i] == delimiter) break;
+        fprintf(file, "%c", str[i]);
+    }
+}
 
 /**
  * Reads the content of an input file.

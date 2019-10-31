@@ -17,10 +17,12 @@ void compileTimeError(Token *token, const char *message) {
     const char *fileName = vm.fileName;
     const char *sourceLine = getSourceFromLine();
 
-    fprintf(stderr, "%s:%d:%d => ", fileName, tkLine, tkColumn); /* Prints the file and line */
-    fprintf(stderr, "CompilerError: %s\n", message);             /* Prints the error message */
-    fprintf(stderr, "%d | %s\n", tkLine, sourceLine);
-    fprintf(stderr, "%*c^\n", tkColumn + getDigits(tkLine) + 2, ' ');
+    fprintf(stderr, "%s:%d:%d => ", fileName, tkLine, tkColumn); /* Prints file and line */
+    fprintf(stderr, "CompilerError: %s\n", message);             /* Prints error message */
+    fprintf(stderr, "%d | ", tkLine);
+    printUntil(stderr, sourceLine, '\n'); /* Prints source line */
+    fprintf(stderr, "\n");
+    fprintf(stderr, "%*c^\n", tkColumn + getDigits(tkLine) + 2, ' '); /* Prints error indicator */
 }
 
 /**
@@ -34,6 +36,7 @@ static void printCallFrames(int initial, int final) {
         int currentLine = getSourceLine(&currentFrame->closure->function->bytecodeChunk,
                                         (int) currentInstruction);
 
+        /* Prints line and function name */
         fprintf(stderr, "    [Line %d] in ", currentLine);
         if (currentFunction->name == NULL) {
             fprintf(stderr, "%s\n", SCRIPT_TAG);
@@ -55,9 +58,10 @@ void runtimeError(const char *format, va_list args) {
     fprintf(stderr, "Stack trace (last call first):\n");
     if (vm.frameCount > 20) {
         printCallFrames(vm.frameCount - 1, vm.frameCount - 10);
-        printf("    ...\n");
+        fprintf(stderr, "    ...\n");
         printCallFrames(9, 0);
-        printf("%d call frames not listed. Run with \"--debug\" to see all.\n", vm.frameCount - 20);
+        fprintf(stderr, "%d call frames not listed. Run with option \"--debug\" to see all.\n",
+                vm.frameCount - 20);
     } else {
         printCallFrames(vm.frameCount - 1, 0);
     }
