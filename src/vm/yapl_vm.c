@@ -59,17 +59,6 @@ static ResultCode declaredVariableError(ObjString *name) {
 }
 
 /**
- * Defines a new native function for YAPL.
- */
-static void defineNative(const char *name, NativeFn function) {
-    push(OBJ_VAL(copyString(name, (int) strlen(name))));
-    push(OBJ_VAL(newNative(function)));
-    tableSet(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
-    pop();
-    pop();
-}
-
-/**
  * Initializes the YAPL's virtual machine.
  */
 void initVM(const char *fileName) {
@@ -80,9 +69,7 @@ void initVM(const char *fileName) {
     vm.objects = NULL;
 
     /* Set native functions */
-    defineNative("clock", clockNative);
-    defineNative("print", printNative);
-    defineNative("puts", putsNative);
+    defineNatives();
 }
 
 /**
