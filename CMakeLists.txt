@@ -38,28 +38,36 @@ add_executable(
         src/commons.h
         src/yapl.h
         src/yapl.c
-        src/vm/yapl_bytecodechunk.h
-        src/vm/yapl_bytecodechunk.c
+        src/utils/yapl_utils.h
+        src/utils/yapl_utils.c
+
+        # Compiler
         src/compiler/yapl_compiler.h
         src/compiler/yapl_compiler.c
+        src/compiler/yapl_scanner.h
+        src/compiler/yapl_scanner.c
+        src/compiler/yapl_tokens.h
+
+        # Standard Lib
         src/lib/yapl_debug.h
         src/lib/yapl_debug.c
         src/lib/yapl_error.h
         src/lib/yapl_error.c
-        src/vm/yapl_memmanager.h
-        src/vm/yapl_memmanager.c
         src/lib/yapl_natives.h
         src/lib/yapl_natives.c
+        src/lib/yapl_string.h
+        src/lib/yapl_string.c
+        src/lib/yapl_table.h
+        src/lib/yapl_table.c
+
+        # Virtual Machine
+        src/vm/yapl_bytecodechunk.h
+        src/vm/yapl_bytecodechunk.c
+        src/vm/yapl_memmanager.h
+        src/vm/yapl_memmanager.c
         src/vm/yapl_object.h
         src/vm/yapl_object.c
         src/vm/yapl_opcodes.h
-        src/compiler/yapl_scanner.h
-        src/compiler/yapl_scanner.c
-        src/lib/yapl_table.h
-        src/lib/yapl_table.c
-        src/compiler/yapl_tokens.h
-        src/utils/yapl_utils.h
-        src/utils/yapl_utils.c
         src/vm/yapl_value.h
         src/vm/yapl_value.c
         src/vm/yapl_vm.h
