@@ -25,7 +25,7 @@ typedef struct {
 /* YAPL's precedence levels, from lowest to highest */
 typedef enum {
     PREC_NONE,
-    PREC_ASSIGN,  /* '=', '+=', '-=', '*=', '/=', '%=' */
+    PREC_ASSIGN,  /* '=' */
     PREC_OR,      /* 'or' */
     PREC_AND,     /* 'and' */
     PREC_EQUAL,   /* '==', '!=' */
@@ -623,6 +623,40 @@ static void variable(Parser *parser, Scanner *scanner, bool canAssign) {
 }
 
 /**
+ * Handles a prefix '++' or '--' operator.
+ */
+static void prefix(Parser *parser, Scanner *scanner, bool canAssign) {
+    TokenType operatorType = parser->previous.type;
+    Token name = parser->current;
+
+    consume(parser, scanner, TK_IDENTIFIER, VAR_NAME_ERR);  /* Variable name expected */
+    namedVariable(parser, scanner, parser->previous, true); /* Loads variable */
+
+    switch (operatorType) { /* Gets prefix operation */
+        case TK_INCREMENT:
+            emitByte(parser, OP_INCREMENT);
+            break;
+        case TK_DECREMENT:
+            emitByte(parser, OP_DECREMENT);
+            break;
+        default:
+            return;
+    }
+
+    int index = resolveLocal(parser, scanner, functionCompiler, &name);
+    uint8_t setOp;
+
+    if (index != -1) { /* Local variable */
+        setOp = OP_SET_LOCAL;
+    } else { /* Global variable */
+        index = identifierConstant(parser, scanner, &name);
+        setOp = OP_SET_GLOBAL;
+    }
+
+    emitBytes(parser, setOp, index);
+}
+
+/**
  * Handles a unary expression by compiling the operand and then emitting the bytecode to perform
  * the unary operation itself.
  */
@@ -676,8 +710,8 @@ ParseRule rules[] = {
     INFIX_RULE(binary, PREC_COMPARE),   /* TK_GREATER_EQUAL */
     INFIX_RULE(binary, PREC_COMPARE),   /* TK_LESS */
     INFIX_RULE(binary, PREC_COMPARE),   /* TK_LESS_EQUAL */
-    EMPTY_RULE,                         /* TK_DECREMENT */
-    EMPTY_RULE,                         /* TK_INCREMENT */
+    PREFIX_RULE(prefix),                /* TK_DECREMENT */
+    PREFIX_RULE(prefix),                /* TK_INCREMENT */
     EMPTY_RULE,                         /* TK_PLUS_EQUAL */
     EMPTY_RULE,                         /* TK_MINUS_EQUAL */
     EMPTY_RULE,                         /* TK_MULTIPLY_EQUAL */

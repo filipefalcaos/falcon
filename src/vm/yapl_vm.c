@@ -258,7 +258,7 @@ static void concatenateStrings() {
 static ResultCode run() {
     CallFrame *frame = &vm.frames[vm.frameCount - 1]; /* Current call frame */
 
-/* Reads the current 8 bits (byte) or 16 bits (2 bytes) */
+/* Reads the next 8 bits (byte) or 16 bits (2 bytes) */
 #define READ_BYTE()  (*frame->pc++)
 #define READ_SHORT() (frame->pc += 2, (uint16_t) ((frame->pc[-2] << 8) | frame->pc[-1]))
 
@@ -268,7 +268,7 @@ static ResultCode run() {
 #define READ_STRING()   AS_STRING(READ_CONSTANT())
 
 /* Performs a binary operation of the 'op' operator on the two elements on the top of the YAPL VM's
- * stack. Then, returns the result */
+ * stack. Then, sets the result on the top of the stack */
 #define BINARY_OP(op, valueType, type)                    \
     do {                                                  \
         if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
@@ -278,6 +278,17 @@ static ResultCode run() {
         type b = AS_NUMBER(pop());                        \
         type a = AS_NUMBER(vm.stackTop[-1]);              \
         vm.stackTop[-1] = valueType((type) a op b);       \
+    } while (false)
+
+/* Performs a prefix (increment or decrement) operation of the 'op' operator on the element on the
+ * top of the YAPL VM's stack and 1. Then, sets the result on the top of the stack */
+#define PREFIX_OP(valueType, op)                                      \
+    do {                                                              \
+        if (!IS_NUMBER(peek(0))) {                                    \
+            VMError(OPR_NOT_NUM_ERR);                                 \
+            return RUNTIME_ERROR;                                     \
+        }                                                             \
+        vm.stackTop[-1] = valueType(AS_NUMBER(vm.stackTop[-1]) op 1); \
     } while (false)
 
 #ifdef YAPL_DEBUG_TRACE_EXECUTION
@@ -380,6 +391,12 @@ static ResultCode run() {
                 break;
 
             /* Variable operations */
+            case OP_DECREMENT:
+                PREFIX_OP(NUMBER_VAL, -);
+                break;
+            case OP_INCREMENT:
+                PREFIX_OP(NUMBER_VAL, +);
+                break;
             case OP_DEFINE_GLOBAL: {
                 ObjString *name = READ_STRING();
                 Value value;
