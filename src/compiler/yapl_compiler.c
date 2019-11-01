@@ -38,7 +38,7 @@ typedef enum {
 } Precedence;
 
 /* Function pointer to parse functions */
-typedef void (*ParseFunction)(bool canAssign);
+typedef void (*ParseFunction)(Parser *parser, Scanner *scanner, bool canAssign);
 
 /* YAPL's parsing rules (prefix function, infix function, precedence function) */
 typedef struct {
@@ -64,34 +64,38 @@ typedef struct {
 typedef enum { TYPE_FUNCTION, TYPE_SCRIPT } FunctionType;
 
 /* YAPL's compiler representation */
-typedef struct Compiler {
-    struct Compiler *enclosing;
+typedef struct {
+    Parser *parser;
+    Scanner *scanner;
+} ProgramCompiler;
+
+/* YAPL's compiler representation */
+typedef struct FunctionCompiler {
+    struct FunctionCompiler *enclosing;
     ObjFunction *function;
     FunctionType type;
     Local locals[MAX_SINGLE_BYTE]; // TODO: make it possible to have more than 256
     Upvalue upvalues[MAX_SINGLE_BYTE];
     int localCount;
     int scopeDepth;
-} Compiler;
+} FunctionCompiler;
 
 /* Parser instance */
-Parser parser;
-Table globalNames;
-Compiler *current = NULL;
+FunctionCompiler *functionCompiler = NULL;
 
 /**
  * Returns the compiling bytecode chunk.
  */
-static BytecodeChunk *currentBytecodeChunk() { return &current->function->bytecodeChunk; }
+static BytecodeChunk *currentBytecodeChunk() { return &functionCompiler->function->bytecodeChunk; }
 
 /**
  * Presents a syntax/compiler error to the programmer.
  */
-void compilerError(Token *token, const char *message) {
-    if (parser.panicMode) return; /* Checks and sets error recovery */
-    parser.panicMode = true;
-    compileTimeError(token, message); /* Presents the error */
-    parser.hadError = true;
+void compilerError(Parser *parser, Scanner *scanner, Token *token, const char *message) {
+    if (parser->panicMode) return; /* Checks and sets error recovery */
+    parser->panicMode = true;
+    compileTimeError(scanner, token, message); /* Presents the error */
+    parser->hadError = true;
 }
 
 /**
@@ -99,90 +103,90 @@ void compilerError(Token *token, const char *message) {
  * The loop keeps going reading tokens and reporting the errors, until it hits a non-error one or
  * reach EOF.
  */
-static void advance() {
-    parser.previous = parser.current;
+static void advance(Parser *parser, Scanner *scanner) {
+    parser->previous = parser->current;
 
     while (true) {
-        parser.current = scanToken();
-        if (parser.current.type != TK_ERROR) break;
-        compilerError(&parser.current, parser.current.start);
+        parser->current = scanToken(scanner);
+        if (parser->current.type != TK_ERROR) break;
+        compilerError(parser, scanner, &parser->current, parser->current.start);
     }
 }
 
 /**
  * Reads the next token and validates that the token has an expected type. If not, reports an error.
  */
-static void consume(TokenType type, const char *message) {
-    if (parser.current.type == type) {
-        advance();
+static void consume(Parser *parser, Scanner *scanner, TokenType type, const char *message) {
+    if (parser->current.type == type) {
+        advance(parser, scanner);
         return;
     }
 
-    compilerError(&parser.current, message);
+    compilerError(parser, scanner, &parser->current, message);
 }
 
 /**
  * Checks if the current token if of the given type.
  */
-static bool check(TokenType type) { return parser.current.type == type; }
+static bool check(Parser *parser, TokenType type) { return parser->current.type == type; }
 
 /**
  * Checks if the current token is of the given type. If so, the token is consumed.
  */
-static bool match(TokenType type) {
-    if (!check(type)) return false;
-    advance();
+static bool match(Parser *parser, Scanner *scanner, TokenType type) {
+    if (!check(parser, type)) return false;
+    advance(parser, scanner);
     return true;
 }
 
 /**
  * Appends a single byte to the bytecode chunk.
  */
-static void emitByte(uint8_t byte) {
-    writeToBytecodeChunk(currentBytecodeChunk(), byte, parser.previous.line);
+static void emitByte(Parser *parser, uint8_t byte) {
+    writeToBytecodeChunk(currentBytecodeChunk(), byte, parser->previous.line);
 }
 
 /**
  * Appends two bytes (operation code and operand) to the bytecode chunk.
  */
-static void emitBytes(uint8_t byte_1, uint8_t byte_2) {
-    emitByte(byte_1);
-    emitByte(byte_2);
+static void emitBytes(Parser *parser, uint8_t byte_1, uint8_t byte_2) {
+    emitByte(parser, byte_1);
+    emitByte(parser, byte_2);
 }
 
 /**
  * Emits a new 'loop back' instruction which jumps backwards by a given offset.
  */
-static void emitLoop(int loopStart) {
-    emitByte(OP_LOOP);
+static void emitLoop(Parser *parser, Scanner *scanner, int loopStart) {
+    emitByte(parser, OP_LOOP);
     int offset = currentBytecodeChunk()->count - loopStart + 2;
-    if (offset > UINT16_MAX) compilerError(&parser.previous, LOOP_LIMIT_ERR);
-    emitByte((uint8_t) ((offset >> 8) & 0xff));
-    emitByte((uint8_t) (offset & 0xff));
+    if (offset > UINT16_MAX) compilerError(parser, scanner, &parser->previous, LOOP_LIMIT_ERR);
+    emitByte(parser, (uint8_t) ((offset >> 8) & 0xff));
+    emitByte(parser, (uint8_t) (offset & 0xff));
 }
 
 /**
  * Emits the bytecode of a given instruction and reserve two bytes for a jump offset.
  */
-static int emitJump(uint8_t instruction) {
-    emitByte(instruction);
-    emitByte(0xff);
-    emitByte(0xff);
+static int emitJump(Parser *parser, uint8_t instruction) {
+    emitByte(parser, instruction);
+    emitByte(parser, 0xff);
+    emitByte(parser, 0xff);
     return currentBytecodeChunk()->count - 2;
 }
 
 /**
  * Emits the OP_RETURN bytecode instruction.
  */
-static void emitReturn() { emitBytes(OP_NULL, OP_RETURN); }
+static void emitReturn(Parser *parser) { emitBytes(parser, OP_NULL, OP_RETURN); }
 
 /**
  * Adds a constant to the bytecode chunk constants table.
  */
-static uint8_t makeConstant(Value value) {
+static uint8_t makeConstant(Parser *parser, Scanner *scanner, Value value) {
     int constant = addConstant(currentBytecodeChunk(), value);
     if (constant > UINT8_MAX) {
-        compilerError(&parser.previous, CONST_LIMIT_ERR);
+        compilerError(parser, scanner, &parser->previous, CONST_LIMIT_ERR);
         return 0;
     }
 
@@ -193,38 +197,48 @@ static uint8_t makeConstant(Value value) {
  * Inserts a constant in the constants table of the current bytecode chunk. Before inserting,
  * checks if the constant limit was exceeded.
  */
-static void emitConstant(Value value) { emitBytes(OP_CONSTANT, makeConstant(value)); }
+static void emitConstant(Parser *parser, Scanner *scanner, Value value) {
+    emitBytes(parser, OP_CONSTANT, makeConstant(parser, scanner, value));
+}
 
 /**
  * Replaces the operand at the given location with the calculated jump offset. This function
  * should be called right before the emission of the next instruction that the jump should
  * land on.
  */
-static void patchJump(int offset) {
+static void patchJump(Parser *parser, Scanner *scanner, int offset) {
     int jump = currentBytecodeChunk()->count - offset - 2; /* -2 to adjust by offset */
-    if (jump > UINT16_MAX) compilerError(&parser.previous, JUMP_LIMIT_ERR);
+    if (jump > UINT16_MAX) compilerError(parser, scanner, &parser->previous, JUMP_LIMIT_ERR);
     currentBytecodeChunk()->code[offset] = (uint8_t) ((jump >> 8) & 0xff);
     currentBytecodeChunk()->code[offset + 1] = (uint8_t) (jump & 0xff);
 }
 
 /**
+ * Starts a new program compiler.
+ */
+static void initProgramCompiler(ProgramCompiler *compiler, Scanner *scanner, Parser *parser) {
+    compiler->scanner = scanner;
+    compiler->parser = parser;
+}
+
+/**
  * Starts a new compilation process.
  */
-static void initCompiler(Compiler *compiler, FunctionType type) {
-    compiler->enclosing = current;
+static void initCompiler(Parser *parser, FunctionCompiler *compiler, FunctionType type) {
+    compiler->enclosing = functionCompiler;
     compiler->function = NULL;
     compiler->type = type;
     compiler->localCount = 0;
     compiler->scopeDepth = 0;
     compiler->function = newFunction();
-    current = compiler;
+    functionCompiler = compiler;
 
     if (type != TYPE_SCRIPT)
-        current->function->name =
-            copyString(parser.previous.start, parser.previous.length); /* Sets function name */
+        functionCompiler->function->name =
+            copyString(parser->previous.start, parser->previous.length); /* Sets function name */
 
     /* Set stack slot zero for the VM's internal use */
-    Local *local = &current->locals[current->localCount++];
+    Local *local = &functionCompiler->locals[functionCompiler->localCount++];
     local->depth = 0;
     local->isCaptured = false;
     local->name.start = "";
@@ -234,9 +248,9 @@ static void initCompiler(Compiler *compiler, FunctionType type) {
 /**
  * Ends the compilation process.
  */
-static ObjFunction *endCompiler() {
-    emitReturn();
-    ObjFunction *function = current->function;
+static ObjFunction *endCompiler(Parser *parser) {
+    emitReturn(parser);
+    ObjFunction *function = functionCompiler->function;
 
 #ifdef YAPL_DEBUG_PRINT_CODE
     if (!parser.hadError) {
@@ -249,48 +263,49 @@ static ObjFunction *endCompiler() {
     }
 #endif
 
-    current = current->enclosing;
+    functionCompiler = functionCompiler->enclosing;
     return function;
 }
 
 /**
  * Begins a new scope by incrementing the current scope depth.
  */
-static void beginScope() { current->scopeDepth++; }
+static void beginScope() { functionCompiler->scopeDepth++; }
 
 /**
  * Ends an existing scope by decrementing the current scope depth and popping all local variables
  * declared in the scope.
  */
-static void endScope() {
-    current->scopeDepth--;
+static void endScope(Parser *parser) {
+    functionCompiler->scopeDepth--;
 
     /* Closes locals and upvalues in the scope */
-    while (current->localCount > 0 &&
-           current->locals[current->localCount - 1].depth > current->scopeDepth) {
-        if (current->locals[current->localCount - 1].isCaptured) {
-            emitByte(OP_CLOSE_UPVALUE);
+    while (functionCompiler->localCount > 0 &&
+           functionCompiler->locals[functionCompiler->localCount - 1].depth >
+               functionCompiler->scopeDepth) {
+        if (functionCompiler->locals[functionCompiler->localCount - 1].isCaptured) {
+            emitByte(parser, OP_CLOSE_UPVALUE);
         } else {
-            emitByte(OP_POP);
+            emitByte(parser, OP_POP);
         }
 
-        current->localCount--;
+        functionCompiler->localCount--;
     }
 }
 
 /* Forward parser's declarations, since the grammar is recursive */
-static void expression();
-static void statement();
-static void declaration();
+static void expression(Parser *parser, Scanner *scanner);
+static void statement(Parser *parser, Scanner *scanner);
+static void declaration(Parser *parser, Scanner *scanner);
 static ParseRule *getRule(TokenType type);
-static void parsePrecedence(Precedence precedence);
+static void parsePrecedence(Parser *parser, Scanner* scanner, Precedence precedence);
 
 /**
  * Checks if an identifier constant was already defined. If so, return its index. If not, set the
  * identifier in the global names table.
  */
-static uint8_t identifierConstant(Token *name) {
-    return makeConstant(OBJ_VAL(copyString(name->start, name->length)));
+static uint8_t identifierConstant(Parser *parser, Scanner *scanner, Token *name) {
+    return makeConstant(parser, scanner, OBJ_VAL(copyString(name->start, name->length)));
 }
 
 /**
@@ -305,12 +320,12 @@ static bool identifiersEqual(Token *a, Token *b) {
  * Resolves a local variable by looping through the list of locals that are currently in the scope.
  * If one has the same name as the identifier token, the variable is resolved.
  */
-static int resolveLocal(Compiler *compiler, Token *name) {
+static int resolveLocal(Parser *parser, Scanner *scanner, FunctionCompiler *compiler, Token *name) {
     for (int i = compiler->localCount - 1; i >= 0; i--) {
         Local *local = &compiler->locals[i];
         if (identifiersEqual(name, &local->name)) { /* Checks if identifier matches */
             if (local->depth == -1)
-                compilerError(&parser.previous, RED_INIT_ERR);
+                compilerError(parser, scanner, &parser->previous, RED_INIT_ERR);
             return i;
         }
     }
@@ -321,7 +336,8 @@ static int resolveLocal(Compiler *compiler, Token *name) {
 /**
  * Adds a new upvalue to the upvalue list and returns the index of the created upvalue.
  */
-static int addUpvalue(Compiler *compiler, uint8_t index, bool isLocal) {
+static int addUpvalue(Parser *parser, Scanner *scanner, FunctionCompiler *compiler, uint8_t index,
+                      bool isLocal) {
     int upvalueCount = compiler->function->upvalueCount;
 
     /* Checks if the upvalue is already in the upvalue list */
@@ -331,7 +347,7 @@ static int addUpvalue(Compiler *compiler, uint8_t index, bool isLocal) {
     }
 
     if (upvalueCount == MAX_SINGLE_BYTE) {
-        compilerError(&parser.previous, CLOSURE_LIMIT_ERR);
+        compilerError(parser, scanner, &parser->previous, CLOSURE_LIMIT_ERR);
         return 0;
     }
 
@@ -345,19 +361,20 @@ static int addUpvalue(Compiler *compiler, uint8_t index, bool isLocal) {
  * Resolves an upvalue by looking for a local variable declared in any of the surrounding scopes. If
  * found, an upvalue index for that variable is returned.
  */
-static int resolveUpvalue(Compiler *compiler, Token *name) {
+static int resolveUpvalue(Parser *parser, Scanner *scanner, FunctionCompiler *compiler,
+                          Token *name) {
     if (compiler->enclosing == NULL) return -1; /* Global variable */
 
     /* Looks for a local variable in the enclosing scope */
-    int local = resolveLocal(compiler->enclosing, name);
+    int local = resolveLocal(parser, scanner, compiler->enclosing, name);
     if (local != -1) {
         compiler->enclosing->locals[local].isCaptured = true;
-        return addUpvalue(compiler, (uint8_t) local, true);
+        return addUpvalue(parser, scanner, compiler, (uint8_t) local, true);
     }
 
     /* Looks for an upvalue in the enclosing scope */
-    int upvalue = resolveUpvalue(compiler->enclosing, name);
-    if (upvalue != -1) return addUpvalue(compiler, (uint8_t)upvalue, false);
+    int upvalue = resolveUpvalue(parser, scanner, compiler->enclosing, name);
+    if (upvalue != -1) return addUpvalue(parser, scanner, compiler, (uint8_t)upvalue, false);
 
     return -1;
 }
@@ -365,13 +382,13 @@ static int resolveUpvalue(Compiler *compiler, Token *name) {
 /**
  * Adds a local variable to the list of variables in a scope depth.
  */
-static void addLocal(Token name) {
-    if (current->localCount == MAX_SINGLE_BYTE) {
-        compilerError(&parser.previous, VAR_LIMIT_ERR);
+static void addLocal(Parser *parser, Scanner *scanner, Token name) {
+    if (functionCompiler->localCount == MAX_SINGLE_BYTE) {
+        compilerError(parser, scanner, &parser->previous, VAR_LIMIT_ERR);
         return;
     }
 
-    Local *local = &current->locals[current->localCount++];
+    Local *local = &functionCompiler->locals[functionCompiler->localCount++];
     local->name = name;
     local->depth = -1;
     local->isCaptured = false;
@@ -380,86 +397,86 @@ static void addLocal(Token name) {
 /**
  * Records the existence of a variable declaration.
  */
-static void declareVariable() {
-    if (current->scopeDepth == 0) return; /* Globals are late bound, exit */
-    Token *name = &parser.previous;
+static void declareVariable(Parser *parser, Scanner *scanner) {
+    if (functionCompiler->scopeDepth == 0) return; /* Globals are late bound, exit */
+    Token *name = &parser->previous;
 
     /* Verifies if variable was previously declared */
-    for (int i = current->localCount - 1; i >= 0; i--) {
-        Local *local = &current->locals[i];
-        if (local->depth != -1 && local->depth < current->scopeDepth) break;
+    for (int i = functionCompiler->localCount - 1; i >= 0; i--) {
+        Local *local = &functionCompiler->locals[i];
+        if (local->depth != -1 && local->depth < functionCompiler->scopeDepth) break;
         if (identifiersEqual(name, &local->name)) /* Checks if already declared */
-            compilerError(&parser.previous, VAR_REDECL_ERR);
+            compilerError(parser, scanner, &parser->previous, VAR_REDECL_ERR);
     }
 
-    addLocal(*name);
+    addLocal(parser, scanner, *name);
 }
 
 /**
  * Parses a variable by consuming an identifier token and then adds the the token lexeme to the
  * constants table.
  */
-static uint8_t parseVariable(const char *errorMessage) {
-    consume(TK_IDENTIFIER, errorMessage);
-    declareVariable();                     /* Declares the variables */
-    if (current->scopeDepth > 0) return 0; /* Locals are not looked up by name, exit */
-    return identifierConstant(&parser.previous);
+static uint8_t parseVariable(Parser *parser, Scanner *scanner, const char *errorMessage) {
+    consume(parser, scanner, TK_IDENTIFIER, errorMessage);
+    declareVariable(parser, scanner);               /* Declares the variables */
+    if (functionCompiler->scopeDepth > 0) return 0; /* Locals are not looked up by name, exit */
+    return identifierConstant(parser, scanner, &parser->previous);
 }
 
 /**
  * Marks a local variable as initialized and available for use.
  */
 static void markInitialized() {
-    if (current->scopeDepth == 0) return;
-    current->locals[current->localCount - 1].depth = current->scopeDepth;
+    if (functionCompiler->scopeDepth == 0) return;
+    functionCompiler->locals[functionCompiler->localCount - 1].depth = functionCompiler->scopeDepth;
 }
 
 /**
  * Handles a variable declaration by emitting the bytecode to perform a global variable declaration.
  */
-static void defineVariable(uint8_t global) {
-    if (current->scopeDepth > 0) {
+static void defineVariable(Parser *parser, uint8_t global) {
+    if (functionCompiler->scopeDepth > 0) {
         markInitialized(); /* Mark as initialized */
         return;            /* Only globals are defined at runtime */
     }
 
-    emitBytes(OP_DEFINE_GLOBAL, global);
+    emitBytes(parser, OP_DEFINE_GLOBAL, global);
 }
 
 /**
  * Compiles the list of arguments in a function call.
  */
-static uint8_t argumentList() {
+static uint8_t argumentList(Parser *parser, Scanner *scanner) {
     uint8_t argCount = 0;
 
-    if (!check(TK_RIGHT_PAREN)) {
+    if (!check(parser, TK_RIGHT_PAREN)) {
         do {
-            expression();
-            if (argCount == 255) compilerError(&parser.previous, ARGS_LIMIT_ERR);
+            expression(parser, scanner);
+            if (argCount == 255) compilerError(parser, scanner, &parser->previous, ARGS_LIMIT_ERR);
             argCount++;
-        } while (match(TK_COMMA));
+        } while (match(parser, scanner, TK_COMMA));
     }
 
-    consume(TK_RIGHT_PAREN, CALL_LIST_PAREN_ERR);
+    consume(parser, scanner, TK_RIGHT_PAREN, CALL_LIST_PAREN_ERR);
     return argCount;
 }
 
 /**
  * Handles the "and" logical operator with short-circuit.
  */
-static void and_(bool canAssign) {
-    int jump = emitJump(OP_AND);
-    parsePrecedence(PREC_AND);
-    patchJump(jump);
+static void and_(Parser *parser, Scanner *scanner, bool canAssign) {
+    int jump = emitJump(parser, OP_AND);
+    parsePrecedence(parser, scanner, PREC_AND);
+    patchJump(parser, scanner, jump);
 }
 
 /**
  * Handles the "or" logical operator with short-circuit.
  */
-static void or_(bool canAssign) {
-    int jump = emitJump(OP_OR);
-    parsePrecedence(PREC_OR);
-    patchJump(jump);
+static void or_(Parser *parser, Scanner *scanner, bool canAssign) {
+    int jump = emitJump(parser, OP_OR);
+    parsePrecedence(parser, scanner, PREC_OR);
+    patchJump(parser, scanner, jump);
 }
 
 /**
@@ -467,45 +484,46 @@ static void or_(bool canAssign) {
  * one was already compiled). Then, emits the bytecode instruction that performs the binary
  * operation.
  */
-static void binary(bool canAssign) {
-    TokenType operatorType = parser.previous.type;
+static void binary(Parser *parser, Scanner *scanner, bool canAssign) {
+    TokenType operatorType = parser->previous.type;
     ParseRule *rule = getRule(operatorType); /* Gets the current rule */
-    parsePrecedence(rule->precedence + 1);   /* Compiles with the correct precedence */
+    parsePrecedence(parser, scanner,
+                    rule->precedence + 1); /* Compiles with the correct precedence */
 
     /* Emits the operator instruction */
     switch (operatorType) {
         case TK_NOT_EQUAL:
-            emitBytes(OP_EQUAL, OP_NOT);
+            emitBytes(parser, OP_EQUAL, OP_NOT);
             break;
         case TK_EQUAL_EQUAL:
-            emitByte(OP_EQUAL);
+            emitByte(parser, OP_EQUAL);
             break;
         case TK_GREATER:
-            emitByte(OP_GREATER);
+            emitByte(parser, OP_GREATER);
             break;
         case TK_GREATER_EQUAL:
-            emitBytes(OP_LESS, OP_NOT);
+            emitBytes(parser, OP_LESS, OP_NOT);
             break;
         case TK_LESS:
-            emitByte(OP_LESS);
+            emitByte(parser, OP_LESS);
             break;
         case TK_LESS_EQUAL:
-            emitBytes(OP_GREATER, OP_NOT);
+            emitBytes(parser, OP_GREATER, OP_NOT);
             break;
         case TK_PLUS:
-            emitByte(OP_ADD);
+            emitByte(parser, OP_ADD);
             break;
         case TK_MINUS:
-            emitByte(OP_SUBTRACT);
+            emitByte(parser, OP_SUBTRACT);
             break;
         case TK_DIV:
-            emitByte(OP_DIVIDE);
+            emitByte(parser, OP_DIVIDE);
             break;
         case TK_MOD:
-            emitByte(OP_MOD);
+            emitByte(parser, OP_MOD);
             break;
         case TK_MULTIPLY:
-            emitByte(OP_MULTIPLY);
+            emitByte(parser, OP_MULTIPLY);
             break;
         default:
             return; /* Unreachable */
@@ -516,24 +534,24 @@ static void binary(bool canAssign) {
  * Handles a function call expression by parsing its arguments list and emitting the instruction to
  * proceed with the execution of the function.
  */
-static void call(bool canAssign) {
-    uint8_t argCount = argumentList();
-    emitBytes(OP_CALL, argCount);
+static void call(Parser *parser, Scanner *scanner, bool canAssign) {
+    uint8_t argCount = argumentList(parser, scanner);
+    emitBytes(parser, OP_CALL, argCount);
 }
 
 /**
  * Handles a literal (booleans or null) expression by outputting the proper instruction.
  */
-static void literal(bool canAssign) {
-    switch (parser.previous.type) {
+static void literal(Parser *parser, Scanner *scanner, bool canAssign) {
+    switch (parser->previous.type) {
         case TK_FALSE:
-            emitByte(OP_FALSE);
+            emitByte(parser, OP_FALSE);
             break;
         case TK_NULL:
-            emitByte(OP_NULL);
+            emitByte(parser, OP_NULL);
             break;
         case TK_TRUE:
-            emitByte(OP_TRUE);
+            emitByte(parser, OP_TRUE);
             break;
         default:
             return; /* Unreachable */
@@ -544,76 +562,80 @@ static void literal(bool canAssign) {
  * Handles the opening parenthesis by compiling the expression between the parentheses, and then
  * parsing the closing parenthesis.
  */
-static void grouping(bool canAssign) {
-    expression();
-    consume(TK_RIGHT_PAREN, GRP_EXPR_ERR);
+static void grouping(Parser *parser, Scanner *scanner, bool canAssign) {
+    expression(parser, scanner);
+    consume(parser, scanner, TK_RIGHT_PAREN, GRP_EXPR_ERR);
 }
 
 /**
  * Handles a numeric expression by converting a string to a double number and then generates the
  * code to load that value by calling "emitConstant".
  */
-static void number(bool canAssign) {
-    double value = strtod(parser.previous.start, NULL);
-    emitConstant(NUMBER_VAL(value));
+static void number(Parser *parser, Scanner *scanner, bool canAssign) {
+    double value = strtod(parser->previous.start, NULL);
+    emitConstant(parser, scanner, NUMBER_VAL(value));
 }
 
 /**
  * Handles a string expression by creating a string object, wrapping it in a Value, and then
  * adding it to the constants table.
  */
-static void string(bool canAssign) {
-    emitConstant(OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.length - 2)));
+static void string(Parser *parser, Scanner *scanner, bool canAssign) {
+    emitConstant(parser, scanner,
+                 OBJ_VAL(copyString(parser->previous.start + 1, parser->previous.length - 2)));
 }
 
 /**
  * Gets the index of a variable in the constants table and emits the the bytecode to perform the
  * load of the global/local variable.
  */
-static void namedVariable(Token name, bool canAssign) {
+static void namedVariable(Parser *parser, Scanner *scanner, Token name, bool canAssign) {
     uint8_t getOpcode, setOpcode;
-    int arg = resolveLocal(current, &name);
+    int arg = resolveLocal(parser, scanner, functionCompiler, &name);
 
     /* Finds the current scope */
     if (arg != -1) { /* Local variable? */
         getOpcode = OP_GET_LOCAL;
         setOpcode = OP_SET_LOCAL;
-    } else if ((arg = resolveUpvalue(current, &name)) != -1) { /* Upvalue? */
+    } else if ((arg = resolveUpvalue(parser, scanner, functionCompiler, &name)) !=
+               -1) { /* Upvalue? */
         getOpcode = OP_GET_UPVALUE;
         setOpcode = OP_SET_UPVALUE;
     } else { /* Global variable */
-        arg = identifierConstant(&name);
+        arg = identifierConstant(parser, scanner, &name);
         getOpcode = OP_GET_GLOBAL;
         setOpcode = OP_SET_GLOBAL;
     }
 
-    if (canAssign && match(TK_EQUAL)) {
-        expression();
-        emitBytes(setOpcode, (uint8_t) arg);
+    if (canAssign && match(parser, scanner, TK_EQUAL)) {
+        expression(parser, scanner);
+        emitBytes(parser, setOpcode, (uint8_t) arg);
     } else {
-        emitBytes(getOpcode, (uint8_t) arg);
+        emitBytes(parser, getOpcode, (uint8_t) arg);
     }
 }
 
 /**
  * Handles a variable access.
  */
-static void variable(bool canAssign) { namedVariable(parser.previous, canAssign); }
+static void variable(Parser *parser, Scanner *scanner, bool canAssign) {
+    namedVariable(parser, scanner, parser->previous, canAssign);
+}
 
 /**
  * Handles a unary expression by compiling the operand and then emitting the bytecode to perform
  * the unary operation itself.
  */
-static void unary(bool canAssign) {
-    TokenType operatorType = parser.previous.type;
-    parsePrecedence(PREC_UNARY); /* Compiles the operand */
+static void unary(Parser *parser, Scanner *scanner, bool canAssign) {
+    TokenType operatorType = parser->previous.type;
+    parsePrecedence(parser, scanner, PREC_UNARY); /* Compiles the operand */
 
     switch (operatorType) {
         case TK_MINUS:
-            emitByte(OP_NEGATE);
+            emitByte(parser, OP_NEGATE);
             break;
         case TK_NOT:
-            emitByte(OP_NOT);
+            emitByte(parser, OP_NOT);
             break;
         default:
             return;
@@ -693,29 +715,29 @@ ParseRule rules[] = {
  * Parses any expression of a given precedence level or higher. Reads the next token and looks up
  * the corresponding ParseRule. If there is no prefix parser, then the token must be a syntax error.
  */
-static void parsePrecedence(Precedence precedence) {
-    advance();
-    ParseFunction prefixRule = getRule(parser.previous.type)->prefix;
+static void parsePrecedence(Parser *parser, Scanner *scanner, Precedence precedence) {
+    advance(parser, scanner);
+    ParseFunction prefixRule = getRule(parser->previous.type)->prefix;
 
     if (prefixRule == NULL) { /* Checks if is a parsing error */
-        compilerError(&parser.previous, EXPR_ERR);
+        compilerError(parser, scanner, &parser->previous, EXPR_ERR);
         return;
     }
 
     /* Checks if the left side is assignable */
     bool canAssign = precedence <= PREC_ASSIGN;
-    prefixRule(canAssign);
+    prefixRule(parser, scanner, canAssign);
 
     /* Looks for an infix parser for the next token */
-    while (precedence <= getRule(parser.current.type)->precedence) {
-        advance();
-        ParseFunction infixRule = getRule(parser.previous.type)->infix;
-        infixRule(canAssign);
+    while (precedence <= getRule(parser->current.type)->precedence) {
+        advance(parser, scanner);
+        ParseFunction infixRule = getRule(parser->previous.type)->infix;
+        infixRule(parser, scanner, canAssign);
     }
 
-    if (canAssign && match(TK_EQUAL)) { /* Checks if is an invalid assignment */
-        compilerError(&parser.previous, INV_ASSG_ERR);
-        expression();
+    if (canAssign && match(parser, scanner, TK_EQUAL)) { /* Checks if is an invalid assignment */
+        compilerError(parser, scanner, &parser->previous, INV_ASSG_ERR);
+        expression(parser, scanner);
     }
 }
 
@@ -728,243 +750,245 @@ static ParseRule *getRule(TokenType type) { return &rules[type]; }
  * Compiles an expression by parsing the lowest precedence level, which subsumes all of the higher
  * precedence expressions too.
  */
-void expression() { parsePrecedence(PREC_ASSIGN); }
+void expression(Parser *parser, Scanner *scanner) { parsePrecedence(parser, scanner, PREC_ASSIGN); }
 
 /**
  * Compiles a block of code by parsing declarations and statements until a closing brace (end of
  * block) is found.
  */
-static void block() {
-    while (!check(TK_RIGHT_BRACE) && !check(TK_EOF)) {
-        declaration();
+static void block(Parser *parser, Scanner *scanner) {
+    while (!check(parser, TK_RIGHT_BRACE) && !check(parser, TK_EOF)) {
+        declaration(parser, scanner);
     }
 
-    consume(TK_RIGHT_BRACE, BLOCK_BRACE_ERR);
+    consume(parser, scanner, TK_RIGHT_BRACE, BLOCK_BRACE_ERR);
 }
 
 /**
  * Compiles a variable declaration list.
  */
-static void varDeclaration() {
-    if (!check(TK_SEMICOLON)) {
+static void varDeclaration(Parser *parser, Scanner *scanner) {
+    if (!check(parser, TK_SEMICOLON)) {
         do {
-            uint8_t global = parseVariable(VAR_NAME_ERR); /* Parses a variable name */
-            if (match(TK_EQUAL)) {
-                expression(); /* Compiles the variable initializer */
+            uint8_t global =
+                parseVariable(parser, scanner, VAR_NAME_ERR); /* Parses a variable name */
+            if (match(parser, scanner, TK_EQUAL)) {
+                expression(parser, scanner); /* Compiles the variable initializer */
             } else {
-                emitByte(OP_NULL);
+                emitByte(parser, OP_NULL);
             }
-            defineVariable(global); /* Emits the declaration bytecode */
-        } while (match(TK_COMMA));
+            defineVariable(parser, global); /* Emits the declaration bytecode */
+        } while (match(parser, scanner, TK_COMMA));
     }
 
-    consume(TK_SEMICOLON, VAR_DECL_ERR);
+    consume(parser, scanner, TK_SEMICOLON, VAR_DECL_ERR);
 }
 
 /**
  * Compiles a function body and its parameters.
  */
-static void function(FunctionType type) {
-    Compiler compiler;
-    initCompiler(&compiler, type);
+static void function(Parser *parser, Scanner *scanner, FunctionType type) {
+    FunctionCompiler compiler;
+    initCompiler(parser, &compiler, type);
     beginScope();
 
     /* Compiles the parameter list */
-    consume(TK_LEFT_PAREN, FUNC_NAME_PAREN_ERR);
-    if (!check(TK_RIGHT_PAREN)) {
+    consume(parser, scanner, TK_LEFT_PAREN, FUNC_NAME_PAREN_ERR);
+    if (!check(parser, TK_RIGHT_PAREN)) {
         do {
-            current->function->arity++;
-            if (current->function->arity > 255)
-                compilerError(&parser.current, PARAMS_LIMIT_ERR);
-            uint8_t paramConstant = parseVariable(PARAM_NAME_ERR);
-            defineVariable(paramConstant);
-        } while (match(TK_COMMA));
+            functionCompiler->function->arity++;
+            if (functionCompiler->function->arity > 255)
+                compilerError(parser, scanner, &parser->current, PARAMS_LIMIT_ERR);
+            uint8_t paramConstant = parseVariable(parser, scanner, PARAM_NAME_ERR);
+            defineVariable(parser, paramConstant);
+        } while (match(parser, scanner, TK_COMMA));
     }
-    consume(TK_RIGHT_PAREN, FUNC_LIST_PAREN_ERR);
+    consume(parser, scanner, TK_RIGHT_PAREN, FUNC_LIST_PAREN_ERR);
 
     /* Compiles the function body */
-    consume(TK_LEFT_BRACE, FUNC_BODY_BRACE_ERR);
-    block();
+    consume(parser, scanner, TK_LEFT_BRACE, FUNC_BODY_BRACE_ERR);
+    block(parser, scanner);
 
     /* Create the function object */
-    ObjFunction *function = endCompiler();
-    emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
+    ObjFunction *function = endCompiler(parser);
+    emitBytes(parser, OP_CLOSURE, makeConstant(parser, scanner, OBJ_VAL(function)));
 
     /* Emits the captured upvalues */
     for (int i = 0; i < function->upvalueCount; i++) {
-        emitByte(compiler.upvalues[i].isLocal ? 1 : 0);
-        emitByte(compiler.upvalues[i].index);
+        emitByte(parser, compiler.upvalues[i].isLocal ? 1 : 0);
+        emitByte(parser, compiler.upvalues[i].index);
     }
 }
 
 /**
  * Compiles a function declaration.
  */
-static void funDeclaration() {
-    uint8_t global = parseVariable(FUNC_NAME_ERR);
+static void funDeclaration(Parser *parser, Scanner *scanner) {
+    uint8_t global = parseVariable(parser, scanner, FUNC_NAME_ERR);
     markInitialized();
-    function(TYPE_FUNCTION);
-    defineVariable(global);
+    function(parser, scanner, TYPE_FUNCTION);
+    defineVariable(parser, global);
 }
 
 /**
  * Compiles an expression statement.
  */
-static void expressionStatement() {
-    expression();
-    consume(TK_SEMICOLON, EXPR_STMT_ERR);
-    emitByte(OP_POP);
+static void expressionStatement(Parser *parser, Scanner *scanner) {
+    expression(parser, scanner);
+    consume(parser, scanner, TK_SEMICOLON, EXPR_STMT_ERR);
+    emitByte(parser, OP_POP);
 }
 
 /**
  * Compiles an "if" conditional statement.
  */
-static void ifStatement() {
-    expression(); /* Compiles condition */
-    consume(TK_LEFT_BRACE, IF_STMT_ERR);
-    int thenJump = emitJump(OP_JUMP_IF_FALSE);
-    emitByte(OP_POP);
+static void ifStatement(Parser *parser, Scanner *scanner) {
+    expression(parser, scanner); /* Compiles condition */
+    consume(parser, scanner, TK_LEFT_BRACE, IF_STMT_ERR);
+    int thenJump = emitJump(parser, OP_JUMP_IF_FALSE);
+    emitByte(parser, OP_POP);
 
     /* Compiles the "if" block */
     beginScope();
-    block();
-    endScope();
+    block(parser, scanner);
+    endScope(parser);
 
-    int elseJump = emitJump(OP_JUMP);
-    patchJump(thenJump);
-    emitByte(OP_POP);
+    int elseJump = emitJump(parser, OP_JUMP);
+    patchJump(parser, scanner, thenJump);
+    emitByte(parser, OP_POP);
 
     /* Compiles the "else" block */
-    if (match(TK_ELSE)) {
-        if (match(TK_IF)) {
-            ifStatement(); /* "else if ..." form */
-        } else if (match(TK_LEFT_BRACE)) {
+    if (match(parser, scanner, TK_ELSE)) {
+        if (match(parser, scanner, TK_IF)) {
+            ifStatement(parser, scanner); /* "else if ..." form */
+        } else if (match(parser, scanner, TK_LEFT_BRACE)) {
             beginScope();
-            block(); /* Compiles the "else" branch */
-            endScope();
+            block(parser, scanner); /* Compiles the "else" branch */
+            endScope(parser);
         }
     }
 
-    patchJump(elseJump);
+    patchJump(parser, scanner, elseJump);
 }
 
 /**
  * Compiles a "while" loop statement.
  */
-static void whileStatement() {
+static void whileStatement(Parser *parser, Scanner *scanner) {
     int loopStart = currentBytecodeChunk()->count; /* Loop entry point */
-    expression();                                  /* Compiles condition */
-    consume(TK_LEFT_BRACE, WHILE_STMT_ERR);
-    int exitJump = emitJump(OP_JUMP_IF_FALSE);
-    emitByte(OP_POP);
+    expression(parser, scanner);                   /* Compiles condition */
+    consume(parser, scanner, TK_LEFT_BRACE, WHILE_STMT_ERR);
+    int exitJump = emitJump(parser, OP_JUMP_IF_FALSE);
+    emitByte(parser, OP_POP);
 
     /* Compiles the "while" block */
     beginScope();
-    block();
-    endScope();
+    block(parser, scanner);
+    endScope(parser);
 
-    emitLoop(loopStart);
-    patchJump(exitJump);
-    emitByte(OP_POP);
+    emitLoop(parser, scanner, loopStart);
+    patchJump(parser, scanner, exitJump);
+    emitByte(parser, OP_POP);
 }
 
 /**
  * Compiles a "for" loop statement.
  */
-static void forStatement() {
+static void forStatement(Parser *parser, Scanner *scanner) {
     beginScope(); /* Begins the loop scope */
 
     /* Compiles the initializer clause */
-    if (match(TK_SEMICOLON)) {
+    if (match(parser, scanner, TK_SEMICOLON)) {
         /* Empty initializer */
-    } else if (match(TK_VAR)) {
-        varDeclaration(); /* Variable declaration initializer */
+    } else if (match(parser, scanner, TK_VAR)) {
+        varDeclaration(parser, scanner); /* Variable declaration initializer */
     } else {
-        expressionStatement(); /* Expression initializer */
+        expressionStatement(parser, scanner); /* Expression initializer */
     }
 
     int loopStart = currentBytecodeChunk()->count; /* Loop entry point */
     int exitJump = -1;
 
     /* Compiles the conditional clause */
-    if (!match(TK_SEMICOLON)) {
-        expression();
-        consume(TK_SEMICOLON, FOR_STMT_COND_ERR);
-        exitJump = emitJump(OP_JUMP_IF_FALSE);
-        emitByte(OP_POP); /* Pops condition */
+    if (!match(parser, scanner, TK_SEMICOLON)) {
+        expression(parser, scanner);
+        consume(parser, scanner, TK_SEMICOLON, FOR_STMT_COND_ERR);
+        exitJump = emitJump(parser, OP_JUMP_IF_FALSE);
+        emitByte(parser, OP_POP); /* Pops condition */
     }
 
     /* Compiles the increment clause */
-    if (!match(TK_LEFT_BRACE)) {
-        int bodyJump = emitJump(OP_JUMP);
+    if (!match(parser, scanner, TK_LEFT_BRACE)) {
+        int bodyJump = emitJump(parser, OP_JUMP);
         int incrementStart = currentBytecodeChunk()->count;
-        expression();
-        emitByte(OP_POP); /* Pops increment */
-        consume(TK_LEFT_BRACE, FOR_STMT_INC_ERR);
-        emitLoop(loopStart);
+        expression(parser, scanner);
+        emitByte(parser, OP_POP); /* Pops increment */
+        consume(parser, scanner, TK_LEFT_BRACE, FOR_STMT_INC_ERR);
+        emitLoop(parser, scanner, loopStart);
         loopStart = incrementStart;
-        patchJump(bodyJump);
+        patchJump(parser, scanner, bodyJump);
     }
 
-    block(); /* Compiles the "for" block */
+    block(parser, scanner); /* Compiles the "for" block */
 
-    emitLoop(loopStart);
+    emitLoop(parser, scanner, loopStart);
     if (exitJump != -1) {
-        patchJump(exitJump);
-        emitByte(OP_POP); /* Pops condition */
+        patchJump(parser, scanner, exitJump);
+        emitByte(parser, OP_POP); /* Pops condition */
     }
 
-    endScope(); /* Ends the loop scope */
+    endScope(parser); /* Ends the loop scope */
 }
 
 
 /**
  * Compiles a "return" statement.
  */
-static void returnStatement() {
-    if (current->type == TYPE_SCRIPT) /* Checks if in top level code */
-        compilerError(&parser.previous, RETURN_TOP_LEVEL_ERR);
+static void returnStatement(Parser *parser, Scanner *scanner) {
+    if (functionCompiler->type == TYPE_SCRIPT) /* Checks if in top level code */
+        compilerError(parser, scanner, &parser->previous, RETURN_TOP_LEVEL_ERR);
 
-    if (match(TK_SEMICOLON)) {
-        emitReturn();
+    if (match(parser, scanner, TK_SEMICOLON)) {
+        emitReturn(parser);
     } else {
-        expression();
-        consume(TK_SEMICOLON, RETURN_STMT_ERR);
-        emitByte(OP_RETURN);
+        expression(parser, scanner);
+        consume(parser, scanner, TK_SEMICOLON, RETURN_STMT_ERR);
+        emitByte(parser, OP_RETURN);
     }
 }
 
 /**
  * Compiles a statement.
  */
-static void statement() {
-    if (match(TK_IF)) {
-        ifStatement();
-    } else if (match(TK_WHILE)) {
-        whileStatement();
-    } else if (match(TK_FOR)) {
-        forStatement();
-    } else if (match(TK_RETURN)) {
-        returnStatement();
-    } else if (match(TK_LEFT_BRACE)) {
+static void statement(Parser *parser, Scanner *scanner) {
+    if (match(parser, scanner, TK_IF)) {
+        ifStatement(parser, scanner);
+    } else if (match(parser, scanner, TK_WHILE)) {
+        whileStatement(parser, scanner);
+    } else if (match(parser, scanner, TK_FOR)) {
+        forStatement(parser, scanner);
+    } else if (match(parser, scanner, TK_RETURN)) {
+        returnStatement(parser, scanner);
+    } else if (match(parser, scanner, TK_LEFT_BRACE)) {
         beginScope();
-        block();
-        endScope();
+        block(parser, scanner);
+        endScope(parser);
     } else {
-        expressionStatement();
+        expressionStatement(parser, scanner);
     }
 }
 
 /**
  * Synchronize error recovery.
  */
-static void synchronize() {
-    parser.panicMode = false;
+static void synchronize(Parser *parser, Scanner *scanner) {
+    parser->panicMode = false;
 
-    while (parser.current.type != TK_EOF) {
-        if (parser.previous.type == TK_SEMICOLON) return; /* Sync point (expression end) */
+    while (parser->current.type != TK_EOF) {
+        if (parser->previous.type == TK_SEMICOLON)
+            return; /* Sync point (expression end) */
 
-        switch (parser.current.type) { /* Sync point (expression begin) */
+        switch (parser->current.type) { /* Sync point (expression begin) */
             case TK_CLASS:
             case TK_FUNCTION:
             case TK_VAR:
@@ -976,23 +1000,23 @@ static void synchronize() {
             default:; /* Keep skipping tokens */
         }
 
-        advance();
+        advance(parser, scanner);
     }
 }
 
 /**
  * Compiles a declaration statement.
  */
-static void declaration() {
-    if (match(TK_VAR)) {
-        varDeclaration();
-    } else if (match(TK_FUNCTION)) {
-        funDeclaration();
+static void declaration(Parser *parser, Scanner *scanner) {
+    if (match(parser, scanner, TK_VAR)) {
+        varDeclaration(parser, scanner);
+    } else if (match(parser, scanner, TK_FUNCTION)) {
+        funDeclaration(parser, scanner);
     } else {
-        statement();
+        statement(parser, scanner);
     }
 
-    if (parser.panicMode) synchronize();
+    if (parser->panicMode) synchronize(parser, scanner);
 }
 
 /**
@@ -1000,21 +1024,25 @@ static void declaration() {
  * recursive descent parser that associates semantics with tokens instead of grammar rules.
  */
 ObjFunction *compile(const char *source) {
-    Compiler compiler;
-    initCompiler(&compiler, TYPE_SCRIPT);
-    initScanner(source);
-    initTable(&globalNames);
+    Scanner scanner;
+    Parser parser;
+    ProgramCompiler proCompiler;
+    FunctionCompiler funCompiler;
+
+    /* Inits the compiler */
+    initScanner(source, &scanner);
+    initProgramCompiler(&proCompiler, &scanner, &parser);
+    initCompiler(proCompiler.parser, &funCompiler, TYPE_SCRIPT);
 
     /* No panic mode yet */
-    parser.hadError = false;
-    parser.panicMode = false;
+    proCompiler.parser->hadError = false;
+    proCompiler.parser->panicMode = false;
 
-    advance();               /* Get the first token */
-    while (!match(TK_EOF)) { /* Main compiler loop */
-        declaration();       /* YAPL's grammar entry point */
+    advance(proCompiler.parser, proCompiler.scanner);                 /* Get the first token */
+    while (!match(proCompiler.parser, proCompiler.scanner, TK_EOF)) { /* Main compiler loop */
+        declaration(proCompiler.parser, proCompiler.scanner); /* YAPL's grammar entry point */
     }
 
-    freeTable(&globalNames);
-    ObjFunction *function = endCompiler();
-    return parser.hadError ? NULL : function;
+    ObjFunction *function = endCompiler(proCompiler.parser);
+    return proCompiler.parser->hadError ? NULL : function;
 }

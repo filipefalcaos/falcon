@@ -11,7 +11,7 @@
 #include <stdarg.h>
 
 /* Compiler/runtime error handling functions */
-void compileTimeError(Token *token, const char *message);
+void compileTimeError(Scanner *scanner, Token *token, const char *message);
 void runtimeError(const char *format, va_list args);
 
 #endif // YAPL_ERROR_H

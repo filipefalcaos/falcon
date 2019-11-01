@@ -11,11 +11,11 @@
 /**
  * Presents a compiler time error to the programmer.
  */
-void compileTimeError(Token *token, const char *message) {
+void compileTimeError(Scanner *scanner, Token *token, const char *message) {
     int tkLine = token->line;
     int tkColumn = token->column;
     const char *fileName = vm.fileName;
-    const char *sourceLine = getSourceFromLine();
+    const char *sourceLine = getSourceFromLine(scanner);
 
     fprintf(stderr, "%s:%d:%d => ", fileName, tkLine, tkColumn); /* Prints file and line */
     fprintf(stderr, "CompilerError: %s\n", message);             /* Prints error message */

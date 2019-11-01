@@ -18,10 +18,19 @@ typedef struct {
     int column;
 } Token;
 
+/* YAPL's scanner representation (lexical analysis) */
+typedef struct {
+    const char *start;
+    const char *current;
+    const char *lineContent;
+    int line;
+    int column;
+} Scanner;
+
 /* Scanning operations */
-void initScanner(const char *source);
-const char *getSourceFromLine();
-Token scanToken();
+void initScanner(const char *source, Scanner *scanner);
+const char *getSourceFromLine(Scanner *scanner);
+Token scanToken(Scanner *scanner);
 
 /* Scanning error messages */
 #define UNTERMINATED_STR_ERR "Unterminated string."
