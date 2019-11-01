@@ -27,7 +27,7 @@ static Value printNative(int argCount, Value *args) {
 /**
  * Native YAPL function to print (with a new line) an YAPL value.
  */
-static Value putsNative(int argCount, Value *args) {
+static Value printlnNative(int argCount, Value *args) {
     printValue(*args);
     printf("\n");
     return NULL_VAL;
@@ -48,8 +48,8 @@ void defineNative(const char *name, NativeFn function) {
  * Defines the complete set of native function for YAPL.
  */
 void defineNatives() {
-    const char *nativeNames[] = { "clock", "print", "puts" };
-    const NativeFn nativeFunctions[] = { clockNative, printNative, putsNative };
+    const char *nativeNames[] = { "clock", "print", "println" };
+    const NativeFn nativeFunctions[] = { clockNative, printNative, printlnNative };
     for (unsigned long i = 0; i < sizeof(nativeNames) / sizeof(nativeNames[0]); i++)
         defineNative(nativeNames[i], nativeFunctions[i]);
 }

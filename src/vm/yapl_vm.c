@@ -33,7 +33,7 @@ static void resetVMStack() {
 /**
  * Presents a runtime error to the programmer and resets the VM stack.
  */
-static void VMError(const char *format, ...) {
+void VMError(const char *format, ...) {
     va_list args;
     va_start(args, format);
     runtimeError(format, args); /* Presents the error */
@@ -508,6 +508,7 @@ static ResultCode run() {
 #undef READ_CONSTANT
 #undef READ_STRING
 #undef BINARY_OP
+#undef PREFIX_OP
 }
 
 /**

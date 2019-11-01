@@ -41,6 +41,7 @@ typedef enum { OK, COMPILE_ERROR, RUNTIME_ERROR } ResultCode;
 extern VM vm;
 
 /* Virtual machine operations */
+void VMError(const char *format, ...);
 void initVM(const char *fileName);
 void freeVM();
 bool push(Value value);
