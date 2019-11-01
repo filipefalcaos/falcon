@@ -155,9 +155,10 @@ static bool callValue(Value callee, int argCount) {
                 return call(AS_CLOSURE(callee), argCount);
             case OBJ_NATIVE: {
                 NativeFn native = AS_NATIVE(callee);
-                Value result = native(argCount, vm.stackTop - argCount);
-                vm.stackTop -= argCount + 1;
-                if (!push(result)) return false;
+                Value out = native(argCount, vm.stackTop - argCount); /* Runs the native function */
+                if (IS_ERR(out)) return false; /* Checks if a runtime error occurred */
+                vm.stackTop -= argCount + 1;   /* Update the stack to before function call */
+                if (!push(out)) return false;  /* Pushes the return value on the stack */
                 return true;
             }
             default:
@@ -215,7 +216,7 @@ static void closeUpvalues(Value *last) {
  */
 static bool isFalsey(Value value) {
     return IS_NULL(value) || (IS_BOOL(value) && !AS_BOOL(value)) ||
-           (IS_NUMBER(value) && AS_NUMBER(value) == 0);
+           (IS_NUM(value) && AS_NUM(value) == 0);
 }
 
 /**
@@ -258,12 +259,12 @@ static ResultCode run() {
  * stack. Then, sets the result on the top of the stack */
 #define BINARY_OP(op, valueType, type)                    \
     do {                                                  \
-        if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
+        if (!IS_NUM(peek(0)) || !IS_NUM(peek(1))) { \
             VMError(OPR_NOT_NUM_ERR);                     \
             return RUNTIME_ERROR;                         \
         }                                                 \
-        type b = AS_NUMBER(pop());                        \
-        type a = AS_NUMBER(vm.stackTop[-1]);              \
+        type b = AS_NUM(pop());                        \
+        type a = AS_NUM(vm.stackTop[-1]);              \
         vm.stackTop[-1] = valueType((type) a op b);       \
     } while (false)
 
@@ -271,11 +272,11 @@ static ResultCode run() {
  * top of the YAPL VM's stack and 1. Then, sets the result on the top of the stack */
 #define PREFIX_OP(valueType, op)                                      \
     do {                                                              \
-        if (!IS_NUMBER(peek(0))) {                                    \
+        if (!IS_NUM(peek(0))) {                                    \
             VMError(OPR_NOT_NUM_ERR);                                 \
             return RUNTIME_ERROR;                                     \
         }                                                             \
-        vm.stackTop[-1] = valueType(AS_NUMBER(vm.stackTop[-1]) op 1); \
+        vm.stackTop[-1] = valueType(AS_NUM(vm.stackTop[-1]) op 1); \
     } while (false)
 
 #ifdef YAPL_DEBUG_TRACE_EXECUTION
@@ -348,9 +349,9 @@ static ResultCode run() {
             case OP_ADD: {
                 if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
                     concatenateStrings();
-                } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
-                    double a = AS_NUMBER(pop());
-                    vm.stackTop[-1] = NUMBER_VAL(AS_NUMBER(vm.stackTop[-1]) + a);
+                } else if (IS_NUM(peek(0)) && IS_NUM(peek(1))) {
+                    double a = AS_NUM(pop());
+                    vm.stackTop[-1] = NUM_VAL(AS_NUM(vm.stackTop[-1]) + a);
                 } else {
                     VMError(OPR_NOT_NUM_STR_ERR);
                     return RUNTIME_ERROR;
@@ -358,31 +359,31 @@ static ResultCode run() {
                 break;
             }
             case OP_SUBTRACT:
-                BINARY_OP(-, NUMBER_VAL, double);
+                BINARY_OP(-, NUM_VAL, double);
                 break;
             case OP_NEGATE:
-                if (!IS_NUMBER(peek(0))) {
+                if (!IS_NUM(peek(0))) {
                     VMError(OPR_NOT_NUM_ERR);
                     return RUNTIME_ERROR;
                 }
-                vm.stackTop[-1] = NUMBER_VAL(-AS_NUMBER(vm.stackTop[-1]));
+                vm.stackTop[-1] = NUM_VAL(-AS_NUM(vm.stackTop[-1]));
                 break;
             case OP_MULTIPLY:
-                BINARY_OP(*, NUMBER_VAL, double);
+                BINARY_OP(*, NUM_VAL, double);
                 break;
             case OP_MOD:
-                BINARY_OP(%, NUMBER_VAL, int);
+                BINARY_OP(%, NUM_VAL, int);
                 break;
             case OP_DIVIDE:
-                BINARY_OP(/, NUMBER_VAL, double);
+                BINARY_OP(/, NUM_VAL, double);
                 break;
 
             /* Variable operations */
             case OP_DECREMENT:
-                PREFIX_OP(NUMBER_VAL, -);
+                PREFIX_OP(NUM_VAL, -);
                 break;
             case OP_INCREMENT:
-                PREFIX_OP(NUMBER_VAL, +);
+                PREFIX_OP(NUM_VAL, +);
                 break;
             case OP_DEFINE_GLOBAL: {
                 ObjString *name = READ_STRING();

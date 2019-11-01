@@ -13,13 +13,23 @@
  * Native YAPL function to compute the elapsed time since the program started running, in seconds.
  */
 static Value clockNative(int argCount, Value *args) {
-    return NUMBER_VAL((double) clock() / CLOCKS_PER_SEC);
+    if (argCount != 0) {
+        VMError(ARGS_COUNT_ERR, 0, argCount);
+        return ERR_VAL;
+    }
+
+    return NUM_VAL((double) clock() / CLOCKS_PER_SEC);
 }
 
 /**
  * Native YAPL function to print an YAPL value.
  */
 static Value printNative(int argCount, Value *args) {
+    if (argCount != 1) {
+        VMError(ARGS_COUNT_ERR, 1, argCount);
+        return ERR_VAL;
+    }
+
     printValue(*args);
     return NULL_VAL;
 }
@@ -28,6 +38,11 @@ static Value printNative(int argCount, Value *args) {
  * Native YAPL function to print (with a new line) an YAPL value.
  */
 static Value printlnNative(int argCount, Value *args) {
+    if (argCount != 1) {
+        VMError(ARGS_COUNT_ERR, 1, argCount);
+        return ERR_VAL;
+    }
+
     printValue(*args);
     printf("\n");
     return NULL_VAL;

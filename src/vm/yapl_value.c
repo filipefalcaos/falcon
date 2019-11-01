@@ -58,8 +58,8 @@ void printValue(Value value) {
         case VAL_NULL:
             printf("null");
             break;
-        case VAL_NUMBER:
-            printf("%g", AS_NUMBER(value));
+        case VAL_NUM:
+            printf("%g", AS_NUM(value));
             break;
         case VAL_OBJ:
             printObject(value);
@@ -80,8 +80,8 @@ bool valuesEqual(Value a, Value b) {
             return AS_BOOL(a) == AS_BOOL(b);
         case VAL_NULL:
             return true;
-        case VAL_NUMBER:
-            return AS_NUMBER(a) == AS_NUMBER(b);
+        case VAL_NUM:
+            return AS_NUM(a) == AS_NUM(b);
         case VAL_OBJ:
             return AS_OBJ(a) == AS_OBJ(b);
         default:

@@ -14,7 +14,7 @@ typedef struct sObj Obj;
 typedef struct sObjString ObjString;
 
 /* Types of values on YAPL */
-typedef enum { VAL_BOOL, VAL_NULL, VAL_NUMBER, VAL_OBJ, VAL_ERROR } ValueType;
+typedef enum { VAL_BOOL, VAL_NULL, VAL_NUM, VAL_OBJ, VAL_ERR } ValueType;
 
 /* YAPL's value representation */
 typedef struct {
@@ -27,21 +27,23 @@ typedef struct {
 } Value;
 
 /* Checks a Value type */
-#define IS_BOOL(value)   ((value).type == VAL_BOOL)
-#define IS_NULL(value)   ((value).type == VAL_NULL)
-#define IS_NUMBER(value) ((value).type == VAL_NUMBER)
-#define IS_OBJ(value)    ((value).type == VAL_OBJ)
+#define IS_BOOL(value) ((value).type == VAL_BOOL)
+#define IS_NULL(value) ((value).type == VAL_NULL)
+#define IS_NUM(value)  ((value).type == VAL_NUM)
+#define IS_OBJ(value)  ((value).type == VAL_OBJ)
+#define IS_ERR(value)  ((value).type == VAL_ERR)
 
 /* Gets the C value from a YAPL Value */
-#define AS_BOOL(value)   ((value).as.boolean)
-#define AS_NUMBER(value) ((value).as.number)
-#define AS_OBJ(value)    ((value).as.obj)
+#define AS_BOOL(value) ((value).as.boolean)
+#define AS_NUM(value)  ((value).as.number)
+#define AS_OBJ(value)  ((value).as.obj)
 
 /* Sets a native C value to a YAPL Value */
-#define BOOL_VAL(value)   ((Value) {VAL_BOOL, {.boolean = (value)}})
-#define NULL_VAL          ((Value) {VAL_NULL, {.number = 0}})
-#define NUMBER_VAL(value) ((Value) {VAL_NUMBER, {.number = (value)}})
-#define OBJ_VAL(object)   ((Value) {VAL_OBJ, {.obj = (Obj *) (object)}})
+#define BOOL_VAL(value) ((Value) {VAL_BOOL, {.boolean = (value)}})
+#define NULL_VAL        ((Value) {VAL_NULL, {.number = 0}})
+#define NUM_VAL(value)  ((Value) {VAL_NUM, {.number = (value)}})
+#define OBJ_VAL(object) ((Value) {VAL_OBJ, {.obj = (Obj *) (object)}})
+#define ERR_VAL         ((Value) {VAL_ERR, {.number = 0}})
 
 /* Array of Values */
 typedef struct {

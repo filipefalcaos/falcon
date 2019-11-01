@@ -573,7 +573,7 @@ static void grouping(Parser *parser, Scanner *scanner, bool canAssign) {
  */
 static void number(Parser *parser, Scanner *scanner, bool canAssign) {
     double value = strtod(parser->previous.start, NULL);
-    emitConstant(parser, scanner, NUMBER_VAL(value));
+    emitConstant(parser, scanner, NUM_VAL(value));
 }
 
 /**
