@@ -9,6 +9,12 @@
 #include <string.h>
 #include <time.h>
 
+/*
+ * ================================================================================================
+ * ================================ System-related native functions ===============================
+ * ================================================================================================
+ */
+
 /**
  * Native YAPL function to compute the elapsed time since the program started running, in seconds.
  */
@@ -20,6 +26,24 @@ static Value clockNative(int argCount, Value *args) {
 
     return NUM_VAL((double) clock() / CLOCKS_PER_SEC);
 }
+
+/**
+ * Native YAPL function to compute the UNIX timestamp, in seconds.
+ */
+static Value timeNative(int argCount, Value *args) {
+    if (argCount != 0) {
+        VMError(ARGS_COUNT_ERR, 0, argCount);
+        return ERR_VAL;
+    }
+
+    return NUM_VAL((double) time(NULL));
+}
+
+/*
+ * ================================================================================================
+ * ====================================== IO native functions =====================================
+ * ================================================================================================
+ */
 
 /**
  * Native YAPL function to print an YAPL value.
@@ -48,6 +72,12 @@ static Value printlnNative(int argCount, Value *args) {
     return NULL_VAL;
 }
 
+/*
+ * ================================================================================================
+ * ==================================== Native functions setup ====================================
+ * ================================================================================================
+ */
+
 /**
  * Defines a new native function for YAPL.
  */
@@ -63,8 +93,21 @@ void defineNative(const char *name, NativeFn function) {
  * Defines the complete set of native function for YAPL.
  */
 void defineNatives() {
-    const char *nativeNames[] = { "clock", "print", "println" };
-    const NativeFn nativeFunctions[] = { clockNative, printNative, printlnNative };
+    const char *nativeNames[] = { /* Native functions names */
+        "clock",
+        "time",
+        "print",
+        "println"
+    };
+
+    const NativeFn nativeFunctions[] = { /* Native functions C implementations */
+        clockNative,
+        timeNative,
+        printNative,
+        printlnNative
+    };
+
+    /* Define listed native functions */
     for (unsigned long i = 0; i < sizeof(nativeNames) / sizeof(nativeNames[0]); i++)
         defineNative(nativeNames[i], nativeFunctions[i]);
 }
