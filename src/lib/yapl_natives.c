@@ -5,7 +5,7 @@
  */
 
 #include "yapl_natives.h"
-#include "../vm/yapl_memmanager.h"
+#include "io/yapl_io.h"
 #include "string/yapl_string.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -105,7 +105,8 @@ static Value inputNative(int argCount, Value *args) {
         printf("%s", AS_CLANG_STRING(prompt)); /* Prints the prompt */
     }
 
-    return OBJ_VAL(readStrStdin()); /* Creates the YAPL string */
+    char *inputString = readStrStdin();                           /* Reads the input string */
+    return OBJ_VAL(copyString(inputString, strlen(inputString))); /* Creates the YAPL string */
 }
 
 /**

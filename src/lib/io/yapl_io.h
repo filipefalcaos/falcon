@@ -11,7 +11,11 @@
 
 /* File operations */
 char *readFile(const char *path);
+char *readStrStdin();
 void printUntil(FILE *file, const char *str, char delimiter);
+
+/* Allocation constants */
+#define STR_INITIAL_ALLOC 128
 
 /* File errors */
 #define ERROR_OPEN "Could not open file"

@@ -9,7 +9,6 @@
 #include "yapl_value.h"
 #include "yapl_vm.h"
 #include <stdio.h>
-#include <string.h>
 
 /* Allocates an object of a given type */
 #define ALLOCATE_OBJ(type, objectType) (type *) allocateObject(sizeof(type), objectType)
@@ -111,45 +110,4 @@ ObjNative *newNative(NativeFn function) {
     ObjNative *native = ALLOCATE_OBJ(ObjNative, OBJ_NATIVE);
     native->function = function;
     return native;
-}
-
-/**
- * Hashes an input string using FNV-1a hash function.
- */
-uint32_t hashString(const char *key, int length) {
-    uint32_t hash = 2166136261u;
-
-    for (int i = 0; i < length; i++) {
-        hash ^= key[i];
-        hash *= 16777619;
-    }
-
-    return hash;
-}
-
-/**
- * Creates a new ObjString by claiming ownership of the given string. In this case, the characters
- * of a ObjString can be freed when no longer needed.
- */
-ObjString *makeString(int length) {
-    ObjString *string = (ObjString *) allocateObject(sizeof(ObjString) + length + 1, OBJ_STRING);
-    string->length = length;
-    return string;
-}
-
-/**
- * Copies and allocates a given string to the heap. This way, every ObjString reliably owns its
- * character array and can free it.
- */
-ObjString *copyString(const char *chars, int length) {
-    uint32_t hash = hashString(chars, length);
-    ObjString *interned = tableFindStr(&vm.strings, chars, length, hash); /* Checks if interned */
-    if (interned != NULL) return interned;
-
-    ObjString *string = makeString(length);
-    memcpy(string->chars, chars, length);
-    string->chars[length] = '\0';
-    string->hash = hash;
-    tableSet(&vm.strings, string, NULL_VAL); /* Intern the string */
-    return string;
 }

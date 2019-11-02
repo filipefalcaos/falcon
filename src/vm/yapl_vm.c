@@ -6,13 +6,13 @@
 
 #include "yapl_vm.h"
 #include "../compiler/yapl_compiler.h"
+#include "../lib/string/yapl_string.h"
 #include "../lib/yapl_error.h"
 #include "../lib/yapl_natives.h"
 #include "yapl_memmanager.h"
 #include "yapl_object.h"
 #include <stdarg.h>
 #include <stdio.h>
-#include <string.h>
 
 #ifdef YAPL_DEBUG_TRACE_EXECUTION
 #include "../lib/yapl_debug.h"
@@ -226,15 +226,7 @@ static bool isFalsey(Value value) {
 static void concatenateStrings() {
     ObjString *b = AS_STRING(pop());
     ObjString *a = AS_STRING(vm.stackTop[-1]);
-
-    /* Concatenate both strings */
-    int length = a->length + b->length;
-    ObjString *result = makeString(length);
-    memcpy(result->chars, a->chars, a->length);
-    memcpy(result->chars + a->length, b->chars, b->length);
-    result->chars[length] = '\0';
-    result->hash = hashString(result->chars, length);
-
+    ObjString *result = concatStrings(b, a); /* Concatenate both strings */
     vm.stackTop[-1] = OBJ_VAL(result);       /* Update the stack top */
     tableSet(&vm.strings, result, NULL_VAL); /* Intern the string */
 }

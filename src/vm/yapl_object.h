@@ -73,9 +73,6 @@ static inline bool isObjType(Value value, ObjType type) {
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
 
 /* Checks if a Value is an Obj type */
-#define IS_CLOSURE(value)  isObjType(value, OBJ_CLOSURE)
-#define IS_FUNCTION(value) isObjType(value, OBJ_FUNCTION)
-#define IS_NATIVE(value)   isObjType(value, OBJ_NATIVE)
 #define IS_STRING(value)   isObjType(value, OBJ_STRING)
 
 /* Gets the object value from a YAPL Value */
@@ -89,14 +86,10 @@ static inline bool isObjType(Value value, ObjType type) {
 void printObject(Value value);
 
 /* Function/closure objects operations */
+Obj *allocateObject(size_t size, ObjType type);
 ObjUpvalue *newUpvalue(Value *slot);
 ObjClosure* newClosure(ObjFunction *function);
 ObjFunction *newFunction();
 ObjNative *newNative(NativeFn function);
-
-/* String object operations */
-uint32_t hashString(const char *key, int length);
-ObjString *makeString(int length);
-ObjString *copyString(const char *chars, int length);
 
 #endif // YAPL_OBJECT_H

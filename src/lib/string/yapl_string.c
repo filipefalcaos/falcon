@@ -5,37 +5,60 @@
  */
 
 #include "yapl_string.h"
-#include "../../vm/yapl_memmanager.h"
-#include <stdio.h>
+#include "../../vm/yapl_object.h"
+#include "../../vm/yapl_vm.h"
 #include <string.h>
 
 /**
- * Reads an input string from the standard input dynamically allocating memory.
+ * Hashes an input string using FNV-1a hash function.
  */
-ObjString *readStrStdin() {
-    uint64_t currentLength = 0;
-    uint64_t initialLength = STR_INITIAL_ALLOC;        /* Initial allocation length */
-    char *inputString = ALLOCATE(char, initialLength); /* Allocates space for the input string */
-    currentLength = initialLength;
+uint32_t hashString(const char *key, int length) {
+    uint32_t hash = 2166136261u;
 
-    if (inputString == NULL) { /* Checks if the allocation failed */
-        memoryError();
-        return NULL;
+    for (int i = 0; i < length; i++) {
+        hash ^= key[i];
+        hash *= 16777619;
     }
 
-    uint64_t i = 0;
-    int currentChar = getchar(); /* Reads the first char */
+    return hash;
+}
 
-    while (currentChar != '\n' && currentChar != EOF) {
-        inputString[i++] = (char) currentChar;
-        if (i == currentLength) {
-            currentLength = INCREASE_CAPACITY(i);
-            inputString = reallocate(inputString, i, currentLength); /* Increases string size */
-        }
+/**
+ * Creates a new ObjString by claiming ownership of the given string. In this case, the characters
+ * of a ObjString can be freed when no longer needed.
+ */
+ObjString *makeString(int length) {
+    ObjString *string = (ObjString *) allocateObject(sizeof(ObjString) + length + 1, OBJ_STRING);
+    string->length = length;
+    return string;
+}
 
-        currentChar = getchar(); /* Reads the next char */
-    }
+/**
+ * Copies and allocates a given string to the heap. This way, every ObjString reliably owns its
+ * character array and can free it.
+ */
+ObjString *copyString(const char *chars, int length) {
+    uint32_t hash = hashString(chars, length);
+    ObjString *interned = tableFindStr(&vm.strings, chars, length, hash); /* Checks if interned */
+    if (interned != NULL) return interned;
 
-    inputString[i] = '\0';
-    return copyString(inputString, (int) strlen(inputString)); /* Creates the YAPL string */
+    ObjString *string = makeString(length);
+    memcpy(string->chars, chars, length);
+    string->chars[length] = '\0';
+    string->hash = hash;
+    tableSet(&vm.strings, string, NULL_VAL); /* Intern the string */
+    return string;
+}
+
+/**
+ * Concatenates two given YAPL strings.
+ */
+ObjString *concatStrings(ObjString *str1, ObjString *str2) {
+    int length = str2->length + str1->length;
+    ObjString *result = makeString(length);
+    memcpy(result->chars, str2->chars, str2->length);
+    memcpy(result->chars + str2->length, str1->chars, str1->length);
+    result->chars[length] = '\0';
+    result->hash = hashString(result->chars, length);
+    return result;
 }

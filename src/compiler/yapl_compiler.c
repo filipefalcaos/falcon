@@ -5,8 +5,8 @@
  */
 
 #include "yapl_compiler.h"
+#include "../lib/string/yapl_string.h"
 #include "../lib/yapl_error.h"
-#include "../vm/yapl_object.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -33,8 +33,7 @@ typedef enum {
     PREC_TERM,    /* '+', '-' */
     PREC_FACTOR,  /* '*', '/', '%' */
     PREC_UNARY,   /* '!', '-', '++', '--' */
-    PREC_POSTFIX, /* '.', '()', '[]' */
-    PREC_PRIMARY
+    PREC_POSTFIX  /* '.', '()', '[]' */
 } Precedence;
 
 /* Function pointer to parse functions */

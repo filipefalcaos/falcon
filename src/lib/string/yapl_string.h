@@ -7,12 +7,13 @@
 #ifndef YAPL_STRING_H
 #define YAPL_STRING_H
 
+#include "../../commons.h"
 #include "../../vm/yapl_value.h"
 
-/* String constants */
-#define STR_INITIAL_ALLOC 128
-
 /* String operations */
-ObjString *readStrStdin();
+uint32_t hashString(const char *key, int length);
+ObjString *makeString(int length);
+ObjString *copyString(const char *chars, int length);
+ObjString *concatStrings(ObjString *str1, ObjString *str2);
 
 #endif // YAPL_STRING_H
