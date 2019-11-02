@@ -8,8 +8,18 @@
 #include "../vm/yapl_memmanager.h"
 #include "yapl_string.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+/* Begin CHECK_ARGS - Checks the validity of a given argument count */
+#define CHECK_ARGS(op, argCount, expectedCount)               \
+    do {                                                      \
+        if (argCount op expectedCount) {                      \
+            VMError(ARGS_COUNT_ERR, expectedCount, argCount); \
+            return ERR_VAL;                                   \
+        }                                                     \
+    } while (false)
 
 /*
  * ================================================================================================
@@ -18,14 +28,50 @@
  */
 
 /**
+ * Native YAPL function to print YAPL's authors.
+ */
+static Value authorsNative(int argCount, Value *args) {
+    CHECK_ARGS(!=, argCount, 0);
+    printAuthors();
+    return NULL_VAL;
+}
+
+/**
+ * Native YAPL function to print YAPL's MIT license.
+ */
+static Value licenseNative(int argCount, Value *args) {
+    CHECK_ARGS(!=, argCount, 0);
+    printLicense();
+    return NULL_VAL;
+}
+
+/**
+ * Native YAPL function to print interpreter usage details.
+ */
+static Value helpNative(int argCount, Value *args) {
+    CHECK_ARGS(!=, argCount, 0);
+    printUsage();
+    return NULL_VAL;
+}
+
+/**
+ * Native YAPL function to exit the running process with a given exit code.
+ */
+static Value exitNative(int argCount, Value *args) {
+    CHECK_ARGS(!=, argCount, 1);
+    if (!IS_NUM(*args)) {
+        VMError(ARGS_TYPE_ERR, 1, "number");
+        return NULL_VAL;
+    }
+
+    exit((int) AS_NUM(*args)); /* Exits the process */
+}
+
+/**
  * Native YAPL function to compute the elapsed time since the program started running, in seconds.
  */
 static Value clockNative(int argCount, Value *args) {
-    if (argCount != 0) {
-        VMError(ARGS_COUNT_ERR, 0, argCount);
-        return ERR_VAL;
-    }
-
+    CHECK_ARGS(!=, argCount, 0);
     return NUM_VAL((double) clock() / CLOCKS_PER_SEC);
 }
 
@@ -33,11 +79,7 @@ static Value clockNative(int argCount, Value *args) {
  * Native YAPL function to compute the UNIX timestamp, in seconds.
  */
 static Value timeNative(int argCount, Value *args) {
-    if (argCount != 0) {
-        VMError(ARGS_COUNT_ERR, 0, argCount);
-        return ERR_VAL;
-    }
-
+    CHECK_ARGS(!=, argCount, 0);
     return NUM_VAL((double) time(NULL));
 }
 
@@ -51,13 +93,10 @@ static Value timeNative(int argCount, Value *args) {
  * Native YAPL function to prompt the user for an input and return the given input as an YAPL Value.
  */
 static Value inputNative(int argCount, Value *args) {
-    if (argCount > 1) {
-        VMError(ARGS_COUNT_ERR, 1, argCount);
-        return ERR_VAL;
-    }
+    CHECK_ARGS(>, argCount, 1);
 
     if (argCount == 1) {
-        Value prompt = args[0];
+        Value prompt = *args;
         if (!IS_STRING(prompt)) { /* Checks if the prompt is valid */
             VMError(ARGS_TYPE_ERR, 1, "string");
             return ERR_VAL;
@@ -73,11 +112,7 @@ static Value inputNative(int argCount, Value *args) {
  * Native YAPL function to print an YAPL value.
  */
 static Value printNative(int argCount, Value *args) {
-    if (argCount != 1) {
-        VMError(ARGS_COUNT_ERR, 1, argCount);
-        return ERR_VAL;
-    }
-
+    CHECK_ARGS(!=, argCount, 1);
     printValue(*args);
     return NULL_VAL;
 }
@@ -86,15 +121,14 @@ static Value printNative(int argCount, Value *args) {
  * Native YAPL function to print (with a new line) an YAPL value.
  */
 static Value printlnNative(int argCount, Value *args) {
-    if (argCount != 1) {
-        VMError(ARGS_COUNT_ERR, 1, argCount);
-        return ERR_VAL;
-    }
-
+    CHECK_ARGS(!=, argCount, 1);
     printValue(*args);
     printf("\n");
     return NULL_VAL;
 }
+
+/* End CHECK_ARGS */
+#undef CHECK_ARGS
 
 /*
  * ================================================================================================
@@ -118,6 +152,10 @@ void defineNative(const char *name, NativeFn function) {
  */
 void defineNatives() {
     const char *nativeNames[] = { /* Native functions names */
+        "authors",
+        "license",
+        "help",
+        "exit",
         "clock",
         "time",
         "input",
@@ -126,6 +164,10 @@ void defineNatives() {
     };
 
     const NativeFn nativeFunctions[] = { /* Native functions C implementations */
+        authorsNative,
+        licenseNative,
+        helpNative,
+        exitNative,
         clockNative,
         timeNative,
         inputNative,

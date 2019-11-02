@@ -7,6 +7,11 @@
 #ifndef YAPL_H
 #define YAPL_H
 
+/* YAPL functions */
+void printAuthors();
+void printLicense();
+void printUsage();
+
 /* YAPL version and copyright */
 #define YAPL_VERSION_MAJOR   "0"
 #define YAPL_VERSION_MINOR   "0"
@@ -28,12 +33,11 @@
 #define FILE_ARG       "file   script file to interpret"
 #define YAPL_ARGS      FILE_ARG
 #define MORE_INFO      "See full license in the \"LICENSE\" file"
-#define EXIT_FUNC      "exit()"
-#define HELP_FUNC      "help()"
-#define LICENSE_FUNC   "license()"
-#define AUTHORS_FUNC   "authors()"
+#define HELP_FUNC      "\"help()\""
+#define LICENSE_FUNC   "\"license()\""
+#define AUTHORS_FUNC   "\"authors()\""
 #define YAPL_HELP                                                        \
-    "Type " HELP_FUNC ", " LICENSE_FUNC " or " AUTHORS_FUNC " for more " \
+    "Call " HELP_FUNC ", " LICENSE_FUNC " or " AUTHORS_FUNC " for more " \
     "information."
 
 /* Limits */

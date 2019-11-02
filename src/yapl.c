@@ -29,17 +29,17 @@ static void printInfo() {
 /**
  * Prints YAPL's authors.
  */
-static void printAuthors() { printf("YAPL authors: %s\n", YAPL_AUTHORS); }
+void printAuthors() { printf("YAPL authors: %s\n", YAPL_AUTHORS); }
 
 /**
  * Prints YAPL's MIT license.
  */
-static void printLicense() { printf("%s\n%s\n", YAPL_COPYRIGHT, MORE_INFO); }
+void printLicense() { printf("%s\n%s\n", YAPL_COPYRIGHT, MORE_INFO); }
 
 /**
  * Prints YAPL's interpreter usage details.
  */
-static void printUsage() {
+void printUsage() {
     printf("%s\n\nOptions and arguments:\n%s\n%s\n", YAPL_USAGE, YAPL_OPTIONS, YAPL_ARGS);
 }
 
@@ -66,24 +66,12 @@ static void repl() {
         inputLine = readline(PROMPT); /* Reads the input line */
         add_history(inputLine);       /* Adds history to the REPL */
 
-        if (!inputLine) { /* Failed to read */
+        if (!inputLine) { /* Checks if failed to read */
             free(inputLine);
             break;
         }
 
-        /* TODO: Make these built-in functions - exit(); can raise a runtime error */
-        if (areStrEqual(inputLine, EXIT_FUNC)) {
-            printf("See you later!\n");
-            break;
-        } else if (areStrEqual(inputLine, HELP_FUNC)) {
-            printUsage(); /* Prints usage */
-        } else if (areStrEqual(inputLine, LICENSE_FUNC)) {
-            printLicense(); /* Prints license */
-        } else if (areStrEqual(inputLine, AUTHORS_FUNC)) {
-            printAuthors(); /* Print authors */
-        } else {
-            interpret(inputLine); /* Interprets the source line */
-        }
+        interpret(inputLine); /* Interprets the source line */
     }
 
     free(inputLine); /* Frees the input line when over */
@@ -97,9 +85,8 @@ static void processArgs(int argc, char const **argv) {
         initVM("repl");
         repl(); /* Starts the REPL */
     } else if (argc == 2) {
-        if (areCharEqual(argv[1][0], '-') ||
-            (areCharEqual(argv[1][0], '-') &&
-             areCharEqual(argv[1][1], '-'))) { /* Checks if arg is an option */
+        if (argv[1][0] == '-' ||
+            (argv[1][0] == '-' && argv[1][1] == '-')) { /* Checks if arg is an option */
             if (areStrEqual(argv[1], "--help") || areStrEqual(argv[1], "-h")) {
                 printUsage(); /* Prints usage */
             } else if (areStrEqual(argv[1], "--version") || areStrEqual(argv[1], "-v")) {

@@ -15,7 +15,6 @@ int getDigits(int n);
 
 /* String/Char utilities */
 bool areStrEqual(const char *str1, const char *str2);
-bool areCharEqual(char chr1, char chr2);
 void printUntil(FILE *file, const char *str, char delimiter);
 
 /* File utilities */

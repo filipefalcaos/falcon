@@ -24,11 +24,6 @@ int getDigits(int n) { return (int) floor(log10(n) + 1); }
 bool areStrEqual(const char *str1, const char *str2) { return (strcmp(str1, str2) == 0); }
 
 /**
- * Checks if two characters are equal.
- */
-bool areCharEqual(char chr1, char chr2) { return (chr1 == chr2); }
-
-/**
  * Prints a string character by character until a specified character is found.
  */
 void printUntil(FILE *file, const char *str, char delimiter) {
