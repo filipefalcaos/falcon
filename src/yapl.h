@@ -34,11 +34,9 @@ void printUsage();
 #define YAPL_ARGS      FILE_ARG
 #define MORE_INFO      "See full license in the \"LICENSE\" file"
 #define HELP_FUNC      "\"help()\""
-#define LICENSE_FUNC   "\"license()\""
+#define LIC_FUNC       "\"license()\""
 #define AUTHORS_FUNC   "\"authors()\""
-#define YAPL_HELP                                                        \
-    "Call " HELP_FUNC ", " LICENSE_FUNC " or " AUTHORS_FUNC " for more " \
-    "information."
+#define YAPL_HELP      "Call " HELP_FUNC ", " LIC_FUNC " or " AUTHORS_FUNC " for more information."
 
 /* Limits */
 /* TODO: make the last two work as configurable parameters */

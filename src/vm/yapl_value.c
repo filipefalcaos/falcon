@@ -5,9 +5,11 @@
  */
 
 #include "yapl_value.h"
+#include "../lib/string/yapl_string.h"
 #include "yapl_memmanager.h"
 #include "yapl_object.h"
 #include <stdio.h>
+#include <string.h>
 
 /**
  * Initializes an empty ValueArray.
@@ -88,3 +90,49 @@ bool valuesEqual(Value a, Value b) {
             return false;
     }
 }
+
+/* Begin string constants */
+#define MAX_NUM_TO_STR       50
+#define NUM_TO_STR_FORMATTER "%.14g"
+
+/**
+ * Converts a given YAPL Value to a YAPL string.
+ */
+ObjString *valueToString(Value *value) {
+    char *string = NULL;
+
+    switch (value->type) {
+        case VAL_BOOL:
+            string = (AS_BOOL(*value) ? "true" : "false");
+            break;
+        case VAL_NULL:
+            string = "null";
+            break;
+        case VAL_NUM:
+            string = ALLOCATE(char, MAX_NUM_TO_STR + 1);
+            sprintf(string, NUM_TO_STR_FORMATTER, AS_NUM(*value)); /* TODO: increase accuracy */
+            break;
+        case VAL_OBJ:
+            switch (OBJ_TYPE(*value)) {
+                case OBJ_STRING:
+                    return AS_STRING(*value);
+                case OBJ_CLOSURE: /* TODO: add toString support for the objects below */
+                    break;
+                case OBJ_FUNCTION:
+                    break;
+                case OBJ_NATIVE:
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+
+    return copyString(string, strlen(string)); /* Creates the YAPL string */
+}
+
+/* End string constants */
+#undef MAX_NUM_TO_STR
+#undef NUM_TO_STR_FORMATTER

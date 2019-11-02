@@ -11,9 +11,9 @@
 #include "../../vm/yapl_value.h"
 
 /* String operations */
-uint32_t hashString(const char *key, int length);
+uint32_t hashString(const char *key, uint64_t length);
 ObjString *makeString(int length);
-ObjString *copyString(const char *chars, int length);
+ObjString *copyString(const char *chars, uint64_t length);
 ObjString *concatStrings(ObjString *str1, ObjString *str2);
 
 #endif // YAPL_STRING_H

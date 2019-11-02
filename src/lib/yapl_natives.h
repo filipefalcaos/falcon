@@ -13,4 +13,7 @@
 void defineNative(const char *name, NativeFn function);
 void defineNatives();
 
+/* Native functions errors */
+#define CONV_STR_NUM_ERR "Could not convert string to number."
+
 #endif // YAPL_NATIVES_H

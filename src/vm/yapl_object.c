@@ -18,7 +18,7 @@
  */
 static void printFunction(ObjFunction *function) {
     if (function->name == NULL) { /* Checks if in top level code */
-        printf("<script>");
+        printf(SCRIPT_TAG);
         return;
     }
     printf("<fn %s>", function->name->chars);

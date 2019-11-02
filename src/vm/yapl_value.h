@@ -60,5 +60,6 @@ void writeValueArray(ValueArray *valueArray, Value value);
 /* Value operations */
 void printValue(Value value);
 bool valuesEqual(Value a, Value b);
+ObjString *valueToString(Value *value);
 
 #endif // YAPL_VALUE_H
