@@ -9,11 +9,12 @@
 
 #include "../../commons.h"
 #include "../../vm/yapl_value.h"
+#include "../../vm/yapl_vm.h"
 
 /* String operations */
 uint32_t hashString(const char *key, uint64_t length);
-ObjString *makeString(int length);
-ObjString *copyString(const char *chars, uint64_t length);
-ObjString *concatStrings(ObjString *str1, ObjString *str2);
+ObjString *makeString(VM *vm, int length);
+ObjString *copyString(VM *vm, const char *chars, uint64_t length);
+ObjString *concatStrings(VM *vm, ObjString *str1, ObjString *str2);
 
 #endif // YAPL_STRING_H

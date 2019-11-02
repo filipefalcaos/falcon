@@ -8,9 +8,13 @@
 #define YAPL_MEMORY_MANAGER_H
 
 #include "yapl_object.h"
+#include "yapl_vm.h"
 
 /* Allocates an array with a given element type and count */
 #define ALLOCATE(type, count) (type *) reallocate(NULL, 0, sizeof(type) * (count))
+
+/* Allocates an object of a given type */
+#define ALLOCATE_OBJ(vm, type, objectType) (type *) allocateObject(vm, sizeof(type), objectType)
 
 /* Frees an allocation by resizing it to zero bytes */
 #define FREE(type, pointer) reallocate(pointer, sizeof(type), 0)
@@ -32,6 +36,7 @@
 /* Memory management operations */
 void memoryError();
 void *reallocate(void *previous, size_t oldSize, size_t newSize);
-void freeObjects();
+Obj *allocateObject(VM *vm, size_t size, ObjType type);
+void freeObjects(VM *vm);
 
 #endif // YAPL_MEMORY_MANAGER_H

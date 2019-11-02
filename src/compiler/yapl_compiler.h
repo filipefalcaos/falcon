@@ -11,7 +11,7 @@
 #include "yapl_scanner.h"
 
 /* Compiler operations */
-ObjFunction *compile(const char *source);
+ObjFunction *compile(VM *vm, const char *source);
 
 /* Compilation error messages */
 /* Expressions */

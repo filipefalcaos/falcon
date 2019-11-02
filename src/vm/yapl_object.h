@@ -29,15 +29,6 @@ typedef struct {
     ObjString *name;
 } ObjFunction;
 
-/* Native functions implementations */
-typedef Value (*NativeFn)(int argCount, Value *args);
-
-/* YAPL's native functions object */
-typedef struct {
-    Obj obj;
-    NativeFn function;
-} ObjNative;
-
 /* YAPL's upvalue object */
 typedef struct sUpvalue {
     Obj obj;
@@ -84,12 +75,5 @@ static inline bool isObjType(Value value, ObjType type) {
 
 /* Object operations */
 void printObject(Value value);
-
-/* Function/closure objects operations */
-Obj *allocateObject(size_t size, ObjType type);
-ObjUpvalue *newUpvalue(Value *slot);
-ObjClosure* newClosure(ObjFunction *function);
-ObjFunction *newFunction();
-ObjNative *newNative(NativeFn function);
 
 #endif // YAPL_OBJECT_H

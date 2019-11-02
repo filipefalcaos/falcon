@@ -5,8 +5,7 @@
  */
 
 #include "yapl_memmanager.h"
-#include "../commons.h"
-#include "yapl_vm.h"
+#include "../lib/yapl_natives.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -30,6 +29,23 @@ void *reallocate(void *previous, size_t oldSize, size_t newSize) {
     }
 
     return realloc(previous, newSize);
+}
+
+/**
+ * Allocates a new YAPL object.
+ */
+Obj *allocateObject(VM *vm, size_t size, ObjType type) {
+    Obj *object = (Obj *) reallocate(NULL, 0, size); /* Creates a new object */
+
+    if (object == NULL) { /* Checks if the allocation failed */
+        memoryError();
+        return NULL;
+    }
+
+    object->type = type;        /* Sets the object type */
+    object->next = vm->objects; /* Adds the new object to the object list */
+    vm->objects = object;
+    return object;
 }
 
 /**
@@ -66,8 +82,8 @@ static void freeObject(Obj *object) {
 /**
  * Frees all the objects allocated in the virtual machine.
  */
-void freeObjects() {
-    Obj *object = vm.objects;
+void freeObjects(VM *vm) {
+    Obj *object = vm->objects;
     while (object != NULL) {
         Obj *next = object->next;
         freeObject(object);

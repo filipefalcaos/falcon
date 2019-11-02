@@ -11,10 +11,10 @@
 /**
  * Presents a compiler time error to the programmer.
  */
-void compileTimeError(Scanner *scanner, Token *token, const char *message) {
+void compileTimeError(VM *vm, Scanner *scanner, Token *token, const char *message) {
     int tkLine = token->line;
     int tkColumn = token->column;
-    const char *fileName = vm.fileName;
+    const char *fileName = vm->fileName;
     const char *sourceLine = getSourceFromLine(scanner);
 
     fprintf(stderr, "%s:%d:%d => ", fileName, tkLine, tkColumn); /* Prints file and line */
@@ -28,9 +28,9 @@ void compileTimeError(Scanner *scanner, Token *token, const char *message) {
 /**
  * Prints a stack trace of call frames from a given initial one to a given final one.
  */
-static void printCallFrames(int initial, int final) {
+static void printCallFrames(VM *vm, int initial, int final) {
     for (int i = initial; i >= final; i--) {
-        CallFrame *currentFrame = &vm.frames[i];
+        CallFrame *currentFrame = &vm->frames[i];
         ObjFunction *currentFunction = currentFrame->closure->function;
         size_t currentInstruction = currentFrame->pc - currentFunction->bytecodeChunk.code - 1;
         int currentLine = getSourceLine(&currentFrame->closure->function->bytecodeChunk,
@@ -49,20 +49,20 @@ static void printCallFrames(int initial, int final) {
 /**
  * Presents a runtime error to the programmer.
  */
-void runtimeError(const char *format, va_list args) {
+void runtimeError(VM *vm, const char *format, va_list args) {
     fprintf(stderr, "RuntimeError: ");
     vfprintf(stderr, format, args); /* Prints the error */
     fprintf(stderr, "\n");
 
     /* Prints a stack trace */
     fprintf(stderr, "Stack trace (last call first):\n");
-    if (vm.frameCount > 20) {
-        printCallFrames(vm.frameCount - 1, vm.frameCount - 10);
+    if (vm->frameCount > 20) {
+        printCallFrames(vm, vm->frameCount - 1, vm->frameCount - 10);
         fprintf(stderr, "    ...\n");
-        printCallFrames(9, 0);
+        printCallFrames(vm, 9, 0);
         fprintf(stderr, "%d call frames not listed. Run with option \"--debug\" to see all.\n",
-                vm.frameCount - 20);
+                vm->frameCount - 20);
     } else {
-        printCallFrames(vm.frameCount - 1, 0);
+        printCallFrames(vm, vm->frameCount - 1, 0);
     }
 }

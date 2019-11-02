@@ -98,7 +98,7 @@ bool valuesEqual(Value a, Value b) {
 /**
  * Converts a given YAPL Value to a YAPL string.
  */
-ObjString *valueToString(Value *value) {
+char *valueToString(Value *value) {
     char *string = NULL;
 
     switch (value->type) {
@@ -114,8 +114,6 @@ ObjString *valueToString(Value *value) {
             break;
         case VAL_OBJ:
             switch (OBJ_TYPE(*value)) {
-                case OBJ_STRING:
-                    return AS_STRING(*value);
                 case OBJ_CLOSURE: /* TODO: add toString support for the objects below */
                     break;
                 case OBJ_FUNCTION:
@@ -130,7 +128,7 @@ ObjString *valueToString(Value *value) {
             break;
     }
 
-    return copyString(string, strlen(string)); /* Creates the YAPL string */
+    return string; /* Returns the string */
 }
 
 /* End string constants */

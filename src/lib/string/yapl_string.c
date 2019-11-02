@@ -6,7 +6,7 @@
 
 #include "yapl_string.h"
 #include "../../vm/yapl_object.h"
-#include "../../vm/yapl_vm.h"
+#include "../../vm/yapl_memmanager.h"
 #include <string.h>
 
 /**
@@ -27,35 +27,36 @@ uint32_t hashString(const char *key, uint64_t length) {
  * Creates a new ObjString by claiming ownership of the given string. In this case, the characters
  * of a ObjString can be freed when no longer needed.
  */
-ObjString *makeString(int length) {
-    ObjString *string = (ObjString *) allocateObject(sizeof(ObjString) + length + 1, OBJ_STRING);
-    string->length = length;
-    return string;
+ObjString *makeString(VM *vm, int length) {
+    ObjString *str = (ObjString *) allocateObject(vm, sizeof(ObjString) + length + 1, OBJ_STRING);
+    str->length = length;
+    return str;
 }
 
 /**
  * Copies and allocates a given string to the heap. This way, every ObjString reliably owns its
  * character array and can free it.
  */
-ObjString *copyString(const char *chars, uint64_t length) {
+ObjString *copyString(VM *vm, const char *chars, uint64_t length) {
     uint32_t hash = hashString(chars, length);
-    ObjString *interned = tableFindStr(&vm.strings, chars, length, hash); /* Checks if interned */
+    ObjString *interned = tableFindStr(&vm->strings, chars, length, hash); /* Checks if interned */
     if (interned != NULL) return interned;
 
-    ObjString *string = makeString(length);
-    memcpy(string->chars, chars, length);
-    string->chars[length] = '\0';
-    string->hash = hash;
-    tableSet(&vm.strings, string, NULL_VAL); /* Intern the string */
-    return string;
+    ObjString *str = makeString(vm, length);
+    memcpy(str->chars, chars, length);
+    str->chars[length] = '\0';
+    str->hash = hash;
+
+    tableSet(&vm->strings, str, NULL_VAL); /* Intern the string */
+    return str;
 }
 
 /**
  * Concatenates two given YAPL strings.
  */
-ObjString *concatStrings(ObjString *str1, ObjString *str2) {
+ObjString *concatStrings(VM *vm, ObjString *str1, ObjString *str2) {
     int length = str2->length + str1->length;
-    ObjString *result = makeString(length);
+    ObjString *result = makeString(vm, length);
     memcpy(result->chars, str2->chars, str2->length);
     memcpy(result->chars + str2->length, str1->chars, str1->length);
     result->chars[length] = '\0';

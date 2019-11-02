@@ -5,6 +5,8 @@
  */
 
 #include "yapl_natives.h"
+#include "../vm/yapl_memmanager.h"
+#include "../vm/yapl_object.h"
 #include "io/yapl_io.h"
 #include "string/yapl_string.h"
 #include <stdio.h>
@@ -13,12 +15,12 @@
 #include <time.h>
 
 /* Begin CHECK_ARGS - Checks the validity of a given argument count */
-#define CHECK_ARGS(op, argCount, expectedCount)               \
-    do {                                                      \
-        if (argCount op expectedCount) {                      \
-            VMError(ARGS_COUNT_ERR, expectedCount, argCount); \
-            return ERR_VAL;                                   \
-        }                                                     \
+#define CHECK_ARGS(vm, op, argCount, expectedCount)               \
+    do {                                                          \
+        if (argCount op expectedCount) {                          \
+            VMError(vm, ARGS_COUNT_ERR, expectedCount, argCount); \
+            return ERR_VAL;                                       \
+        }                                                         \
     } while (false)
 
 /*
@@ -30,8 +32,8 @@
 /**
  * Native YAPL function to print YAPL's authors.
  */
-static Value authorsNative(int argCount, Value *args) {
-    CHECK_ARGS(!=, argCount, 0);
+static Value authorsNative(VM *vm, int argCount, Value *args) {
+    CHECK_ARGS(vm, !=, argCount, 0);
     printAuthors();
     return NULL_VAL;
 }
@@ -39,8 +41,8 @@ static Value authorsNative(int argCount, Value *args) {
 /**
  * Native YAPL function to print YAPL's MIT license.
  */
-static Value licenseNative(int argCount, Value *args) {
-    CHECK_ARGS(!=, argCount, 0);
+static Value licenseNative(VM *vm, int argCount, Value *args) {
+    CHECK_ARGS(vm, !=, argCount, 0);
     printLicense();
     return NULL_VAL;
 }
@@ -48,8 +50,8 @@ static Value licenseNative(int argCount, Value *args) {
 /**
  * Native YAPL function to print interpreter usage details.
  */
-static Value helpNative(int argCount, Value *args) {
-    CHECK_ARGS(!=, argCount, 0);
+static Value helpNative(VM *vm, int argCount, Value *args) {
+    CHECK_ARGS(vm, !=, argCount, 0);
     printUsage();
     return NULL_VAL;
 }
@@ -57,10 +59,10 @@ static Value helpNative(int argCount, Value *args) {
 /**
  * Native YAPL function to exit the running process with a given exit code.
  */
-static Value exitNative(int argCount, Value *args) {
-    CHECK_ARGS(!=, argCount, 1);
+static Value exitNative(VM *vm, int argCount, Value *args) {
+    CHECK_ARGS(vm, !=, argCount, 1);
     if (!IS_NUM(*args)) {
-        VMError(ARGS_TYPE_ERR, 1, "number");
+        VMError(vm, ARGS_TYPE_ERR, 1, "number");
         return ERR_VAL;
     }
 
@@ -70,16 +72,16 @@ static Value exitNative(int argCount, Value *args) {
 /**
  * Native YAPL function to compute the elapsed time since the program started running, in seconds.
  */
-static Value clockNative(int argCount, Value *args) {
-    CHECK_ARGS(!=, argCount, 0);
+static Value clockNative(VM *vm, int argCount, Value *args) {
+    CHECK_ARGS(vm, !=, argCount, 0);
     return NUM_VAL((double) clock() / CLOCKS_PER_SEC);
 }
 
 /**
  * Native YAPL function to compute the UNIX timestamp, in seconds.
  */
-static Value timeNative(int argCount, Value *args) {
-    CHECK_ARGS(!=, argCount, 0);
+static Value timeNative(VM *vm, int argCount, Value *args) {
+    CHECK_ARGS(vm, !=, argCount, 0);
     return NUM_VAL((double) time(NULL));
 }
 
@@ -92,8 +94,8 @@ static Value timeNative(int argCount, Value *args) {
 /**
  * Native YAPL function to get the type of a given YAPL Value, as a string.
  */
-static Value typeNative(int argCount, Value *args) {
-    CHECK_ARGS(!=, argCount, 1);
+static Value typeNative(VM *vm, int argCount, Value *args) {
+    CHECK_ARGS(vm, !=, argCount, 1);
     char *typeString = NULL;
     int typeStringLen = 0;
 
@@ -131,17 +133,17 @@ static Value typeNative(int argCount, Value *args) {
             break;
     }
 
-    return OBJ_VAL(copyString(typeString, typeStringLen));
+    return OBJ_VAL(copyString(vm, typeString, typeStringLen));
 }
 
 /**
  * Native YAPL function to convert a given YAPL Value to a string.
  */
-static Value strNative(int argCount, Value *args) {
-    CHECK_ARGS(!=, argCount, 1);
+static Value strNative(VM *vm, int argCount, Value *args) {
+    CHECK_ARGS(vm, !=, argCount, 1);
     if (!IS_STRING(*args)) {
-        ObjString *string = valueToString(args); /* Converts value to a string */
-        return OBJ_VAL(string);
+        char *string = valueToString(args); /* Converts value to a string */
+        return OBJ_VAL(copyString(vm, string, strlen(string)));
     }
 
     return *args; /* Given value is already a string */
@@ -150,11 +152,11 @@ static Value strNative(int argCount, Value *args) {
 /**
  * Native YAPL function to convert a given YAPL Value to a number.
  */
-static Value numNative(int argCount, Value *args) {
-    CHECK_ARGS(!=, argCount, 1);
+static Value numNative(VM *vm, int argCount, Value *args) {
+    CHECK_ARGS(vm, !=, argCount, 1);
     if (!IS_NUM(*args)) {
         if (!IS_STRING(*args) && !IS_BOOL(*args)) {
-            VMError(ARGS_TYPE_ERR, 1, "string, boolean, or number");
+            VMError(vm, ARGS_TYPE_ERR, 1, "string, boolean, or number");
             return ERR_VAL;
         }
 
@@ -163,7 +165,7 @@ static Value numNative(int argCount, Value *args) {
             double number = strtod(AS_CLANG_STRING(*args), &end); /* Converts a string to double */
 
             if (start == end) { /* Checks for conversion success */
-                VMError(CONV_STR_NUM_ERR);
+                VMError(vm, CONV_STR_NUM_ERR);
                 return ERR_VAL;
             }
 
@@ -185,28 +187,28 @@ static Value numNative(int argCount, Value *args) {
 /**
  * Native YAPL function to prompt the user for an input and return the given input as an YAPL Value.
  */
-static Value inputNative(int argCount, Value *args) {
-    CHECK_ARGS(>, argCount, 1);
+static Value inputNative(VM *vm, int argCount, Value *args) {
+    CHECK_ARGS(vm, >, argCount, 1);
 
     if (argCount == 1) {
         Value prompt = *args;
         if (!IS_STRING(prompt)) { /* Checks if the prompt is valid */
-            VMError(ARGS_TYPE_ERR, 1, "string");
+            VMError(vm, ARGS_TYPE_ERR, 1, "string");
             return ERR_VAL;
         }
 
         printf("%s", AS_CLANG_STRING(prompt)); /* Prints the prompt */
     }
 
-    char *inputString = readStrStdin();                           /* Reads the input string */
-    return OBJ_VAL(copyString(inputString, strlen(inputString))); /* Creates the YAPL string */
+    char *inputString = readStrStdin();                               /* Reads the input string */
+    return OBJ_VAL(copyString(vm, inputString, strlen(inputString))); /* Creates the YAPL string */
 }
 
 /**
  * Native YAPL function to print an YAPL value.
  */
-static Value printNative(int argCount, Value *args) {
-    CHECK_ARGS(!=, argCount, 1);
+static Value printNative(VM *vm, int argCount, Value *args) {
+    CHECK_ARGS(vm, !=, argCount, 1);
     printValue(*args);
     return NULL_VAL;
 }
@@ -214,8 +216,8 @@ static Value printNative(int argCount, Value *args) {
 /**
  * Native YAPL function to print (with a new line) an YAPL value.
  */
-static Value printlnNative(int argCount, Value *args) {
-    CHECK_ARGS(!=, argCount, 1);
+static Value printlnNative(VM *vm, int argCount, Value *args) {
+    CHECK_ARGS(vm, !=, argCount, 1);
     printValue(*args);
     printf("\n");
     return NULL_VAL;
@@ -231,20 +233,29 @@ static Value printlnNative(int argCount, Value *args) {
  */
 
 /**
+ * Allocates a new YAPL native function object.
+ */
+ObjNative *newNative(VM *vm, NativeFn function) {
+    ObjNative *native = ALLOCATE_OBJ(vm, ObjNative, OBJ_NATIVE);
+    native->function = function;
+    return native;
+}
+
+/**
  * Defines a new native function for YAPL.
  */
-void defineNative(const char *name, NativeFn function) {
-    push(OBJ_VAL(copyString(name, (int) strlen(name))));
-    push(OBJ_VAL(newNative(function)));
-    tableSet(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
-    pop();
-    pop();
+void defineNative(VM *vm, const char *name, NativeFn function) {
+    push(vm, OBJ_VAL(copyString(vm, name, (int) strlen(name))));
+    push(vm, OBJ_VAL(newNative(vm, function)));
+    tableSet(&vm->globals, AS_STRING(vm->stack[0]), vm->stack[1]);
+    pop(vm);
+    pop(vm);
 }
 
 /**
  * Defines the complete set of native function for YAPL.
  */
-void defineNatives() {
+void defineNatives(VM *vm) {
     const char *nativeNames[] = { /* Native functions names */
         "authors",
         "license",
@@ -277,5 +288,5 @@ void defineNatives() {
 
     /* Define listed native functions */
     for (unsigned long i = 0; i < sizeof(nativeNames) / sizeof(nativeNames[0]); i++)
-        defineNative(nativeNames[i], nativeFunctions[i]);
+        defineNative(vm, nativeNames[i], nativeFunctions[i]);
 }

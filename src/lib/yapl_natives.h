@@ -9,9 +9,19 @@
 
 #include "../vm/yapl_vm.h"
 
+/* Native functions implementations */
+typedef Value (*NativeFn)(VM *vm, int argCount, Value *args);
+
+/* YAPL's native functions object */
+typedef struct {
+    Obj obj;
+    NativeFn function;
+} ObjNative;
+
 /* Native functions operations */
-void defineNative(const char *name, NativeFn function);
-void defineNatives();
+ObjNative *newNative(VM *vm, NativeFn function);
+void defineNative(VM *vm, const char *name, NativeFn function);
+void defineNatives(VM *vm);
 
 /* Native functions errors */
 #define CONV_STR_NUM_ERR "Could not convert string to number."

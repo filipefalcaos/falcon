@@ -37,16 +37,18 @@ typedef struct {
 /* Interpretation result codes */
 typedef enum { OK, COMPILE_ERROR, RUNTIME_ERROR } ResultCode;
 
-/* VM instance */
-extern VM vm;
-
 /* Virtual machine operations */
-void VMError(const char *format, ...);
-void initVM(const char *fileName);
-void freeVM();
-bool push(Value value);
-Value pop();
-ResultCode interpret(const char *source);
+void VMError(VM *vm, const char *format, ...);
+void initVM(VM *vm);
+void freeVM(VM *vm);
+bool push(VM *vm, Value value);
+Value pop(VM *vm);
+ResultCode interpret(VM *vm, const char *source);
+
+/* Function/closure objects operations */
+ObjUpvalue *newUpvalue(VM *vm, Value *slot);
+ObjClosure* newClosure(VM *vm, ObjFunction *function);
+ObjFunction *newFunction(VM *vm);
 
 /* Runtime error messages */
 #define UNKNOWN_OPCODE_ERR \

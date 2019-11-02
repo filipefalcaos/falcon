@@ -46,9 +46,9 @@ void printUsage() {
 /**
  * Interprets a YAPL source file.
  */
-static void runFile(const char *path) {
-    char *source = readFile(path); /* Gets the source content */
-    ResultCode resultCode = interpret(source); /* Interprets the source code */
+static void runFile(VM *vm, const char *path) {
+    char *source = readFile(path);                 /* Gets the source content */
+    ResultCode resultCode = interpret(vm, source); /* Interprets the source code */
     free(source);
     if (resultCode == COMPILE_ERROR) exit(YAPL_ERR_COMPILER);
     if (resultCode == RUNTIME_ERROR) exit(YAPL_ERR_RUNTIME);
@@ -57,7 +57,7 @@ static void runFile(const char *path) {
 /**
  * Starts YAPL REPL.
  */
-static void repl() {
+static void repl(VM *vm) {
     char *inputLine;
     printInfo();
     printHelp();
@@ -71,7 +71,7 @@ static void repl() {
             break;
         }
 
-        interpret(inputLine); /* Interprets the source line */
+        interpret(vm, inputLine); /* Interprets the source line */
     }
 
     free(inputLine); /* Frees the input line when over */
@@ -80,10 +80,10 @@ static void repl() {
 /**
  * Process the CLI args and proceeds with the requested action.
  */
-static void processArgs(int argc, char const **argv) {
+static void processArgs(VM *vm, int argc, char const **argv) {
     if (argc == 1) {
-        initVM("repl");
-        repl(); /* Starts the REPL */
+        vm->fileName = "repl";
+        repl(vm); /* Starts the REPL */
     } else if (argc == 2) {
         if (argv[1][0] == '-' ||
             (argv[1][0] == '-' && argv[1][1] == '-')) { /* Checks if arg is an option */
@@ -97,8 +97,8 @@ static void processArgs(int argc, char const **argv) {
                 exit(YAPL_ERR_USAGE);
             }
         } else {
-            initVM(argv[1]);
-            runFile(argv[1]); /* Interprets the input file */
+            vm->fileName = argv[1];
+            runFile(vm, argv[1]); /* Interprets the input file */
         }
     } else { /* Unknown option: prints the usage */
         printf("Wrong arguments order\n");
@@ -108,7 +108,9 @@ static void processArgs(int argc, char const **argv) {
 }
 
 int main(int argc, char const **argv) {
-    processArgs(argc, argv);
-    freeVM();
+    VM vm;
+    initVM(&vm);
+    processArgs(&vm, argc, argv);
+    freeVM(&vm);
     return 0;
 }
