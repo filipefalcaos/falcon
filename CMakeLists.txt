@@ -38,8 +38,6 @@ add_executable(
         src/commons.h
         src/yapl.h
         src/yapl.c
-        src/utils/yapl_utils.h
-        src/utils/yapl_utils.c
 
         # Compiler
         src/compiler/yapl_compiler.h
@@ -55,10 +53,14 @@ add_executable(
         src/lib/yapl_error.c
         src/lib/yapl_natives.h
         src/lib/yapl_natives.c
-        src/lib/yapl_string.h
-        src/lib/yapl_string.c
         src/lib/yapl_table.h
         src/lib/yapl_table.c
+        src/lib/math/yapl_math.h
+        src/lib/math/yapl_math.c
+        src/lib/io/yapl_io.h
+        src/lib/io/yapl_io.c
+        src/lib/string/yapl_string.h
+        src/lib/string/yapl_string.c
 
         # Virtual Machine
         src/vm/yapl_bytecodechunk.h

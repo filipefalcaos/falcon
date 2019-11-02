@@ -5,8 +5,8 @@
  */
 
 #include "yapl_compiler.h"
-#include "../vm/yapl_object.h"
 #include "../lib/yapl_error.h"
+#include "../vm/yapl_object.h"
 #include <stdlib.h>
 #include <string.h>
 

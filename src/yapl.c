@@ -5,11 +5,11 @@
  */
 
 #include "yapl.h"
-#include "utils/yapl_utils.h"
+#include "lib/io/yapl_io.h"
 #include "vm/yapl_vm.h"
-#include <stdio.h> /* MUST be included before readline */
 #include <readline/readline.h>
 #include <stdlib.h>
+#include <string.h>
 
 /**
  * Prints help functions for the REPL.
@@ -87,9 +87,9 @@ static void processArgs(int argc, char const **argv) {
     } else if (argc == 2) {
         if (argv[1][0] == '-' ||
             (argv[1][0] == '-' && argv[1][1] == '-')) { /* Checks if arg is an option */
-            if (areStrEqual(argv[1], "--help") || areStrEqual(argv[1], "-h")) {
+            if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
                 printUsage(); /* Prints usage */
-            } else if (areStrEqual(argv[1], "--version") || areStrEqual(argv[1], "-v")) {
+            } else if (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0) {
                 printInfo(); /* Prints version details */
             } else {         /* Unknown option: prints the usage */
                 printf("Unknown option '%s'\n", argv[1]);

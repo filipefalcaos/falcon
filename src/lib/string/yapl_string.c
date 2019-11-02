@@ -1,11 +1,11 @@
 /*
  * YAPL version 0.0.1 (master, Oct 18 2019)
- * yapl_string.c: String functions for YAPL
+ * yapl_string.c: YAPL's standard string library
  * See YAPL's license in the LICENSE file
  */
 
 #include "yapl_string.h"
-#include "../vm/yapl_memmanager.h"
+#include "../../vm/yapl_memmanager.h"
 #include <stdio.h>
 #include <string.h>
 

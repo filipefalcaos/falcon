@@ -1,37 +1,11 @@
 /*
  * YAPL version 0.0.1 (master, Oct 18 2019)
- * yapl_utils.c: List of internal utility functions
+ * yapl_io.c: YAPL's standard IO library
  * See YAPL's license in the LICENSE file
  */
 
-#include "yapl_utils.h"
-#include <math.h>
+#include "yapl_io.h"
 #include <stdlib.h>
-#include <string.h>
-
-/* File errors */
-#define ERROR_OPEN "Could not open file"
-#define ERROR_READ "Could not read file"
-
-/**
- * Gets the number of digits in an integer.
- */
-int getDigits(int n) { return (int) floor(log10(n) + 1); }
-
-/**
- * Checks if two strings are equal.
- */
-bool areStrEqual(const char *str1, const char *str2) { return (strcmp(str1, str2) == 0); }
-
-/**
- * Prints a string character by character until a specified character is found.
- */
-void printUntil(FILE *file, const char *str, char delimiter) {
-    for (int i = 0; str[i] != '\0'; i++) {
-        if (str[i] == delimiter) break;
-        fprintf(file, "%c", str[i]);
-    }
-}
 
 /**
  * Reads the content of an input file.
@@ -65,4 +39,14 @@ char *readFile(const char *path) {
     buffer[bytesRead] = '\0';
     fclose(file);
     return buffer;
+}
+
+/**
+ * Prints a string character by character until a specified character is found.
+ */
+void printUntil(FILE *file, const char *str, char delimiter) {
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (str[i] == delimiter) break;
+        fprintf(file, "%c", str[i]);
+    }
 }

@@ -5,8 +5,8 @@
  */
 
 #include "yapl_error.h"
-#include "../utils/yapl_utils.h"
-#include <stdio.h>
+#include "io/yapl_io.h"
+#include "math/yapl_math.h"
 
 /**
  * Presents a compiler time error to the programmer.

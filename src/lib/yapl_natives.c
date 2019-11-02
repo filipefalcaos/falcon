@@ -6,7 +6,7 @@
 
 #include "yapl_natives.h"
 #include "../vm/yapl_memmanager.h"
-#include "yapl_string.h"
+#include "string/yapl_string.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
