@@ -12,7 +12,7 @@
 /**
  * Hashes an input string using FNV-1a hash function.
  */
-uint32_t hashString(const char *key, uint64_t length) {
+uint32_t hashString(const char *key, int length) {
     uint32_t hash = 2166136261u;
 
     for (uint64_t i = 0; i < length; i++) {
@@ -37,7 +37,7 @@ ObjString *makeString(VM *vm, int length) {
  * Copies and allocates a given string to the heap. This way, every ObjString reliably owns its
  * character array and can free it.
  */
-ObjString *copyString(VM *vm, const char *chars, uint64_t length) {
+ObjString *copyString(VM *vm, const char *chars, int length) {
     uint32_t hash = hashString(chars, length);
     ObjString *interned = tableFindStr(&vm->strings, chars, length, hash); /* Checks if interned */
     if (interned != NULL) return interned;

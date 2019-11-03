@@ -59,6 +59,7 @@ typedef enum {
     TK_TRUE, /* Also a literal */
     TK_UNLESS,
     TK_VAR,
+    TK_WHEN,
     TK_WHILE,
 
     /* Error and EOF */

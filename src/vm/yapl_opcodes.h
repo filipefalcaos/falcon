@@ -56,7 +56,8 @@ typedef enum {
     OP_RETURN,  /* "return" statement */
 
     /* VM operations */
-    OP_POP /* Pop from VM stack */
+    OP_DUP, /* Duplicate the top of the VM stack */
+    OP_POP  /* Pop from the VM stack */
 
 } OpCodes;
 

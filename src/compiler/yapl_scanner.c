@@ -145,9 +145,9 @@ static TokenType checkKeyword(int start, int length, const char *rest, TokenType
  * Checks if a name is an identifier or a defined YAPL keyword.
  */
 static TokenType findType(Scanner *scanner) {
-    const char current = scanner->start[0]; /* Current char */
+    const char start = scanner->start[0]; /* Current char */
 
-    switch (current) {
+    switch (start) {
         case 'a':
             return checkKeyword(1, 2, "nd", TK_AND, scanner);
         case 'c':
@@ -204,8 +204,30 @@ static TokenType findType(Scanner *scanner) {
             return checkKeyword(1, 5, "nless", TK_UNLESS, scanner);
         case 'v':
             return checkKeyword(1, 2, "ar", TK_VAR, scanner);
-        case 'w':
-            return checkKeyword(1, 4, "hile", TK_WHILE, scanner);
+        case 'w': {
+            const char *current = scanner->start;
+            long length = scanner->current - scanner->start; /* Current token length */
+
+            if (length > 1) {
+                switch (current[1]) {
+                    case 'h':
+                        if (length > 2) {
+                            switch (current[2]) {
+                                case 'e':
+                                    return checkKeyword(3, 1, "n", TK_WHEN, scanner);
+                                case 'i':
+                                    return checkKeyword(3, 2, "le", TK_WHILE, scanner);
+                                default:
+                                    break;
+                            }
+                        }
+                    default:
+                        break;
+                }
+            }
+
+            break;
+        }
         default:
             return TK_IDENTIFIER;
     }

@@ -314,7 +314,7 @@ static ResultCode run(VM *vm) {
 
     while (true) {
 #ifdef YAPL_DEBUG_TRACE_EXECUTION
-        if (vm->stack != vm->stackTop) printStack();
+        if (vm->stack != vm->stackTop) printStack(vm);
         disassembleInstruction(&frame->closure->function->bytecodeChunk,
                                (int) (frame->pc - frame->closure->function->bytecodeChunk.code));
 #endif
@@ -522,6 +522,9 @@ static ResultCode run(VM *vm) {
             }
 
             /* VM operations */
+            case OP_DUP:
+                push(vm, peek(vm, 0));
+                break;
             case OP_POP:
                 pop(vm);
                 break;

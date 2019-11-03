@@ -181,6 +181,8 @@ int disassembleInstruction(BytecodeChunk *bytecodeChunk, int offset) {
             return byteInstruction("OP_CALL", bytecodeChunk, offset);
         case OP_RETURN:
             return simpleInstruction("OP_RETURN", offset);
+        case OP_DUP:
+            return simpleInstruction("OP_DUP", offset);
         case OP_POP:
             return simpleInstruction("OP_POP", offset);
         default:

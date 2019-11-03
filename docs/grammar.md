@@ -50,7 +50,7 @@ for_statement        -> "for" ( variable_declaration | expression_statement | ";
 while_statement      -> "while" expression block ;
 if_statement         -> ( "if" | "unless" ) expression block ( "else" ( block | if_statement ) )? ;
 switch_statement     -> "switch" expression "{" switch_case* else_case? "}" ;
-switch_case          -> expression "->" statement* ;
+switch_case          -> "when" expression "->" statement* ;
 else_case            -> "else" "->" statement* ;
 return_statement     -> "return" expression? ";" ;
 block                -> "{" declaration* "}" ;

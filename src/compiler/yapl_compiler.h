@@ -21,6 +21,11 @@ ObjFunction *compile(VM *vm, const char *source);
 
 /* Conditionals and Loops */
 #define IF_STMT_ERR       "Expected a '{' after 'if' condition."
+#define SWITCH_STMT_ERR   "Expected a '{' before switch cases."
+#define ELSE_END_ERR      "Cases or else are not allowed after an else case."
+#define ARR_CASE_ERR      "Expected a '->' after case."
+#define ARR_ELSE_ERR      "Expected a '->' after else case."
+#define STMT_SWITCH_ERR   "Cannot have statements before any switch case."
 #define WHILE_STMT_ERR    "Expected a '{' after 'while' condition."
 #define FOR_STMT_COND_ERR "Expected a ';' after 'for' loop condition."
 #define FOR_STMT_INC_ERR  "Expected a '{' after an increment clause."

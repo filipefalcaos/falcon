@@ -258,7 +258,7 @@ static ObjFunction *endCompiler(Parser *parser) {
     ObjFunction *function = functionCompiler->function;
 
 #ifdef YAPL_DEBUG_PRINT_CODE
-    if (!parser.hadError) {
+    if (!parser->hadError) {
         printOpcodesHeader();
         disassembleBytecodeChunk(currentBytecodeChunk(),
                                  function->name != NULL ? function->name->chars : SCRIPT_TAG);
@@ -662,7 +662,7 @@ static void prefix(ProgramCompiler *compiler, bool canAssign) {
         setOp = OP_SET_GLOBAL;
     }
 
-    emitBytes(parser, setOp, index);
+    emitBytes(parser, setOp, (uint8_t) index);
 }
 
 /**
@@ -741,6 +741,7 @@ ParseRule rules[] = {
     PREFIX_RULE(literal),               /* TK_TRUE */
     EMPTY_RULE,                         /* TK_UNLESS */
     EMPTY_RULE,                         /* TK_VAR */
+    EMPTY_RULE,                         /* TK_WHEN */
     EMPTY_RULE,                         /* TK_WHILE */
     EMPTY_RULE,                         /* TK_ERROR */
     EMPTY_RULE                          /* TK_EOF */
@@ -860,7 +861,7 @@ static void function(ProgramCompiler *programCompiler, FunctionType type) {
 
     /* Emits the captured upvalues */
     for (int i = 0; i < function->upvalueCount; i++) {
-        emitByte(parser, compiler.upvalues[i].isLocal ? 1 : 0);
+        emitByte(parser, (uint8_t) (compiler.upvalues[i].isLocal ? 1 : 0));
         emitByte(parser, compiler.upvalues[i].index);
     }
 }
@@ -868,6 +869,7 @@ static void function(ProgramCompiler *programCompiler, FunctionType type) {
 /**
  * Compiles a function declaration.
  */
+/* TODO: store functions in a different HashTable - new opcode OP_DEFINE_FUNC */
 static void funDeclaration(ProgramCompiler *compiler) {
     uint8_t global = parseVariable(compiler, FUNC_NAME_ERR);
     markInitialized();
@@ -922,7 +924,70 @@ static void ifStatement(ProgramCompiler *compiler) {
  * Compiles a "switch" conditional statement.
  */
 static void switchStatement(ProgramCompiler *compiler) {
-    
+    Parser *parser = compiler->parser;
+
+    /* Possible switch states */
+    typedef enum {
+        BEF_CASES, /* Before all cases */
+        BEF_ELSE,  /* Before else case */
+        AFT_ELSE   /* After else case */
+    } SwitchState;
+
+    SwitchState switchState = BEF_CASES;
+    int caseEnds[MAX_SINGLE_BYTE];
+    int caseCount = 0;
+    int previousCaseSkip = -1;
+
+    expression(compiler); /* Compiles expression to switch on */
+    consume(compiler, TK_LEFT_BRACE, SWITCH_STMT_ERR);
+
+    while (!match(compiler, TK_RIGHT_BRACE) && !check(parser, TK_EOF)) {
+        if (match(compiler, TK_WHEN) || match(compiler, TK_ELSE)) {
+            TokenType caseType = parser->previous.type;
+
+            if (switchState == AFT_ELSE) { /* Already compiled the else case? */
+                compilerError(compiler, &parser->previous, ELSE_END_ERR);
+            } else if (switchState == BEF_ELSE) {                  /* Else case not compiled yet? */
+                caseEnds[caseCount++] = emitJump(parser, OP_JUMP); /* Jumps over the other cases */
+                patchJump(compiler, previousCaseSkip);             /* Patches the jump */
+                emitByte(parser, OP_POP);
+            }
+
+            if (caseType == TK_WHEN) {
+                switchState = BEF_ELSE;
+
+                /* Checks if the case is equal to the switch value */
+                emitByte(parser, OP_DUP); /* "==" pops its operand, so duplicate before */
+                expression(compiler);
+                consume(compiler, TK_ARROW, ARR_CASE_ERR);
+                emitByte(parser, OP_EQUAL);
+                previousCaseSkip = emitJump(parser, OP_JUMP_IF_FALSE);
+
+                emitByte(parser, OP_POP); /* Pops the comparison result */
+            } else {
+                switchState = AFT_ELSE;
+                consume(compiler, TK_ARROW, ARR_ELSE_ERR);
+                previousCaseSkip = -1;
+            }
+        } else {
+            if (switchState == BEF_CASES) /* Statement outside a case? */
+                compilerError(compiler, &parser->previous, STMT_SWITCH_ERR);
+            statement(compiler); /* Statement is inside a case */
+        }
+    }
+
+    /* If no else case, patch its condition jump */
+    if (switchState == BEF_ELSE) {
+        patchJump(compiler, previousCaseSkip);
+        emitByte(parser, OP_POP);
+    }
+
+    /* Patch all the case jumps to the end */
+    for (int i = 0; i < caseCount; i++) {
+        patchJump(compiler, caseEnds[i]);
+    }
+
+    emitByte(parser, OP_POP); /* Pops the switch value */
 }
 
 /**
