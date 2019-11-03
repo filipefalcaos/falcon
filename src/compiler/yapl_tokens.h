@@ -18,9 +18,7 @@ typedef enum {
     TK_COMMA,
     TK_DOT,
     TK_SEMICOLON,
-
-    /* Escape characters */
-    TK_NL,
+    TK_ARROW,
 
     /* Operators */
     TK_MINUS,
@@ -38,11 +36,6 @@ typedef enum {
     TK_LESS_EQUAL,
     TK_DECREMENT,
     TK_INCREMENT,
-    TK_PLUS_EQUAL,
-    TK_MINUS_EQUAL,
-    TK_MULTIPLY_EQUAL,
-    TK_DIV_EQUAL,
-    TK_MOD_EQUAL,
     TK_AND, /* Also a keyword */
     TK_OR,  /* Also a keyword */
 
@@ -61,6 +54,7 @@ typedef enum {
     TK_NULL,
     TK_RETURN,
     TK_SUPER,
+    TK_SWITCH,
     TK_THIS,
     TK_TRUE, /* Also a literal */
     TK_UNLESS,

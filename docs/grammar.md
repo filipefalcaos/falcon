@@ -40,7 +40,7 @@ statement -> expression_statement
           | for_statement
           | while_statement
           | if_statement
-          | print_statement
+          | switch_statement
           | return_statement 
           | block ;
 
@@ -49,7 +49,9 @@ for_statement        -> "for" ( variable_declaration | expression_statement | ";
                         expression? ";" expression? block ;
 while_statement      -> "while" expression block ;
 if_statement         -> ( "if" | "unless" ) expression block ( "else" ( block | if_statement ) )? ;
-print_statement      -> ( "print" | "puts" ) expression ";" ;
+switch_statement     -> "switch" expression "{" switch_case* else_case? "}" ;
+switch_case          -> expression "->" statement* ;
+else_case            -> "else" "->" statement* ;
 return_statement     -> "return" expression? ";" ;
 block                -> "{" declaration* "}" ;
 ```

@@ -706,7 +706,7 @@ ParseRule rules[] = {
     EMPTY_RULE,                         /* TK_COMMA */
     EMPTY_RULE,                         /* TK_DOT */
     EMPTY_RULE,                         /* TK_SEMICOLON */
-    EMPTY_RULE,                         /* TK_NL */
+    EMPTY_RULE,                         /* TK_ARROW */
     RULE(unary, binary, PREC_TERM),     /* TK_MINUS */
     INFIX_RULE(binary, PREC_TERM),      /* TK_PLUS */
     INFIX_RULE(binary, PREC_FACTOR),    /* TK_DIV */
@@ -722,11 +722,6 @@ ParseRule rules[] = {
     INFIX_RULE(binary, PREC_COMPARE),   /* TK_LESS_EQUAL */
     PREFIX_RULE(prefix),                /* TK_DECREMENT */
     PREFIX_RULE(prefix),                /* TK_INCREMENT */
-    EMPTY_RULE,                         /* TK_PLUS_EQUAL */
-    EMPTY_RULE,                         /* TK_MINUS_EQUAL */
-    EMPTY_RULE,                         /* TK_MULTIPLY_EQUAL */
-    EMPTY_RULE,                         /* TK_DIV_EQUAL */
-    EMPTY_RULE,                         /* TK_MOD_EQUAL */
     INFIX_RULE(and_, PREC_AND),         /* TK_AND */
     INFIX_RULE(or_, PREC_OR),           /* TK_OR */
     PREFIX_RULE(variable),              /* TK_IDENTIFIER */
@@ -741,6 +736,7 @@ ParseRule rules[] = {
     PREFIX_RULE(literal),               /* TK_NULL */
     EMPTY_RULE,                         /* TK_RETURN */
     EMPTY_RULE,                         /* TK_SUPER */
+    EMPTY_RULE,                         /* TK_SWITCH */
     EMPTY_RULE,                         /* TK_THIS */
     PREFIX_RULE(literal),               /* TK_TRUE */
     EMPTY_RULE,                         /* TK_UNLESS */
@@ -923,6 +919,13 @@ static void ifStatement(ProgramCompiler *compiler) {
 }
 
 /**
+ * Compiles a "switch" conditional statement.
+ */
+static void switchStatement(ProgramCompiler *compiler) {
+    
+}
+
+/**
  * Compiles a "while" loop statement.
  */
 static void whileStatement(ProgramCompiler *compiler) {
@@ -1019,6 +1022,8 @@ static void returnStatement(ProgramCompiler *compiler) {
 static void statement(ProgramCompiler *compiler) {
     if (match(compiler, TK_IF)) {
         ifStatement(compiler);
+    } else if(match(compiler, TK_SWITCH)) {
+        switchStatement(compiler);
     } else if (match(compiler, TK_WHILE)) {
         whileStatement(compiler);
     } else if (match(compiler, TK_FOR)) {

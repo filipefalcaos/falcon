@@ -177,7 +177,17 @@ static TokenType findType(Scanner *scanner) {
         case 'r':
             return checkKeyword(1, 5, "eturn", TK_RETURN, scanner);
         case 's':
-            return checkKeyword(1, 4, "uper", TK_SUPER, scanner);
+            if (scanner->current - scanner->start > 1) {
+                switch (scanner->start[1]) {
+                    case 'u':
+                        return checkKeyword(2, 3, "per", TK_SUPER, scanner);
+                    case 'w':
+                        return checkKeyword(2, 4, "itch", TK_SWITCH, scanner);
+                    default:
+                        break;
+                }
+            }
+            break;
         case 't':
             if (scanner->current - scanner->start > 1) {
                 switch (scanner->start[1]) {
@@ -277,23 +287,18 @@ Token scanToken(Scanner *scanner) {
         case '-':
             if (match('-', scanner))
                 return makeToken(TK_DECREMENT, scanner);
-            else if (match('=', scanner))
-                return makeToken(TK_MINUS_EQUAL, scanner);
+            else if (match('>', scanner))
+                return makeToken(TK_ARROW, scanner);
             else
                 return makeToken(TK_MINUS, scanner);
         case '+':
-            if (match('+', scanner))
-                return makeToken(TK_INCREMENT, scanner);
-            else if (match('=', scanner))
-                return makeToken(TK_PLUS_EQUAL, scanner);
-            else
-                return makeToken(TK_PLUS, scanner);
+            return makeToken(match('+', scanner) ? TK_INCREMENT : TK_PLUS, scanner);
         case '/':
-            return makeToken(match('=', scanner) ? TK_DIV_EQUAL : TK_DIV, scanner);
+            return makeToken(TK_DIV, scanner);
         case '*':
-            return makeToken(match('=', scanner) ? TK_MULTIPLY_EQUAL : TK_MULTIPLY, scanner);
+            return makeToken(TK_MULTIPLY, scanner);
         case '%':
-            return makeToken(match('=', scanner) ? TK_MOD_EQUAL : TK_MOD, scanner);
+            return makeToken(TK_MOD, scanner);
         case '!':
             return makeToken(match('=', scanner) ? TK_NOT_EQUAL : TK_NOT, scanner);
         case '=':
