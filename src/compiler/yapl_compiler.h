@@ -32,7 +32,7 @@ ObjFunction *compile(VM *vm, const char *source);
 
 /* Variables */
 #define RED_INIT_ERR   "Cannot read variable in its own initializer."
-#define VAR_REDECL_ERR "Variable already declared in this scope."
+#define VAR_REDECL_ERR "Variable or closure already declared in this scope."
 #define INV_ASSG_ERR   "Invalid assignment target."
 #define VAR_NAME_ERR   "Expected a variable name."
 #define VAR_DECL_ERR   "Expected a ';' after variable declaration."

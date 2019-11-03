@@ -48,14 +48,6 @@ static ResultCode undefinedVariableError(VM *vm, ObjString *name, bool delete) {
 }
 
 /**
- * Presents a runtime error when a global variable is already declared.
- */
-static ResultCode declaredVariableError(VM *vm, ObjString *name) {
-    VMError(vm, GLB_VAR_REDECL_ERR, name->chars);
-    return RUNTIME_ERROR;
-}
-
-/**
  * Initializes the YAPL's virtual machine.
  */
 void initVM(VM *vm) {
@@ -64,9 +56,7 @@ void initVM(VM *vm) {
     initTable(&vm->globals);
     vm->fileName = NULL;
     vm->objects = NULL;
-
-    /* Set native functions */
-    defineNatives(vm);
+    defineNatives(vm); /* Set native functions */
 }
 
 /**
@@ -416,9 +406,6 @@ static ResultCode run(VM *vm) {
                 break;
             case OP_DEFINE_GLOBAL: {
                 ObjString *name = READ_STRING();
-                Value value;
-                if (tableGet(&vm->globals, name, &value)) /* Checks if already declared */
-                    return declaredVariableError(vm, name);
                 tableSet(&vm->globals, name, peek(vm, 0));
                 pop(vm);
                 break;

@@ -869,12 +869,11 @@ static void function(ProgramCompiler *programCompiler, FunctionType type) {
 /**
  * Compiles a function declaration.
  */
-/* TODO: store functions in a different HashTable - new opcode OP_DEFINE_FUNC */
 static void funDeclaration(ProgramCompiler *compiler) {
-    uint8_t global = parseVariable(compiler, FUNC_NAME_ERR);
+    uint8_t func = parseVariable(compiler, FUNC_NAME_ERR);
     markInitialized();
     function(compiler, TYPE_FUNCTION);
-    defineVariable(compiler->parser, global);
+    defineVariable(compiler->parser, func);
 }
 
 /**
