@@ -104,10 +104,11 @@ bool tableSet(Table *table, ObjString *key, Value value) {
     }
 
     Entry *entry = findEntry(table->entries, table->capacity, key);
-    if (entry->key == NULL && IS_NULL(entry->value)) table->count++;
+    bool isNewKey = entry->key == NULL;
+    if (isNewKey && IS_NULL(entry->value)) table->count++;
     entry->key = key;
     entry->value = value;
-    return entry->key == NULL;
+    return isNewKey;
 }
 
 /**
