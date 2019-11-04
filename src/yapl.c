@@ -7,9 +7,10 @@
 #include "yapl.h"
 #include "lib/io/yapl_io.h"
 #include "vm/yapl_vm.h"
+#include <ctype.h>
 #include <readline/readline.h>
 #include <stdlib.h>
-#include <string.h>
+#include <unistd.h>
 
 /**
  * Prints help functions for the REPL.
@@ -40,7 +41,10 @@ void printLicense() { printf("%s\n%s\n", YAPL_COPYRIGHT, MORE_INFO); }
  * Prints YAPL's interpreter usage details.
  */
 void printUsage() {
-    printf("%s\n\nOptions and arguments:\n%s\n%s\n", YAPL_USAGE, YAPL_OPTIONS, YAPL_ARGS);
+    printf("Usage: \n%*c%s\n\n", 4, ' ', YAPL_USAGE);
+    printf("Flags: \n%*c%s\n%*c%s\n\n", 4, ' ', HELP_FLAG, 4, ' ', VERSION_FLAG);
+    printf("Options: \n%*c%s\n\n", 4, ' ', INPUT_OPTION);
+    printf("Arguments: \n%*c%s\n", 4, ' ', FILE_ARG);
 }
 
 /**
@@ -80,34 +84,61 @@ static void repl(VM *vm) {
 /**
  * Process the CLI args and proceeds with the requested action.
  */
-static void processArgs(VM *vm, int argc, char const **argv) {
-    if (argc == 1) {
-        vm->fileName = "repl";
-        repl(vm); /* Starts the REPL */
-    } else if (argc == 2) {
-        if (argv[1][0] == '-' ||
-            (argv[1][0] == '-' && argv[1][1] == '-')) { /* Checks if arg is an option */
-            if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
-                printUsage(); /* Prints usage */
-            } else if (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0) {
-                printInfo(); /* Prints version details */
-            } else {         /* Unknown option: prints the usage */
-                printf("Unknown option '%s'\n", argv[1]);
-                printUsage();
+static void processArgs(VM *vm, int argc, char **argv) {
+    int arg;
+    char *inputCommand = NULL;
+    bool onlyInfo = false, onlyHelp = false;
+    opterr = 0; /* Disables getopt automatic error report */
+
+    /* Parses option arguments */
+    while ((arg = getopt(argc, argv, "hvi:")) != -1) {
+        switch (arg) {
+            case 'h':
+                onlyHelp = true;
+                if (!onlyInfo) printUsage(); /* Prints usage */
+                break;
+            case 'v':
+                onlyInfo = true;
+                if (!onlyHelp) printInfo(); /* Prints version details */
+                break;
+            case 'i':
+                inputCommand = optarg; /* Sets "-i" argument */
+                break;
+            case '?':
+                if (!onlyInfo && !onlyHelp) {
+                    if (optopt == 'i') {
+                        fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+                    } else if (isprint(optopt)) {
+                        fprintf(stderr, "Unknown option '-%c'.\n", optopt);
+                    } else {
+                        fprintf(stderr, "Unknown option character '\\x%x'.\n", optopt);
+                    }
+
+                    printUsage(); /* Prints usage */
+                    exit(YAPL_ERR_USAGE);
+                }
+            default:
                 exit(YAPL_ERR_USAGE);
-            }
-        } else {
-            vm->fileName = argv[1];
-            runFile(vm, argv[1]); /* Interprets the input file */
         }
-    } else { /* Unknown option: prints the usage */
-        printf("Wrong arguments order\n");
-        printUsage();
-        exit(YAPL_ERR_USAGE);
+    }
+
+    /* Parses the [script] positional argument */
+    if (!onlyInfo && !onlyHelp) {
+        if (argv[optind]) {
+            vm->fileName = argv[optind];
+            runFile(vm, argv[1]); /* Interprets the input file */
+        } else {
+            vm->fileName = "repl";
+            if (inputCommand != NULL) {
+                interpret(vm, inputCommand); /* Interprets the command */
+            } else {
+                repl(vm); /* Starts the REPL */
+            }
+        }
     }
 }
 
-int main(int argc, char const **argv) {
+int main(int argc, char **argv) {
     VM vm;
     initVM(&vm);
     processArgs(&vm, argc, argv);

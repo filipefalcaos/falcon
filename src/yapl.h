@@ -24,19 +24,18 @@ void printUsage();
 #define YAPL_AUTHORS         "Filipe Falcão, UFAL, Brazil"
 
 /* REPL macros */
-#define PROMPT         ">>> "
-#define SCRIPT_TAG     "<script>"
-#define YAPL_USAGE     "Usage: yapl [options] [file]"
-#define HELP_OPTION    "-h, --help   output usage information"
-#define VERSION_OPTION "-v, --version   output version information"
-#define YAPL_OPTIONS   HELP_OPTION "\n" VERSION_OPTION
-#define FILE_ARG       "file   script file to interpret"
-#define YAPL_ARGS      FILE_ARG
-#define MORE_INFO      "See full license in the \"LICENSE\" file"
-#define HELP_FUNC      "\"help()\""
-#define LIC_FUNC       "\"license()\""
-#define AUTHORS_FUNC   "\"authors()\""
-#define YAPL_HELP      "Call " HELP_FUNC ", " LIC_FUNC " or " AUTHORS_FUNC " for more information."
+#define PROMPT       ">>> "
+#define SCRIPT_TAG   "<script>"
+#define YAPL_USAGE   "yapl [flags] [options] [script]"
+#define HELP_FLAG    "-h    output usage information"
+#define VERSION_FLAG "-v    output version information"
+#define INPUT_OPTION "-i <input>    input code to execute"
+#define FILE_ARG     SCRIPT_TAG "    script file to interpret"
+#define MORE_INFO    "See full license in the \"LICENSE\" file"
+#define HELP_FUNC    "\"help()\""
+#define LIC_FUNC     "\"license()\""
+#define AUTHORS_FUNC "\"authors()\""
+#define YAPL_HELP    "Call " HELP_FUNC ", " LIC_FUNC " or " AUTHORS_FUNC " for more information."
 
 /* Limits */
 /* TODO: make the last two work as configurable parameters */
