@@ -17,6 +17,7 @@ typedef enum {
     TK_RIGHT_BRACE,
     TK_COMMA,
     TK_DOT,
+    TK_COLON,
     TK_SEMICOLON,
     TK_ARROW,
 
@@ -38,6 +39,7 @@ typedef enum {
     TK_INCREMENT,
     TK_AND, /* Also a keyword */
     TK_OR,  /* Also a keyword */
+    TK_TERNARY,
 
     /* Identifier and Literals */
     TK_IDENTIFIER,

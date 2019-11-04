@@ -300,6 +300,10 @@ Token scanToken(Scanner *scanner) {
             return makeToken(TK_LEFT_BRACE, scanner);
         case '}':
             return makeToken(TK_RIGHT_BRACE, scanner);
+        case '?':
+            return makeToken(TK_TERNARY, scanner);
+        case ':':
+            return makeToken(TK_COLON, scanner);
         case ';':
             return makeToken(TK_SEMICOLON, scanner);
         case ',':

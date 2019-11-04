@@ -26,6 +26,7 @@ typedef struct {
 typedef enum {
     PREC_NONE,
     PREC_ASSIGN,  /* '=' */
+    PREC_TERNARY, /* '?:' */
     PREC_OR,      /* 'or' */
     PREC_AND,     /* 'and' */
     PREC_EQUAL,   /* '==', '!=' */
@@ -486,6 +487,24 @@ static void or_(ProgramCompiler *compiler, bool canAssign) {
 }
 
 /**
+ * Handles the ternary "?:" conditional operator expression.
+ */
+static void ternary(ProgramCompiler *compiler, bool canAssign) {
+    Parser *parser = compiler->parser;
+
+    int ifJump = emitJump(compiler->parser, OP_JUMP_IF_FALSE); /* Jumps if the condition is false */
+    emitByte(parser, OP_POP);                                  /* Pops the condition result */
+    parsePrecedence(compiler, PREC_TERNARY);                   /* Compiles the first branch */
+    consume(compiler, TK_COLON, TERNARY_EXPR_ERR);
+
+    int elseJump = emitJump(parser, OP_JUMP); /* Jumps the second branch if first was taken */
+    patchJump(compiler, ifJump);              /* Patches the jump over the first branch */
+    emitByte(parser, OP_POP);                 /* Pops the condition result */
+    parsePrecedence(compiler, PREC_ASSIGN);   /* Compiles the second branch */
+    patchJump(compiler, elseJump);            /* Patches the jump over the second branch */
+}
+
+/**
  * Handles a binary (infix) expression, by compiling the right operand of the expression (the left
  * one was already compiled). Then, emits the bytecode instruction that performs the binary
  * operation.
@@ -705,6 +724,7 @@ ParseRule rules[] = {
     EMPTY_RULE,                         /* TK_RIGHT_BRACE */
     EMPTY_RULE,                         /* TK_COMMA */
     EMPTY_RULE,                         /* TK_DOT */
+    EMPTY_RULE,                         /* TK_COLON */
     EMPTY_RULE,                         /* TK_SEMICOLON */
     EMPTY_RULE,                         /* TK_ARROW */
     RULE(unary, binary, PREC_TERM),     /* TK_MINUS */
@@ -724,6 +744,7 @@ ParseRule rules[] = {
     PREFIX_RULE(prefix),                /* TK_INCREMENT */
     INFIX_RULE(and_, PREC_AND),         /* TK_AND */
     INFIX_RULE(or_, PREC_OR),           /* TK_OR */
+    INFIX_RULE(ternary, PREC_TERNARY),  /* TK_TERNARY */
     PREFIX_RULE(variable),              /* TK_IDENTIFIER */
     PREFIX_RULE(string),                /* TK_STRING */
     PREFIX_RULE(number),                /* TK_NUMBER */
@@ -767,7 +788,7 @@ static void parsePrecedence(ProgramCompiler *compiler, Precedence precedence) {
     }
 
     /* Checks if the left side is assignable */
-    bool canAssign = precedence <= PREC_ASSIGN;
+    bool canAssign = precedence <= PREC_TERNARY;
     prefixRule(compiler, canAssign);
 
     /* Looks for an infix parser for the next token */

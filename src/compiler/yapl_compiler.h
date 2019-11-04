@@ -15,9 +15,10 @@ ObjFunction *compile(VM *vm, const char *source);
 
 /* Compilation error messages */
 /* Expressions */
-#define GRP_EXPR_ERR  "Expected ')' after expression."
-#define EXPR_ERR      "Expected expression."
-#define EXPR_STMT_ERR "Expected a ';' after expression."
+#define GRP_EXPR_ERR     "Expected ')' after expression."
+#define TERNARY_EXPR_ERR "Expected a ':' after first branch of ternary operator."
+#define EXPR_ERR         "Expected expression."
+#define EXPR_STMT_ERR    "Expected a ';' after expression."
 
 /* Conditionals and Loops */
 #define IF_STMT_ERR       "Expected a '{' after 'if' condition."
