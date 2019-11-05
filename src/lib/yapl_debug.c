@@ -133,6 +133,10 @@ int disassembleInstruction(BytecodeChunk *bytecodeChunk, int offset) {
             return simpleInstruction("OP_TRUE", offset);
         case OP_NULL:
             return simpleInstruction("OP_NULL", offset);
+        case OP_AND:
+            return simpleInstruction("OP_AND", offset);
+        case OP_OR:
+            return simpleInstruction("OP_OR", offset);
         case OP_NOT:
             return simpleInstruction("OP_NOT", offset);
         case OP_EQUAL:
@@ -153,6 +157,10 @@ int disassembleInstruction(BytecodeChunk *bytecodeChunk, int offset) {
             return simpleInstruction("OP_MOD", offset);
         case OP_DIVIDE:
             return simpleInstruction("OP_DIVIDE", offset);
+        case OP_DECREMENT:
+            return simpleInstruction("OP_DECREMENT", offset);
+        case OP_INCREMENT:
+            return simpleInstruction("OP_INCREMENT", offset);
         case OP_DEFINE_GLOBAL:
             return constantInstruction("OP_DEFINE_GLOBAL", bytecodeChunk, offset);
         case OP_GET_GLOBAL:
