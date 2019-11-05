@@ -115,7 +115,7 @@ ObjFunction *newFunction(VM *vm) {
  * Pushes a value to the YAPL's virtual machine stack.
  */
 bool push(VM *vm, Value value) {
-    if (STACK_COUNT(vm) > VM_STACK_MAX) {
+    if (STACK_COUNT(vm) > VM_STACK_MAX - 1) {
         VMError(vm, STACK_OVERFLOW);
         return false;
     }
