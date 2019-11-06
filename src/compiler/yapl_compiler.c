@@ -1028,8 +1028,14 @@ static void switchStatement(ProgramCompiler *compiler) {
  */
 static void whileStatement(ProgramCompiler *compiler) {
     Parser *parser = compiler->parser;
-    int loopStart = currentBytecodeChunk()->count; /* Loop entry point */
-    expression(compiler);                          /* Compiles condition */
+
+    /* Loop's control flow marks */
+    int surroundingLoopStart = parser->innermostLoopStart;
+    int surroundingLoopScopeDepth = parser->innermostLoopScopeDepth;
+    parser->innermostLoopStart = currentBytecodeChunk()->count;
+    parser->innermostLoopScopeDepth = functionCompiler->scopeDepth;
+
+    expression(compiler); /* Compiles the loop condition */
     consume(compiler, TK_LEFT_BRACE, WHILE_STMT_ERR);
 
     int exitJump = emitJump(parser, OP_JUMP_IF_FALSE);
@@ -1040,9 +1046,13 @@ static void whileStatement(ProgramCompiler *compiler) {
     block(compiler);
     endScope(parser);
 
-    emitLoop(compiler, loopStart);
+    /* Emits the loop and patches the next jump */
+    emitLoop(compiler, parser->innermostLoopStart);
     patchJump(compiler, exitJump);
     emitByte(parser, OP_POP);
+
+    parser->innermostLoopStart = surroundingLoopStart;
+    parser->innermostLoopScopeDepth = surroundingLoopScopeDepth;
 }
 
 /**
@@ -1061,6 +1071,7 @@ static void forStatement(ProgramCompiler *compiler) {
         expressionStatement(compiler); /* Expression initializer */
     }
 
+    /* Loop's control flow marks */
     int surroundingLoopStart = parser->innermostLoopStart;
     int surroundingLoopScopeDepth = parser->innermostLoopScopeDepth;
     parser->innermostLoopStart = currentBytecodeChunk()->count;
