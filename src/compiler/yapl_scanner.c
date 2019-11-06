@@ -171,7 +171,17 @@ static TokenType findType(Scanner *scanner) {
         case 'i':
             return checkKeyword(1, 1, "f", TK_IF, scanner);
         case 'n':
-            return checkKeyword(1, 3, "ull", TK_NULL, scanner);
+            if (scanner->current - scanner->start > 1) {
+                switch (scanner->start[1]) {
+                    case 'e':
+                        return checkKeyword(2, 2, "xt", TK_NEXT, scanner);
+                    case 'u':
+                        return checkKeyword(2, 2, "ll", TK_NULL, scanner);
+                    default:
+                        break;
+                }
+            }
+            break;
         case 'o':
             return checkKeyword(1, 1, "r", TK_OR, scanner);
         case 'r':
@@ -210,7 +220,7 @@ static TokenType findType(Scanner *scanner) {
 
             if (length > 1) {
                 switch (current[1]) {
-                    case 'h':
+                    case 'h': {
                         if (length > 2) {
                             switch (current[2]) {
                                 case 'e':
@@ -221,6 +231,7 @@ static TokenType findType(Scanner *scanner) {
                                     break;
                             }
                         }
+                    }
                     default:
                         break;
                 }

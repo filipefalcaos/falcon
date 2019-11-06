@@ -41,7 +41,8 @@ statement -> expression_statement
           | while_statement
           | if_statement
           | switch_statement
-          | return_statement 
+          | next_statement
+          | return_statement
           | block ;
 
 expression_statement -> expression ";" ;
@@ -52,6 +53,7 @@ if_statement         -> ( "if" | "unless" ) expression block ( "else" ( block | 
 switch_statement     -> "switch" expression "{" switch_case* else_case? "}" ;
 switch_case          -> "when" expression "->" statement* ;
 else_case            -> "else" "->" statement* ;
+next_statement       -> "next" ";" ;
 return_statement     -> "return" expression? ";" ;
 block                -> "{" declaration* "}" ;
 ```

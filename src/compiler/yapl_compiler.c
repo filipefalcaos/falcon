@@ -18,6 +18,8 @@
 typedef struct {
     Token current;
     Token previous;
+    int innermostLoopStart;
+    int innermostLoopScopeDepth;
     bool hadError;
     bool panicMode;
 } Parser;
@@ -88,6 +90,16 @@ FunctionCompiler *functionCompiler = NULL;
  * Returns the compiling bytecode chunk.
  */
 static BytecodeChunk *currentBytecodeChunk() { return &functionCompiler->function->bytecodeChunk; }
+
+/**
+ * Initializes a given Parser instance as error-free and with no loops.
+ */
+static void initParser(Parser *parser) {
+    parser->innermostLoopStart = -1;
+    parser->innermostLoopScopeDepth = 0;
+    parser->hadError = false;
+    parser->panicMode = false;
+}
 
 /**
  * Presents a syntax/compiler error to the programmer.
@@ -754,6 +766,7 @@ ParseRule rules[] = {
     EMPTY_RULE,                         /* TK_FOR */
     EMPTY_RULE,                         /* TK_FUNCTION */
     EMPTY_RULE,                         /* TK_IF */
+    EMPTY_RULE,                         /* TK_NEXT */
     PREFIX_RULE(literal),               /* TK_NULL */
     EMPTY_RULE,                         /* TK_RETURN */
     EMPTY_RULE,                         /* TK_SUPER */
@@ -1048,10 +1061,13 @@ static void forStatement(ProgramCompiler *compiler) {
         expressionStatement(compiler); /* Expression initializer */
     }
 
-    int loopStart = currentBytecodeChunk()->count; /* Loop entry point */
-    int exitJump = -1;
+    int surroundingLoopStart = parser->innermostLoopStart;
+    int surroundingLoopScopeDepth = parser->innermostLoopScopeDepth;
+    parser->innermostLoopStart = currentBytecodeChunk()->count;
+    parser->innermostLoopScopeDepth = functionCompiler->scopeDepth;
 
     /* Compiles the conditional clause */
+    int exitJump = -1;
     if (!match(compiler, TK_SEMICOLON)) {
         expression(compiler);
         consume(compiler, TK_SEMICOLON, FOR_STMT_COND_ERR);
@@ -1066,29 +1082,48 @@ static void forStatement(ProgramCompiler *compiler) {
         expression(compiler);
         emitByte(parser, OP_POP); /* Pops increment */
         consume(compiler, TK_LEFT_BRACE, FOR_STMT_INC_ERR);
-        emitLoop(compiler, loopStart);
-        loopStart = incrementStart;
+        emitLoop(compiler, parser->innermostLoopStart);
+        parser->innermostLoopStart = incrementStart;
         patchJump(compiler, bodyJump);
     }
 
     block(compiler); /* Compiles the "for" block */
 
-    emitLoop(compiler, loopStart);
+    emitLoop(compiler, parser->innermostLoopStart);
     if (exitJump != -1) {
         patchJump(compiler, exitJump);
         emitByte(parser, OP_POP); /* Pops condition */
     }
 
+    parser->innermostLoopStart = surroundingLoopStart;
+    parser->innermostLoopScopeDepth = surroundingLoopScopeDepth;
     endScope(parser); /* Ends the loop scope */
 }
 
+/**
+ * Compiles a "next" control flow statement, advancing to the next iteration of a loop and
+ * discarding locals created in the loop.
+ */
+static void nextStatement(ProgramCompiler *compiler) {
+    Parser *parser = compiler->parser;
+    if (parser->innermostLoopStart == -1) /* Is outside of a loop body? */
+        compilerError(compiler, &parser->previous, NEXT_LOOP_ERR);
+    consume(compiler, TK_SEMICOLON, NEXT_STMT_ERR);
+
+    /* Discards locals created in loop */
+    for (int i = functionCompiler->localCount - 1;
+         i >= 0 && functionCompiler->locals[i].depth > parser->innermostLoopScopeDepth; i--) {
+        emitByte(parser, OP_POP);
+    }
+
+    emitLoop(compiler, parser->innermostLoopStart); /* Jumps to top of current innermost loop */
+}
 
 /**
  * Compiles a "return" statement.
  */
 static void returnStatement(ProgramCompiler *compiler) {
     Parser *parser = compiler->parser;
-
     if (functionCompiler->type == TYPE_SCRIPT) /* Checks if in top level code */
         compilerError(compiler, &parser->previous, RETURN_TOP_LEVEL_ERR);
 
@@ -1113,6 +1148,8 @@ static void statement(ProgramCompiler *compiler) {
         whileStatement(compiler);
     } else if (match(compiler, TK_FOR)) {
         forStatement(compiler);
+    } else if (match(compiler, TK_NEXT)) {
+        nextStatement(compiler);
     } else if (match(compiler, TK_RETURN)) {
         returnStatement(compiler);
     } else if (match(compiler, TK_LEFT_BRACE)) {
@@ -1171,19 +1208,16 @@ static void declaration(ProgramCompiler *compiler) {
  * recursive descent parser that associates semantics with tokens instead of grammar rules.
  */
 ObjFunction *compile(VM *vm, const char *source) {
-    Scanner scanner;
     Parser parser;
+    Scanner scanner;
     ProgramCompiler programCompiler;
     FunctionCompiler funCompiler;
 
-    /* Inits the compiler */
+    /* Inits the parser, scanner, and compiler */
+    initParser(&parser);
     initScanner(source, &scanner);
     initProgramCompiler(&programCompiler, vm, &parser, &scanner);
     initCompiler(&programCompiler, &funCompiler, TYPE_SCRIPT);
-
-    /* No panic mode yet */
-    programCompiler.parser->hadError = false;
-    programCompiler.parser->panicMode = false;
 
     advance(&programCompiler);                 /* Get the first token */
     while (!match(&programCompiler, TK_EOF)) { /* Main compiler loop */

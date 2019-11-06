@@ -30,6 +30,8 @@ ObjFunction *compile(VM *vm, const char *source);
 #define WHILE_STMT_ERR    "Expected a '{' after 'while' condition."
 #define FOR_STMT_COND_ERR "Expected a ';' after 'for' loop condition."
 #define FOR_STMT_INC_ERR  "Expected a '{' after an increment clause."
+#define NEXT_STMT_ERR     "Expected a ';' after 'next' statement."
+#define NEXT_LOOP_ERR     "Cannot have 'next' statement outside of a loop body."
 
 /* Variables */
 #define RED_INIT_ERR   "Cannot read variable in its own initializer."

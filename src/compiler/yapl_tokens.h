@@ -53,6 +53,7 @@ typedef enum {
     TK_FOR,
     TK_FUNCTION,
     TK_IF,
+    TK_NEXT,
     TK_NULL,
     TK_RETURN,
     TK_SUPER,
