@@ -773,7 +773,6 @@ ParseRule rules[] = {
     EMPTY_RULE,                         /* TK_SWITCH */
     EMPTY_RULE,                         /* TK_THIS */
     PREFIX_RULE(literal),               /* TK_TRUE */
-    EMPTY_RULE,                         /* TK_UNLESS */
     EMPTY_RULE,                         /* TK_VAR */
     EMPTY_RULE,                         /* TK_WHEN */
     EMPTY_RULE,                         /* TK_WHILE */

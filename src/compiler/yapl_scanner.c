@@ -210,8 +210,6 @@ static TokenType findType(Scanner *scanner) {
                 }
             }
             break;
-        case 'u':
-            return checkKeyword(1, 5, "nless", TK_UNLESS, scanner);
         case 'v':
             return checkKeyword(1, 2, "ar", TK_VAR, scanner);
         case 'w': {
