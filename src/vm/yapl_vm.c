@@ -393,9 +393,19 @@ static ResultCode run(VM *vm) {
             case OP_MOD:
                 BINARY_OP(vm, %, NUM_VAL, int);
                 break;
-            case OP_DIVIDE:
-                BINARY_OP(vm, /, NUM_VAL, double);
+            case OP_DIVIDE: {
+                if (!IS_NUM(peek(vm, 0)) || !IS_NUM(peek(vm, 1))) {
+                    VMError(vm, OPR_NOT_NUM_ERR);
+                    return RUNTIME_ERROR;
+                } else if (AS_NUM(peek(vm, 0)) == 0) {
+                    VMError(vm, DIV_ZERO_ERR);
+                    return RUNTIME_ERROR;
+                }
+
+                double a = AS_NUM(pop(vm));
+                vm->stackTop[-1] = NUM_VAL(AS_NUM(vm->stackTop[-1]) / a);
                 break;
+            }
 
             /* Variable operations */
             case OP_DECREMENT:

@@ -55,11 +55,11 @@ ObjFunction *newFunction(VM *vm);
     "Unknown opcode %d. This is most likely a bug in YAPL itself. Please provide a bug report."
 #define STACK_OVERFLOW      "Stack overflow."
 #define UNDEF_VAR_ERR       "Undefined variable '%s'."
-#define GLB_VAR_REDECL_ERR  "Global variable '%s' already declared."
 #define ARGS_COUNT_ERR      "Expected %d arguments, but got %d."
 #define ARGS_TYPE_ERR       "Expected argument %d to be a %s."
 #define VALUE_NOT_CALL_ERR  "Cannot call value. Only functions and classes are callable values."
 #define OPR_NOT_NUM_ERR     "Operand must be a number."
 #define OPR_NOT_NUM_STR_ERR "Operands must be two numbers or two strings."
+#define DIV_ZERO_ERR        "Cannot perform a division by zero."
 
 #endif // YAPL_VM_H
