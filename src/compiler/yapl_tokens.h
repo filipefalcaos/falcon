@@ -35,8 +35,6 @@ typedef enum {
     TK_GREATER_EQUAL,
     TK_LESS,
     TK_LESS_EQUAL,
-    TK_DECREMENT,
-    TK_INCREMENT,
     TK_AND, /* Also a keyword */
     TK_OR,  /* Also a keyword */
     TK_TERNARY,

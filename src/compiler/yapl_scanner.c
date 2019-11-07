@@ -320,14 +320,9 @@ Token scanToken(Scanner *scanner) {
         case '.':
             return makeToken(TK_DOT, scanner);
         case '-':
-            if (match('-', scanner))
-                return makeToken(TK_DECREMENT, scanner);
-            else if (match('>', scanner))
-                return makeToken(TK_ARROW, scanner);
-            else
-                return makeToken(TK_MINUS, scanner);
+            return makeToken(match('>', scanner) ? TK_ARROW : TK_MINUS, scanner);
         case '+':
-            return makeToken(match('+', scanner) ? TK_INCREMENT : TK_PLUS, scanner);
+            return makeToken(TK_PLUS, scanner);
         case '/':
             return makeToken(TK_DIV, scanner);
         case '*':

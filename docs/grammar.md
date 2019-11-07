@@ -79,7 +79,7 @@ comparison -> addition ( ( ">" | ">=" | "<" | "<=" ) addition )* ;
 addition       -> multiplication ( ( "-" | "+" ) multiplication )* ;
 multiplication -> unary ( ( "/" | "*" | "%" ) unary )* ;
 
-unary   -> ( "!" | "-" | "--" | "++" ) unary | call ;
+unary   -> ( "!" | "-" ) unary | call ;
 call    -> primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
 primary -> "true" | "false" | "null" | "this" 
         | NUMBER | STRING | IDENTIFIER | "(" expression ")"

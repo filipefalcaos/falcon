@@ -35,7 +35,7 @@ typedef enum {
     PREC_COMPARE, /* '<', '>', '<=', '>=' */
     PREC_TERM,    /* '+', '-' */
     PREC_FACTOR,  /* '*', '/', '%' */
-    PREC_UNARY,   /* '!', '-', '++', '--' */
+    PREC_UNARY,   /* '!', '-' */
     PREC_POSTFIX  /* '.', '()', '[]' */
 } Precedence;
 
@@ -662,41 +662,6 @@ static void variable(ProgramCompiler *compiler, bool canAssign) {
 }
 
 /**
- * Handles a prefix '++' or '--' operator.
- */
-static void prefix(ProgramCompiler *compiler, bool canAssign) {
-    Parser *parser = compiler->parser;
-    TokenType operatorType = parser->previous.type;
-    Token name = parser->current;
-
-    consume(compiler, TK_IDENTIFIER, VAR_NAME_ERR);  /* Variable name expected */
-    namedVariable(compiler, parser->previous, true); /* Loads variable */
-
-    switch (operatorType) { /* Gets prefix operation */
-        case TK_INCREMENT:
-            emitByte(parser, OP_INCREMENT);
-            break;
-        case TK_DECREMENT:
-            emitByte(parser, OP_DECREMENT);
-            break;
-        default:
-            return;
-    }
-
-    int index = resolveLocal(compiler, functionCompiler, &name);
-    uint8_t setOp;
-
-    if (index != -1) { /* Local variable */
-        setOp = OP_SET_LOCAL;
-    } else { /* Global variable */
-        index = identifierConstant(compiler, &name);
-        setOp = OP_SET_GLOBAL;
-    }
-
-    emitBytes(parser, setOp, (uint8_t) index);
-}
-
-/**
  * Handles a unary expression by compiling the operand and then emitting the bytecode to perform
  * the unary operation itself.
  */
@@ -752,8 +717,6 @@ ParseRule rules[] = {
     INFIX_RULE(binary, PREC_COMPARE),   /* TK_GREATER_EQUAL */
     INFIX_RULE(binary, PREC_COMPARE),   /* TK_LESS */
     INFIX_RULE(binary, PREC_COMPARE),   /* TK_LESS_EQUAL */
-    PREFIX_RULE(prefix),                /* TK_DECREMENT */
-    PREFIX_RULE(prefix),                /* TK_INCREMENT */
     INFIX_RULE(and_, PREC_AND),         /* TK_AND */
     INFIX_RULE(or_, PREC_OR),           /* TK_OR */
     INFIX_RULE(ternary, PREC_TERNARY),  /* TK_TERNARY */
