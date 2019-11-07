@@ -34,8 +34,6 @@ typedef enum {
     OP_MULTIPLY, /* "*" operator */
 
     /* Variable operations */
-    OP_DECREMENT,     /* "--" operator */
-    OP_INCREMENT,     /* "++" operator */
     OP_DEFINE_GLOBAL, /* Define global variable */
     OP_GET_GLOBAL,    /* Get global variable value */
     OP_SET_GLOBAL,    /* Set global variable value */

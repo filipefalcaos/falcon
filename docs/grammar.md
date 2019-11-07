@@ -68,7 +68,7 @@ precedence levels are explicit in the grammar by setting separate rules:
 
 ```
 expression -> assignment ;
-assignment -> ( call "." )? IDENTIFIER "=" assignment
+assignment -> ( call "." )? IDENTIFIER ( "=" | "+=" | "-=" | "*=" | "/=" | "%=" ) assignment
            | logic_or;
 
 logic_or   -> logic_and ( "or" logic_and )* ;

@@ -287,17 +287,6 @@ static ResultCode run(VM *vm) {
         vm->stackTop[-1] = valueType((type) a op b);        \
     } while (false)
 
-/* Performs a prefix (increment or decrement) operation of the 'op' operator on the element on the
- * top of the YAPL VM's stack and 1. Then, sets the result on the top of the stack */
-#define PREFIX_OP(vm, valueType, op)                                 \
-    do {                                                             \
-        if (!IS_NUM(peek(vm, 0))) {                                  \
-            VMError(vm, OPR_NOT_NUM_ERR);                            \
-            return RUNTIME_ERROR;                                    \
-        }                                                            \
-        vm->stackTop[-1] = valueType(AS_NUM(vm->stackTop[-1]) op 1); \
-    } while (false)
-
 #ifdef YAPL_DEBUG_TRACE_EXECUTION
     printTraceExecutionHeader();
 #endif
@@ -408,12 +397,6 @@ static ResultCode run(VM *vm) {
             }
 
             /* Variable operations */
-            case OP_DECREMENT:
-                PREFIX_OP(vm, NUM_VAL, -);
-                break;
-            case OP_INCREMENT:
-                PREFIX_OP(vm, NUM_VAL, +);
-                break;
             case OP_DEFINE_GLOBAL: {
                 ObjString *name = READ_STRING();
                 tableSet(&vm->globals, name, peek(vm, 0));

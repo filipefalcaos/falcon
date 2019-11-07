@@ -23,10 +23,15 @@ typedef enum {
 
     /* Operators */
     TK_MINUS,
+    TK_MINUS_EQUAL,
     TK_PLUS,
+    TK_PLUS_EQUAL,
     TK_DIV,
+    TK_DIV_EQUAL,
     TK_MOD,
+    TK_MOD_EQUAL,
     TK_MULTIPLY,
+    TK_MULTIPLY_EQUAL,
     TK_NOT,
     TK_NOT_EQUAL,
     TK_EQUAL,

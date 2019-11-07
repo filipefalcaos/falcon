@@ -27,16 +27,16 @@ typedef struct {
 /* YAPL's precedence levels, from lowest to highest */
 typedef enum {
     PREC_NONE,
-    PREC_ASSIGN,  /* '=' */
-    PREC_TERNARY, /* '?:' */
-    PREC_OR,      /* 'or' */
-    PREC_AND,     /* 'and' */
-    PREC_EQUAL,   /* '==', '!=' */
-    PREC_COMPARE, /* '<', '>', '<=', '>=' */
-    PREC_TERM,    /* '+', '-' */
-    PREC_FACTOR,  /* '*', '/', '%' */
-    PREC_UNARY,   /* '!', '-' */
-    PREC_POSTFIX  /* '.', '()', '[]' */
+    PREC_ASSIGN,  /* 1: "=", "-=", "+=", "*=", "/=", "%=" */
+    PREC_TERNARY, /* 2: "?:" */
+    PREC_OR,      /* 3: "or" */
+    PREC_AND,     /* 4: "and" */
+    PREC_EQUAL,   /* 5: "==", "!=" */
+    PREC_COMPARE, /* 6: "<", ">", "<=", ">=" */
+    PREC_TERM,    /* 7: "+", "-" */
+    PREC_FACTOR,  /* 8: "*", "/", "%" */
+    PREC_UNARY,   /* 9: "not", "-" */
+    PREC_POSTFIX  /* 10: ".", "()", "[]" */
 } Precedence;
 
 /* Local variable representation */
@@ -630,14 +630,14 @@ static void string(ProgramCompiler *compiler, bool canAssign) {
  */
 static void namedVariable(ProgramCompiler *compiler, Token name, bool canAssign) {
     uint8_t getOpcode, setOpcode;
+    Parser *parser = compiler->parser;
     int arg = resolveLocal(compiler, functionCompiler, &name);
 
     /* Finds the current scope */
     if (arg != -1) { /* Local variable? */
         getOpcode = OP_GET_LOCAL;
         setOpcode = OP_SET_LOCAL;
-    } else if ((arg = resolveUpvalue(compiler, functionCompiler, &name)) !=
-               -1) { /* Upvalue? */
+    } else if ((arg = resolveUpvalue(compiler, functionCompiler, &name)) != -1) { /* Upvalue? */
         getOpcode = OP_GET_UPVALUE;
         setOpcode = OP_SET_UPVALUE;
     } else { /* Global variable */
@@ -646,11 +646,37 @@ static void namedVariable(ProgramCompiler *compiler, Token name, bool canAssign)
         setOpcode = OP_SET_GLOBAL;
     }
 
-    if (canAssign && match(compiler, TK_EQUAL)) {
+    /* Compiles variable assignments or access */
+    if (canAssign && match(compiler, TK_EQUAL)) { /* a = ... */
         expression(compiler);
         emitBytes(compiler->parser, setOpcode, (uint8_t) arg);
-    } else {
-        emitBytes(compiler->parser, getOpcode, (uint8_t) arg);
+    } else if (canAssign && match(compiler, TK_MINUS_EQUAL)) { /* a -= ... */
+        emitBytes(parser, getOpcode, (uint8_t) arg);
+        expression(compiler);
+        emitByte(parser, OP_SUBTRACT);
+        emitBytes(parser, setOpcode, (uint8_t) arg);
+    } else if (canAssign && match(compiler, TK_PLUS_EQUAL)) { /* a += ... */
+        emitBytes(parser, getOpcode, (uint8_t) arg);
+        expression(compiler);
+        emitByte(parser, OP_ADD);
+        emitBytes(parser, setOpcode, (uint8_t) arg);
+    } else if (canAssign && match(compiler, TK_DIV_EQUAL)) { /* a /= ... */
+        emitBytes(parser, getOpcode, (uint8_t) arg);
+        expression(compiler);
+        emitByte(parser, OP_DIVIDE);
+        emitBytes(parser, setOpcode, (uint8_t) arg);
+    } else if (canAssign && match(compiler, TK_MOD_EQUAL)) { /* a %= ... */
+        emitBytes(parser, getOpcode, (uint8_t) arg);
+        expression(compiler);
+        emitByte(parser, OP_MOD);
+        emitBytes(parser, setOpcode, (uint8_t) arg);
+    } else if (canAssign && match(compiler, TK_MULTIPLY_EQUAL)) { /* a *= ... */
+        emitBytes(parser, getOpcode, (uint8_t) arg);
+        expression(compiler);
+        emitByte(parser, OP_MULTIPLY);
+        emitBytes(parser, setOpcode, (uint8_t) arg);
+    } else {  /* Access variable */
+        emitBytes(parser, getOpcode, (uint8_t) arg);
     }
 }
 
@@ -705,10 +731,15 @@ ParseRule rules[] = {
     EMPTY_RULE,                         /* TK_SEMICOLON */
     EMPTY_RULE,                         /* TK_ARROW */
     RULE(unary, binary, PREC_TERM),     /* TK_MINUS */
+    EMPTY_RULE,                         /* TK_MINUS_EQUAL */
     INFIX_RULE(binary, PREC_TERM),      /* TK_PLUS */
+    EMPTY_RULE,                         /* TK_PLUS_EQUAL */
     INFIX_RULE(binary, PREC_FACTOR),    /* TK_DIV */
+    EMPTY_RULE,                         /* TK_DIV_EQUAL */
     INFIX_RULE(binary, PREC_FACTOR),    /* TK_MOD */
+    EMPTY_RULE,                         /* TK_MOD_EQUAL */
     INFIX_RULE(binary, PREC_FACTOR),    /* TK_MULTIPLY */
+    EMPTY_RULE,                         /* TK_MULTIPLY_EQUAL */
     PREFIX_RULE(unary),                 /* TK_NOT */
     INFIX_RULE(binary, PREC_EQUAL),     /* TK_NOT_EQUAL */
     EMPTY_RULE,                         /* TK_EQUAL */
