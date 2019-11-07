@@ -175,6 +175,8 @@ static TokenType findType(Scanner *scanner) {
                 switch (scanner->start[1]) {
                     case 'e':
                         return checkKeyword(2, 2, "xt", TK_NEXT, scanner);
+                    case 'o':
+                        return checkKeyword(2, 1, "t", TK_NOT, scanner);
                     case 'u':
                         return checkKeyword(2, 2, "ll", TK_NULL, scanner);
                     default:
@@ -330,7 +332,8 @@ Token scanToken(Scanner *scanner) {
         case '%':
             return makeToken(TK_MOD, scanner);
         case '!':
-            return makeToken(match('=', scanner) ? TK_NOT_EQUAL : TK_NOT, scanner);
+            if (match('=', scanner)) /* Logical not operator is "not" instead of "!" */
+                return makeToken(TK_NOT_EQUAL, scanner);
         case '=':
             return makeToken(match('=', scanner) ? TK_EQUAL_EQUAL : TK_EQUAL, scanner);
         case '<':
