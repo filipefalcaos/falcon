@@ -275,17 +275,55 @@ static ResultCode run(VM *vm) {
 #define READ_CONSTANT() (frame->closure->function->bytecodeChunk.constants.values[READ_BYTE()])
 #define READ_STRING()   AS_STRING(READ_CONSTANT())
 
-/* Performs a binary operation of the 'op' operator on the two elements on the top of the YAPL VM's
- * stack. Then, sets the result on the top of the stack */
-#define BINARY_OP(vm, op, valueType, type)                  \
+/* Checks if the two elements at the top of the YAPL VM's stack are numerical Values. If not, a
+ * runtime error is returned */
+#define ASSERT_TOP2_NUM(vm)                                 \
     do {                                                    \
         if (!IS_NUM(peek(vm, 0)) || !IS_NUM(peek(vm, 1))) { \
             VMError(vm, OPR_NOT_NUM_ERR);                   \
             return RUNTIME_ERROR;                           \
         }                                                   \
-        type b = AS_NUM(pop(vm));                           \
-        type a = AS_NUM(vm->stackTop[-1]);                  \
-        vm->stackTop[-1] = valueType((type) a op b);        \
+    } while (false)
+
+/* Checks if the element at the top of the YAPL VM's stack is a numerical Value. If not, a runtime
+ * error is returned */
+#define ASSERT_TOP_NUM(vm)                \
+    do {                                  \
+        if (!IS_NUM(peek(vm, 0))) {       \
+            VMError(vm, OPR_NOT_NUM_ERR); \
+            return RUNTIME_ERROR;         \
+        }                                 \
+    } while (false)
+
+/* Checks if the element at the top of the YAPL VM's stack is not zero. If not, a runtime error is
+ * returned */
+#define ASSERT_TOP_NOT_0(vm)            \
+    do {                                \
+        if (AS_NUM(peek(vm, 0)) == 0) { \
+            VMError(vm, DIV_ZERO_ERR);  \
+            return RUNTIME_ERROR;       \
+        }                               \
+    } while (false)
+
+/* Performs a binary operation of the 'op' operator on the two elements on the top of the YAPL VM's
+ * stack. Then, sets the result on the top of the stack */
+#define BINARY_OP(vm, op, valueType)          \
+    do {                                      \
+        ASSERT_TOP2_NUM(vm);                  \
+        double b = AS_NUM(pop(vm));           \
+        double a = AS_NUM(vm->stackTop[-1]);  \
+        vm->stackTop[-1] = valueType(a op b); \
+    } while (false)
+
+/* Performs a division operation (integer mod or double division) on the two elements on the top of
+ * the YAPL VM's stack. Then, sets the result on the top of the stack */
+#define DIVISION_OP(vm, op, type)           \
+    do {                                    \
+        ASSERT_TOP2_NUM(vm);                \
+        ASSERT_TOP_NOT_0(vm);               \
+        type b = AS_NUM(pop(vm));           \
+        type a = AS_NUM(vm->stackTop[-1]);  \
+        vm->stackTop[-1] = NUM_VAL(a op b); \
     } while (false)
 
 #ifdef YAPL_DEBUG_TRACE_EXECUTION
@@ -348,10 +386,10 @@ static ResultCode run(VM *vm) {
                 break;
             }
             case OP_GREATER:
-                BINARY_OP(vm, >, BOOL_VAL, double);
+                BINARY_OP(vm, >, BOOL_VAL);
                 break;
             case OP_LESS:
-                BINARY_OP(vm, <, BOOL_VAL, double);
+                BINARY_OP(vm, <, BOOL_VAL);
                 break;
 
             /* Arithmetic operations */
@@ -368,40 +406,24 @@ static ResultCode run(VM *vm) {
                 break;
             }
             case OP_SUBTRACT:
-                BINARY_OP(vm, -, NUM_VAL, double);
+                BINARY_OP(vm, -, NUM_VAL);
                 break;
             case OP_NEGATE:
-                if (!IS_NUM(peek(vm, 0))) {
-                    VMError(vm, OPR_NOT_NUM_ERR);
-                    return RUNTIME_ERROR;
-                }
+                ASSERT_TOP_NUM(vm);
                 vm->stackTop[-1] = NUM_VAL(-AS_NUM(vm->stackTop[-1]));
                 break;
             case OP_MULTIPLY:
-                BINARY_OP(vm, *, NUM_VAL, double);
+                BINARY_OP(vm, *, NUM_VAL);
                 break;
             case OP_MOD:
-                BINARY_OP(vm, %, NUM_VAL, int);
+                DIVISION_OP(vm, %, int);
                 break;
             case OP_DIVIDE: {
-                if (!IS_NUM(peek(vm, 0)) || !IS_NUM(peek(vm, 1))) {
-                    VMError(vm, OPR_NOT_NUM_ERR);
-                    return RUNTIME_ERROR;
-                } else if (AS_NUM(peek(vm, 0)) == 0) {
-                    VMError(vm, DIV_ZERO_ERR);
-                    return RUNTIME_ERROR;
-                }
-
-                double a = AS_NUM(pop(vm));
-                vm->stackTop[-1] = NUM_VAL(AS_NUM(vm->stackTop[-1]) / a);
+                DIVISION_OP(vm, /, double);
                 break;
             }
             case OP_POW: {
-                if (!IS_NUM(peek(vm, 0)) || !IS_NUM(peek(vm, 1))) {
-                    VMError(vm, OPR_NOT_NUM_ERR);
-                    return RUNTIME_ERROR;
-                }
-
+                ASSERT_TOP2_NUM(vm);
                 double a = AS_NUM(pop(vm));
                 vm->stackTop[-1] = NUM_VAL(YAPL_POW(AS_NUM(vm->stackTop[-1]), a));
                 break;
@@ -531,8 +553,11 @@ static ResultCode run(VM *vm) {
 #undef READ_SHORT
 #undef READ_CONSTANT
 #undef READ_STRING
+#undef ASSERT_TOP2_NUM
+#undef ASSERT_TOP_NUM
+#undef ASSERT_TOP_NOT_0
 #undef BINARY_OP
-#undef PREFIX_OP
+#undef DIVISION_OP
 }
 
 /**
