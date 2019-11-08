@@ -126,9 +126,11 @@ static void processArgs(VM *vm, int argc, char **argv) {
     if (!onlyInfo && !onlyHelp) {
         if (argv[optind]) {
             vm->fileName = argv[optind];
+            vm->isREPL = false;
             runFile(vm, argv[1]); /* Interprets the input file */
         } else {
             vm->fileName = "repl";
+            vm->isREPL = true;
             if (inputCommand != NULL) {
                 interpret(vm, inputCommand); /* Interprets the command */
             } else {

@@ -56,6 +56,7 @@ void initVM(VM *vm) {
     initTable(&vm->strings);
     initTable(&vm->globals);
     vm->fileName = NULL;
+    vm->isREPL = false;
     vm->objects = NULL;
     defineNatives(vm); /* Set native functions */
 }
@@ -541,6 +542,15 @@ static ResultCode run(VM *vm) {
             case OP_POP:
                 pop(vm);
                 break;
+            case OP_POP_EXPR: {
+                Value result = pop(vm);
+                bool isString = IS_STRING(result);
+                if (isString) printf("\"");
+                printValue(result);
+                if (isString) printf("\"");
+                printf("\n");
+                break;
+            }
 
             /* Unknown opcode */
             default:

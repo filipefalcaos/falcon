@@ -22,6 +22,7 @@ typedef struct {
 /* YAPL's virtual machine structure */
 typedef struct {
     const char *fileName;            /* The name of the running file */
+    bool isREPL;                     /* Whether is running on REPL */
     CallFrame frames[VM_FRAMES_MAX]; /* VM's call frames */
     int frameCount;                  /* Call frames count */
     ObjUpvalue *openUpvalues;        /* List of open upvalues */
