@@ -79,11 +79,12 @@ comparison -> addition ( ( ">" | ">=" | "<" | "<=" ) addition )* ;
 addition       -> multiplication ( ( "-" | "+" ) multiplication )* ;
 multiplication -> unary ( ( "/" | "*" | "%" ) unary )* ;
 
-unary   -> ( "not" | "-" ) unary | call ;
-call    -> primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
-primary -> "true" | "false" | "null" | "this" 
-        | NUMBER | STRING | IDENTIFIER | "(" expression ")"
-        | "super" "." IDENTIFIER ;
+unary    -> ( "not" | "-" ) unary | exponent ;
+exponent -> "^" exponent | call ;
+call     -> primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
+primary  -> "true" | "false" | "null" | "this" 
+         | NUMBER | STRING | IDENTIFIER | "(" expression ")"
+         | "super" "." IDENTIFIER ;
 ```
 
 ### Recurrent rules

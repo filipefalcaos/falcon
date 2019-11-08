@@ -6,6 +6,7 @@
 
 #include "yapl_vm.h"
 #include "../compiler/yapl_compiler.h"
+#include "../lib/math/yapl_math.h"
 #include "../lib/string/yapl_string.h"
 #include "../lib/yapl_error.h"
 #include "../lib/yapl_natives.h"
@@ -393,6 +394,16 @@ static ResultCode run(VM *vm) {
 
                 double a = AS_NUM(pop(vm));
                 vm->stackTop[-1] = NUM_VAL(AS_NUM(vm->stackTop[-1]) / a);
+                break;
+            }
+            case OP_POW: {
+                if (!IS_NUM(peek(vm, 0)) || !IS_NUM(peek(vm, 1))) {
+                    VMError(vm, OPR_NOT_NUM_ERR);
+                    return RUNTIME_ERROR;
+                }
+
+                double a = AS_NUM(pop(vm));
+                vm->stackTop[-1] = NUM_VAL(YAPL_POW(AS_NUM(vm->stackTop[-1]), a));
                 break;
             }
 

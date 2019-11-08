@@ -36,7 +36,8 @@ typedef enum {
     PREC_TERM,    /* 7: "+", "-" */
     PREC_FACTOR,  /* 8: "*", "/", "%" */
     PREC_UNARY,   /* 9: "not", "-" */
-    PREC_POSTFIX  /* 10: ".", "()", "[]" */
+    PREC_POW,     /* 10: "^" */
+    PREC_POSTFIX  /* 11: ".", "()", "[]" */
 } Precedence;
 
 /* Local variable representation */
@@ -499,24 +500,6 @@ static void or_(ProgramCompiler *compiler, bool canAssign) {
 }
 
 /**
- * Handles the ternary "?:" conditional operator expression.
- */
-static void ternary(ProgramCompiler *compiler, bool canAssign) {
-    Parser *parser = compiler->parser;
-
-    int ifJump = emitJump(compiler->parser, OP_JUMP_IF_FALSE); /* Jumps if the condition is false */
-    emitByte(parser, OP_POP);                                  /* Pops the condition result */
-    parsePrecedence(compiler, PREC_TERNARY);                   /* Compiles the first branch */
-    consume(compiler, TK_COLON, TERNARY_EXPR_ERR);
-
-    int elseJump = emitJump(parser, OP_JUMP); /* Jumps the second branch if first was taken */
-    patchJump(compiler, ifJump);              /* Patches the jump over the first branch */
-    emitByte(parser, OP_POP);                 /* Pops the condition result */
-    parsePrecedence(compiler, PREC_ASSIGN);   /* Compiles the second branch */
-    patchJump(compiler, elseJump);            /* Patches the jump over the second branch */
-}
-
-/**
  * Handles a binary (infix) expression, by compiling the right operand of the expression (the left
  * one was already compiled). Then, emits the bytecode instruction that performs the binary
  * operation.
@@ -577,6 +560,15 @@ static void call(ProgramCompiler *compiler, bool canAssign) {
 }
 
 /**
+ * Handles the opening parenthesis by compiling the expression between the parentheses, and then
+ * parsing the closing parenthesis.
+ */
+static void grouping(ProgramCompiler *compiler, bool canAssign) {
+    expression(compiler);
+    consume(compiler, TK_RIGHT_PAREN, GRP_EXPR_ERR);
+}
+
+/**
  * Handles a literal (booleans or null) expression by outputting the proper instruction.
  */
 static void literal(ProgramCompiler *compiler, bool canAssign) {
@@ -597,21 +589,20 @@ static void literal(ProgramCompiler *compiler, bool canAssign) {
 }
 
 /**
- * Handles the opening parenthesis by compiling the expression between the parentheses, and then
- * parsing the closing parenthesis.
- */
-static void grouping(ProgramCompiler *compiler, bool canAssign) {
-    expression(compiler);
-    consume(compiler, TK_RIGHT_PAREN, GRP_EXPR_ERR);
-}
-
-/**
  * Handles a numeric expression by converting a string to a double number and then generates the
  * code to load that value by calling "emitConstant".
  */
 static void number(ProgramCompiler *compiler, bool canAssign) {
     double value = strtod(compiler->parser->previous.start, NULL);
     emitConstant(compiler, NUM_VAL(value));
+}
+
+/**
+ * Handles a exponentiation expression.
+ */
+static void pow_(ProgramCompiler *compiler, bool canAssign) {
+    parsePrecedence(compiler, PREC_POW); /* Compiles the operand */
+    emitByte(compiler->parser, OP_POW);
 }
 
 /**
@@ -675,6 +666,11 @@ static void namedVariable(ProgramCompiler *compiler, Token name, bool canAssign)
         expression(compiler);
         emitByte(parser, OP_MULTIPLY);
         emitBytes(parser, setOpcode, (uint8_t) arg);
+    } else if (canAssign && match(compiler, TK_POW_EQUAL)) { /* a ^= ... */
+        emitBytes(parser, getOpcode, (uint8_t) arg);
+        expression(compiler);
+        emitByte(parser, OP_POW);
+        emitBytes(parser, setOpcode, (uint8_t) arg);
     } else {  /* Access variable */
         emitBytes(parser, getOpcode, (uint8_t) arg);
     }
@@ -685,6 +681,24 @@ static void namedVariable(ProgramCompiler *compiler, Token name, bool canAssign)
  */
 static void variable(ProgramCompiler *compiler, bool canAssign) {
     namedVariable(compiler, compiler->parser->previous, canAssign);
+}
+
+/**
+ * Handles the ternary "?:" conditional operator expression.
+ */
+static void ternary(ProgramCompiler *compiler, bool canAssign) {
+    Parser *parser = compiler->parser;
+
+    int ifJump = emitJump(compiler->parser, OP_JUMP_IF_FALSE); /* Jumps if the condition is false */
+    emitByte(parser, OP_POP);                                  /* Pops the condition result */
+    parsePrecedence(compiler, PREC_TERNARY);                   /* Compiles the first branch */
+    consume(compiler, TK_COLON, TERNARY_EXPR_ERR);
+
+    int elseJump = emitJump(parser, OP_JUMP); /* Jumps the second branch if first was taken */
+    patchJump(compiler, ifJump);              /* Patches the jump over the first branch */
+    emitByte(parser, OP_POP);                 /* Pops the condition result */
+    parsePrecedence(compiler, PREC_ASSIGN);   /* Compiles the second branch */
+    patchJump(compiler, elseJump);            /* Patches the jump over the second branch */
 }
 
 /**
@@ -740,6 +754,8 @@ ParseRule rules[] = {
     EMPTY_RULE,                         /* TK_MOD_EQUAL */
     INFIX_RULE(binary, PREC_FACTOR),    /* TK_MULTIPLY */
     EMPTY_RULE,                         /* TK_MULTIPLY_EQUAL */
+    INFIX_RULE(pow_, PREC_POW),         /* TK_POW */
+    EMPTY_RULE,                         /* TK_POW_EQUAL */
     PREFIX_RULE(unary),                 /* TK_NOT */
     INFIX_RULE(binary, PREC_EQUAL),     /* TK_NOT_EQUAL */
     EMPTY_RULE,                         /* TK_EQUAL */

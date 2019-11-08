@@ -336,6 +336,8 @@ Token scanToken(Scanner *scanner) {
             return makeToken(match('=', scanner) ? TK_MOD_EQUAL : TK_MOD, scanner);
         case '*':
             return makeToken(match('=', scanner) ? TK_MULTIPLY_EQUAL : TK_MULTIPLY, scanner);
+        case '^':
+            return makeToken(match('=', scanner) ? TK_POW_EQUAL : TK_POW, scanner);
         case '!':
             if (match('=', scanner)) /* Logical not operator is "not" instead of "!" */
                 return makeToken(TK_NOT_EQUAL, scanner);

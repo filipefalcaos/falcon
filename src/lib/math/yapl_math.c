@@ -5,7 +5,6 @@
  */
 
 #include "yapl_math.h"
-#include <math.h>
 
 /**
  * Gets the number of digits in an integer.

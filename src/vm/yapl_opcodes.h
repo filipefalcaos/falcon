@@ -32,6 +32,7 @@ typedef enum {
     OP_DIVIDE,   /* "/" operator */
     OP_MOD,      /* "%" operator */
     OP_MULTIPLY, /* "*" operator */
+    OP_POW,      /* "^" operator */
 
     /* Variable operations */
     OP_DEFINE_GLOBAL, /* Define global variable */

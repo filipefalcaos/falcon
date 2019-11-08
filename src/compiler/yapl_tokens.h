@@ -32,6 +32,8 @@ typedef enum {
     TK_MOD_EQUAL,
     TK_MULTIPLY,
     TK_MULTIPLY_EQUAL,
+    TK_POW,
+    TK_POW_EQUAL,
     TK_NOT,
     TK_NOT_EQUAL,
     TK_EQUAL,

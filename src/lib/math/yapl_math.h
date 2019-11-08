@@ -7,7 +7,12 @@
 #ifndef YAPL_MATH_H
 #define YAPL_MATH_H
 
+#include <math.h>
+
 /* Mathematical operations */
 int getDigits(int n);
+
+/* Computes a^b */
+#define YAPL_POW(a, b) pow(a, b)
 
 #endif // YAPL_MATH_H
