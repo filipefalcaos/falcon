@@ -25,7 +25,7 @@ static void printFunction(ObjFunction *function) {
 void printObject(Value value) {
     switch (OBJ_TYPE(value)) {
         case OBJ_STRING:
-            printf("\"%s\"", AS_CLANG_STRING(value));
+            printf("%s", AS_CLANG_STRING(value));
             break;
         case OBJ_UPVALUE:
             break; /* Upvalues cannot be printed */

@@ -63,9 +63,9 @@ static int constantInstruction(const char *name, BytecodeChunk *bytecodeChunk, i
 
     /* Prints the constant */
     printf("%-16s %4d ", name, constant);
-    if (value.type != VAL_OBJ) printf("'");
+    printf("'");
     printValue(value);
-    if (value.type != VAL_OBJ) printf("'");
+    printf("'");
     printf("\n");
     return offset + 2;
 }
@@ -79,9 +79,9 @@ static int constantInstruction16(const char *name, BytecodeChunk *bytecodeChunk,
 
     /* Prints the constant */
     printf("%-16s %4d ", name, constant);
-    if (value.type != VAL_OBJ) printf("'");
+    printf("'");
     printValue(value);
-    if (value.type != VAL_OBJ) printf("'");
+    printf("'");
     printf("\n");
     return offset + 3;
 }
