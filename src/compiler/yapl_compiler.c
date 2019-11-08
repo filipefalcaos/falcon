@@ -616,12 +616,24 @@ static void string(ProgramCompiler *compiler, bool canAssign) {
 }
 
 /**
+ * Emits the instructions for a given compound assignment, which provide a shorter syntax for
+ * assigning the result of an arithmetic operator.
+ */
+static void compoundAssignment(ProgramCompiler *compiler, uint8_t getOpcode, uint8_t setOpcode,
+                               uint8_t arg, uint8_t opcode) {
+    Parser *parser = compiler->parser;
+    emitBytes(parser, getOpcode, (uint8_t) arg);
+    expression(compiler);
+    emitByte(parser, opcode);
+    emitBytes(parser, setOpcode, (uint8_t) arg);
+}
+
+/**
  * Gets the index of a variable in the constants table and emits the the bytecode to perform the
  * load of the global/local variable.
  */
 static void namedVariable(ProgramCompiler *compiler, Token name, bool canAssign) {
     uint8_t getOpcode, setOpcode;
-    Parser *parser = compiler->parser;
     int arg = resolveLocal(compiler, functionCompiler, &name);
 
     /* Finds the current scope */
@@ -642,37 +654,19 @@ static void namedVariable(ProgramCompiler *compiler, Token name, bool canAssign)
         expression(compiler);
         emitBytes(compiler->parser, setOpcode, (uint8_t) arg);
     } else if (canAssign && match(compiler, TK_MINUS_EQUAL)) { /* a -= ... */
-        emitBytes(parser, getOpcode, (uint8_t) arg);
-        expression(compiler);
-        emitByte(parser, OP_SUBTRACT);
-        emitBytes(parser, setOpcode, (uint8_t) arg);
+        compoundAssignment(compiler, getOpcode, setOpcode, arg, OP_SUBTRACT);
     } else if (canAssign && match(compiler, TK_PLUS_EQUAL)) { /* a += ... */
-        emitBytes(parser, getOpcode, (uint8_t) arg);
-        expression(compiler);
-        emitByte(parser, OP_ADD);
-        emitBytes(parser, setOpcode, (uint8_t) arg);
+        compoundAssignment(compiler, getOpcode, setOpcode, arg, OP_ADD);
     } else if (canAssign && match(compiler, TK_DIV_EQUAL)) { /* a /= ... */
-        emitBytes(parser, getOpcode, (uint8_t) arg);
-        expression(compiler);
-        emitByte(parser, OP_DIVIDE);
-        emitBytes(parser, setOpcode, (uint8_t) arg);
+        compoundAssignment(compiler, getOpcode, setOpcode, arg, OP_DIVIDE);
     } else if (canAssign && match(compiler, TK_MOD_EQUAL)) { /* a %= ... */
-        emitBytes(parser, getOpcode, (uint8_t) arg);
-        expression(compiler);
-        emitByte(parser, OP_MOD);
-        emitBytes(parser, setOpcode, (uint8_t) arg);
+        compoundAssignment(compiler, getOpcode, setOpcode, arg, OP_MOD);
     } else if (canAssign && match(compiler, TK_MULTIPLY_EQUAL)) { /* a *= ... */
-        emitBytes(parser, getOpcode, (uint8_t) arg);
-        expression(compiler);
-        emitByte(parser, OP_MULTIPLY);
-        emitBytes(parser, setOpcode, (uint8_t) arg);
+        compoundAssignment(compiler, getOpcode, setOpcode, arg, OP_MULTIPLY);
     } else if (canAssign && match(compiler, TK_POW_EQUAL)) { /* a ^= ... */
-        emitBytes(parser, getOpcode, (uint8_t) arg);
-        expression(compiler);
-        emitByte(parser, OP_POW);
-        emitBytes(parser, setOpcode, (uint8_t) arg);
+        compoundAssignment(compiler, getOpcode, setOpcode, arg, OP_POW);
     } else {  /* Access variable */
-        emitBytes(parser, getOpcode, (uint8_t) arg);
+        emitBytes(compiler->parser, getOpcode, (uint8_t) arg);
     }
 }
 
