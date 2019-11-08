@@ -545,6 +545,7 @@ static ResultCode run(VM *vm) {
             case OP_POP_EXPR: {
                 Value result = pop(vm);
                 bool isString = IS_STRING(result);
+                printf(" => ");
                 if (isString) printf("\"");
                 printValue(result);
                 if (isString) printf("\"");
