@@ -919,7 +919,8 @@ static void funDeclaration(ProgramCompiler *compiler) {
 static void expressionStatement(ProgramCompiler *compiler) {
     expression(compiler);
     consume(compiler, TK_SEMICOLON, EXPR_STMT_ERR);
-    emitByte(compiler->parser, (compiler->vm->isREPL) ? OP_POP_EXPR : OP_POP);
+//    emitByte(compiler->parser, (compiler->vm->isREPL) ? OP_POP_EXPR : OP_POP);
+    emitByte(compiler->parser, OP_POP);
 }
 
 /**
