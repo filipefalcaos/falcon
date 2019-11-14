@@ -34,6 +34,6 @@ void freeBytecodeChunk(BytecodeChunk *bytecodeChunk);
 void writeToBytecodeChunk(BytecodeChunk *bytecodeChunk, uint8_t byte, int line);
 int getSourceLine(BytecodeChunk *bytecodeChunk, int instruction);
 int addConstant(BytecodeChunk *bytecodeChunk, Value value);
-int writeConstant(BytecodeChunk *bytecodeChunk, Value value, int line);
+int writeConstant(BytecodeChunk *bytecodeChunk, int index, int line);
 
 #endif // YAPL_BYTECODE_CHUNK_H

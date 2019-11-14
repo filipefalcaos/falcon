@@ -212,7 +212,12 @@ static uint8_t makeConstant(ProgramCompiler *compiler, Value value) {
  * checks if the constant limit was exceeded.
  */
 static void emitConstant(ProgramCompiler *compiler, Value value) {
-    emitBytes(compiler->parser, OP_CONSTANT, makeConstant(compiler, value));
+    int constant = addConstant(currentBytecodeChunk(), value);
+    if (constant > UINT16_MAX) {
+        compilerError(compiler, &compiler->parser->previous, CONST_LIMIT_ERR);
+    } else {
+        writeConstant(currentBytecodeChunk(), constant, compiler->parser->previous.line);
+    }
 }
 
 /**

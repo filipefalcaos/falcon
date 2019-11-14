@@ -54,7 +54,7 @@ ObjFunction *compile(VM *vm, const char *source);
 #define RETURN_TOP_LEVEL_ERR "Cannot return from top level code."
 
 /* Limits */
-#define CONST_LIMIT_ERR   "Limit of 255 constants reached."
+#define CONST_LIMIT_ERR   "Limit of 65535 constants reached."
 #define LOOP_LIMIT_ERR    "Limit of 65535 instructions in loop body reached."
 #define JUMP_LIMIT_ERR    "Limit of 65535 instructions in conditional branch reached."
 #define VAR_LIMIT_ERR     "Limit of 255 local variables in scope reached."
