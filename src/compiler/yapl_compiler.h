@@ -28,8 +28,10 @@ ObjFunction *compile(VM *vm, const char *source);
 #define ARR_ELSE_ERR      "Expected a '->' after else case."
 #define STMT_SWITCH_ERR   "Cannot have statements before any switch case."
 #define WHILE_STMT_ERR    "Expected a '{' after 'while' condition."
-#define FOR_STMT_COND_ERR "Expected a ';' after 'for' loop condition."
-#define FOR_STMT_INC_ERR  "Expected a '{' after an increment clause."
+#define FOR_STMT_INIT_ERR "Expected an implicit variable declaration in the init clause."
+#define FOR_STMT_CM1_ERR  "Expected a ',' after 'for' loop init clause."
+#define FOR_STMT_CM2_ERR  "Expected a ',' after 'for' loop conditional clause."
+#define FOR_STMT_BRC_ERR  "Expected a '{' after 'for' loop increment clause."
 #define NEXT_STMT_ERR     "Expected a ';' after 'next' statement."
 #define NEXT_LOOP_ERR     "Cannot have 'next' statement outside of a loop body."
 

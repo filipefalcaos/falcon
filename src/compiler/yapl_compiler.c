@@ -420,7 +420,7 @@ static void declareVariable(ProgramCompiler *compiler) {
     if (functionCompiler->scopeDepth == 0) return; /* Globals are late bound, exit */
     Token *name = &compiler->parser->previous;
 
-    /* Verifies if variable was previously declared */
+    /* Verifies if local variable was previously declared */
     for (int i = functionCompiler->localCount - 1; i >= 0; i--) {
         Local *local = &functionCompiler->locals[i];
         if (local->depth != -1 && local->depth < functionCompiler->scopeDepth) break;
@@ -844,26 +844,31 @@ static void block(ProgramCompiler *compiler) {
 }
 
 /**
+ * Compiles the declaration of a single variable.
+ */
+static void singleVarDeclaration(ProgramCompiler *compiler) {
+    Parser *parser = compiler->parser;
+    uint8_t global = parseVariable(compiler, VAR_NAME_ERR); /* Parses a variable name */
+
+    if (match(compiler, TK_EQUAL)) {
+        expression(compiler); /* Compiles the variable initializer */
+    } else {
+        emitByte(parser, OP_NULL); /* Default variable value is "null" */
+    }
+
+    defineVariable(parser, global); /* Emits the declaration bytecode */
+}
+
+/**
  * Compiles a variable declaration list.
  */
 static void varDeclaration(ProgramCompiler *compiler) {
     Parser *parser = compiler->parser;
-
     if (!check(parser, TK_SEMICOLON)) {
         do {
-            uint8_t global = parseVariable(compiler, VAR_NAME_ERR); /* Parses a variable name */
-
-            if (match(compiler, TK_EQUAL)) {
-                expression(compiler); /* Compiles the variable initializer */
-            } else {
-                emitByte(parser, OP_NULL); /* Default variable value is "null" */
-            }
-
-            defineVariable(parser, global); /* Emits the declaration bytecode */
+            singleVarDeclaration(compiler); /* Compiles the declaration */
         } while (match(compiler, TK_COMMA));
     }
-
-    consume(compiler, TK_SEMICOLON, VAR_DECL_ERR);
 }
 
 /**
@@ -1067,12 +1072,11 @@ static void forStatement(ProgramCompiler *compiler) {
     beginScope(); /* Begins the loop scope */
 
     /* Compiles the initializer clause */
-    if (match(compiler, TK_SEMICOLON)) {
-        /* Empty initializer */
-    } else if (match(compiler, TK_VAR)) {
-        varDeclaration(compiler); /* Variable declaration initializer */
+    if (match(compiler, TK_COMMA)) {
+        compilerError(compiler, &parser->previous, FOR_STMT_INIT_ERR); /* Empty initializer */
     } else {
-        expressionStatement(compiler); /* Expression initializer */
+        singleVarDeclaration(compiler); /* Variable declaration initializer */
+        consume(compiler, TK_COMMA, FOR_STMT_CM1_ERR);
     }
 
     /* Loop's control flow marks */
@@ -1082,28 +1086,22 @@ static void forStatement(ProgramCompiler *compiler) {
     parser->innermostLoopScopeDepth = functionCompiler->scopeDepth;
 
     /* Compiles the conditional clause */
-    int exitJump = -1;
-    if (!match(compiler, TK_SEMICOLON)) {
-        expression(compiler);
-        consume(compiler, TK_SEMICOLON, FOR_STMT_COND_ERR);
-        exitJump = emitJump(parser, OP_JUMP_IF_FALSE);
-        emitByte(parser, OP_POP); /* Pops condition */
-    }
+    expression(compiler);
+    consume(compiler, TK_COMMA, FOR_STMT_CM2_ERR);
+    int exitJump = emitJump(parser, OP_JUMP_IF_FALSE);
+    emitByte(parser, OP_POP); /* Pops condition */
 
     /* Compiles the increment clause */
-    if (!match(compiler, TK_LEFT_BRACE)) {
-        int bodyJump = emitJump(parser, OP_JUMP);
-        int incrementStart = currentBytecodeChunk()->count;
-        expression(compiler);
-        emitByte(parser, OP_POP); /* Pops increment */
-        consume(compiler, TK_LEFT_BRACE, FOR_STMT_INC_ERR);
-        emitLoop(compiler, parser->innermostLoopStart);
-        parser->innermostLoopStart = incrementStart;
-        patchJump(compiler, bodyJump);
-    }
+    int bodyJump = emitJump(parser, OP_JUMP);
+    int incrementStart = currentBytecodeChunk()->count;
+    expression(compiler);
+    emitByte(parser, OP_POP); /* Pops increment */
+    consume(compiler, TK_LEFT_BRACE, FOR_STMT_BRC_ERR);
+    emitLoop(compiler, parser->innermostLoopStart);
+    parser->innermostLoopStart = incrementStart;
+    patchJump(compiler, bodyJump);
 
     block(compiler); /* Compiles the "for" block */
-
     emitLoop(compiler, parser->innermostLoopStart);
     if (exitJump != -1) {
         patchJump(compiler, exitJump);
@@ -1209,6 +1207,7 @@ static void synchronize(ProgramCompiler *compiler) {
 static void declaration(ProgramCompiler *compiler) {
     if (match(compiler, TK_VAR)) {
         varDeclaration(compiler);
+        consume(compiler, TK_SEMICOLON, VAR_DECL_ERR);
     } else if (match(compiler, TK_FUNCTION)) {
         funDeclaration(compiler);
     } else {
