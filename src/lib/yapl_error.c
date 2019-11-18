@@ -8,6 +8,9 @@
 #include "io/yapl_io.h"
 #include "math/yapl_math.h"
 
+/* Stack trace limits */
+#define MAX_STACK_TRACE 20
+
 /**
  * Presents a compiler time error to the programmer.
  */
@@ -56,12 +59,12 @@ void runtimeError(VM *vm, const char *format, va_list args) {
 
     /* Prints a stack trace */
     fprintf(stderr, "Stack trace (last call first):\n");
-    if (vm->frameCount > 20) {
-        printCallFrames(vm, vm->frameCount - 1, vm->frameCount - 10);
+    if (vm->frameCount > MAX_STACK_TRACE) {
+        printCallFrames(vm, vm->frameCount - 1, vm->frameCount - (MAX_STACK_TRACE / 2));
         fprintf(stderr, "    ...\n");
-        printCallFrames(vm, 9, 0);
+        printCallFrames(vm, (MAX_STACK_TRACE / 2) - 1, 0);
         fprintf(stderr, "%d call frames not listed. Run with option \"--debug\" to see all.\n",
-                vm->frameCount - 20);
+                vm->frameCount - MAX_STACK_TRACE);
     } else {
         printCallFrames(vm, vm->frameCount - 1, 0);
     }

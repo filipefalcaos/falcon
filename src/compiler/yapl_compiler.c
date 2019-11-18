@@ -14,6 +14,13 @@
 #include "../lib/yapl_debug.h"
 #endif
 
+/* Compilation flags */
+#define ERROR_STATE      -1
+#define NO_LOOP          ERROR_STATE
+#define UNDEFINED_SCOPE  ERROR_STATE
+#define UNRESOLVED_LOCAL ERROR_STATE
+#define GLOBAL_SCOPE     0
+
 /* YAPL's parser representation */
 typedef struct {
     Token current;
@@ -96,8 +103,8 @@ static BytecodeChunk *currentBytecodeChunk() { return &functionCompiler->functio
  * Initializes a given Parser instance as error-free and with no loops.
  */
 static void initParser(Parser *parser) {
-    parser->innermostLoopStart = -1;
-    parser->innermostLoopScopeDepth = 0;
+    parser->innermostLoopStart = NO_LOOP;
+    parser->innermostLoopScopeDepth = GLOBAL_SCOPE;
     parser->hadError = false;
     parser->panicMode = false;
 }
@@ -201,7 +208,7 @@ static uint8_t makeConstant(ProgramCompiler *compiler, Value value) {
     int constant = addConstant(currentBytecodeChunk(), value);
     if (constant > UINT8_MAX) {
         compilerError(compiler, &compiler->parser->previous, CONST_LIMIT_ERR);
-        return 0;
+        return ERROR_STATE;
     }
 
     return (uint8_t) constant;
@@ -251,7 +258,7 @@ static void initCompiler(ProgramCompiler *programCompiler, FunctionCompiler *com
     compiler->function = NULL;
     compiler->type = type;
     compiler->localCount = 0;
-    compiler->scopeDepth = 0;
+    compiler->scopeDepth = GLOBAL_SCOPE;
     compiler->function = newFunction(programCompiler->vm);
     functionCompiler = compiler;
 
@@ -263,7 +270,7 @@ static void initCompiler(ProgramCompiler *programCompiler, FunctionCompiler *com
 
     /* Set stack slot zero for the VM's internal use */
     Local *local = &functionCompiler->locals[functionCompiler->localCount++];
-    local->depth = 0;
+    local->depth = GLOBAL_SCOPE;
     local->isCaptured = false;
     local->name.start = "";
     local->name.length = 0;
@@ -348,13 +355,13 @@ static int resolveLocal(ProgramCompiler *programCompiler, FunctionCompiler *comp
     for (int i = compiler->localCount - 1; i >= 0; i--) {
         Local *local = &compiler->locals[i];
         if (identifiersEqual(name, &local->name)) { /* Checks if identifier matches */
-            if (local->depth == -1)
+            if (local->depth == UNDEFINED_SCOPE)
                 compilerError(programCompiler, &programCompiler->parser->previous, RED_INIT_ERR);
             return i;
         }
     }
 
-    return -1;
+    return UNRESOLVED_LOCAL;
 }
 
 /**
@@ -372,7 +379,7 @@ static int addUpvalue(ProgramCompiler *programCompiler, FunctionCompiler *compil
 
     if (upvalueCount == MAX_SINGLE_BYTE) {
         compilerError(programCompiler, &programCompiler->parser->previous, CLOSURE_LIMIT_ERR);
-        return 0;
+        return UNRESOLVED_LOCAL;
     }
 
     /* Adds the new upvalue */
@@ -387,20 +394,22 @@ static int addUpvalue(ProgramCompiler *programCompiler, FunctionCompiler *compil
  */
 static int resolveUpvalue(ProgramCompiler *programCompiler, FunctionCompiler *compiler,
                           Token *name) {
-    if (compiler->enclosing == NULL) return -1; /* Global variable? */
+    if (compiler->enclosing == NULL) /* Global variable? */
+        return UNRESOLVED_LOCAL;
 
     /* Looks for a local variable in the enclosing scope */
     int local = resolveLocal(programCompiler, compiler->enclosing, name);
-    if (local != -1) {
+    if (local != UNRESOLVED_LOCAL) {
         compiler->enclosing->locals[local].isCaptured = true;
         return addUpvalue(programCompiler, compiler, (uint8_t) local, true);
     }
 
     /* Looks for an upvalue in the enclosing scope */
     int upvalue = resolveUpvalue(programCompiler, compiler->enclosing, name);
-    if (upvalue != -1) return addUpvalue(programCompiler, compiler, (uint8_t)upvalue, false);
+    if (upvalue != UNRESOLVED_LOCAL)
+        return addUpvalue(programCompiler, compiler, (uint8_t) upvalue, false);
 
-    return -1;
+    return UNRESOLVED_LOCAL;
 }
 
 /**
@@ -414,7 +423,7 @@ static void addLocal(ProgramCompiler *compiler, Token name) {
 
     Local *local = &functionCompiler->locals[functionCompiler->localCount++];
     local->name = name;
-    local->depth = -1;
+    local->depth = UNDEFINED_SCOPE;
     local->isCaptured = false;
 }
 
@@ -422,13 +431,13 @@ static void addLocal(ProgramCompiler *compiler, Token name) {
  * Records the existence of a variable declaration.
  */
 static void declareVariable(ProgramCompiler *compiler) {
-    if (functionCompiler->scopeDepth == 0) return; /* Globals are late bound, exit */
+    if (functionCompiler->scopeDepth == GLOBAL_SCOPE) return; /* Globals are late bound, exit */
     Token *name = &compiler->parser->previous;
 
     /* Verifies if local variable was previously declared */
     for (int i = functionCompiler->localCount - 1; i >= 0; i--) {
         Local *local = &functionCompiler->locals[i];
-        if (local->depth != -1 && local->depth < functionCompiler->scopeDepth) break;
+        if (local->depth != UNDEFINED_SCOPE && local->depth < functionCompiler->scopeDepth) break;
         if (identifiersEqual(name, &local->name)) /* Checks if already declared */
             compilerError(compiler, &compiler->parser->previous, VAR_REDECL_ERR);
     }
@@ -442,8 +451,11 @@ static void declareVariable(ProgramCompiler *compiler) {
  */
 static uint8_t parseVariable(ProgramCompiler *compiler, const char *errorMessage) {
     consume(compiler, TK_IDENTIFIER, errorMessage);
-    declareVariable(compiler);                      /* Declares the variables */
-    if (functionCompiler->scopeDepth > 0) return 0; /* Locals are not looked up by name, exit */
+    declareVariable(compiler); /* Declares the variables */
+
+    if (functionCompiler->scopeDepth > GLOBAL_SCOPE)
+        return ERROR_STATE; /* Locals are not looked up by name, exit */
+
     return identifierConstant(compiler, &compiler->parser->previous);
 }
 
@@ -451,7 +463,7 @@ static uint8_t parseVariable(ProgramCompiler *compiler, const char *errorMessage
  * Marks a local variable as initialized and available for use.
  */
 static void markInitialized() {
-    if (functionCompiler->scopeDepth == 0) return;
+    if (functionCompiler->scopeDepth == GLOBAL_SCOPE) return;
     functionCompiler->locals[functionCompiler->localCount - 1].depth = functionCompiler->scopeDepth;
 }
 
@@ -459,7 +471,7 @@ static void markInitialized() {
  * Handles a variable declaration by emitting the bytecode to perform a global variable declaration.
  */
 static void defineVariable(Parser *parser, uint8_t global) {
-    if (functionCompiler->scopeDepth > 0) {
+    if (functionCompiler->scopeDepth > GLOBAL_SCOPE) {
         markInitialized(); /* Mark as initialized */
         return;            /* Only globals are defined at runtime */
     }
@@ -642,7 +654,7 @@ static void namedVariable(ProgramCompiler *compiler, Token name, bool canAssign)
     int arg = resolveLocal(compiler, functionCompiler, &name);
 
     /* Finds the current scope */
-    if (arg != -1) { /* Local variable? */
+    if (arg != UNRESOLVED_LOCAL) { /* Local variable? */
         getOpcode = OP_GET_LOCAL;
         setOpcode = OP_SET_LOCAL;
     } else if ((arg = resolveUpvalue(compiler, functionCompiler, &name)) != -1) { /* Upvalue? */
@@ -890,7 +902,7 @@ static void function(ProgramCompiler *programCompiler, FunctionType type) {
     if (!check(parser, TK_RIGHT_PAREN)) {
         do {
             functionCompiler->function->arity++;
-            if (functionCompiler->function->arity > 255)
+            if (functionCompiler->function->arity > UINT8_MAX)
                 compilerError(programCompiler, &parser->current, PARAMS_LIMIT_ERR);
             uint8_t paramConstant = parseVariable(programCompiler, PARAM_NAME_ERR);
             defineVariable(parser, paramConstant);
@@ -908,7 +920,7 @@ static void function(ProgramCompiler *programCompiler, FunctionType type) {
 
     /* Emits the captured upvalues */
     for (int i = 0; i < function->upvalueCount; i++) {
-        emitByte(parser, (uint8_t) (compiler.upvalues[i].isLocal ? 1 : 0));
+        emitByte(parser, (uint8_t) (compiler.upvalues[i].isLocal ? true : false));
         emitByte(parser, compiler.upvalues[i].index);
     }
 }
@@ -1124,7 +1136,7 @@ static void forStatement(ProgramCompiler *compiler) {
  */
 static void nextStatement(ProgramCompiler *compiler) {
     Parser *parser = compiler->parser;
-    if (parser->innermostLoopStart == -1) /* Is outside of a loop body? */
+    if (parser->innermostLoopStart == NO_LOOP) /* Is outside of a loop body? */
         compilerError(compiler, &parser->previous, NEXT_LOOP_ERR);
     consume(compiler, TK_SEMICOLON, NEXT_STMT_ERR);
 
