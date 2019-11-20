@@ -82,7 +82,7 @@ static Token makeToken(TokenType type, Scanner *scanner) {
     Token token;
     token.type = type;
     token.start = scanner->start;
-    token.length = (int) (scanner->current - scanner->start);
+    token.length = (uint64_t) (scanner->current - scanner->start);
     token.line = scanner->line;
     token.column = scanner->column;
     return token;
@@ -95,9 +95,9 @@ static Token errorToken(const char *message, Scanner *scanner) {
     Token token;
     token.type = TK_ERROR;
     token.start = message;
-    token.length = (int) strlen(message);
+    token.length = (uint64_t) strlen(message);
     token.line = scanner->line;
-    token.column = (int) scanner->start;
+    token.column = (uint64_t) scanner->start;
     return token;
 }
 

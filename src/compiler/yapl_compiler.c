@@ -11,6 +11,7 @@
 #include <string.h>
 
 #ifdef YAPL_DEBUG_PRINT_CODE
+#include <stdio.h>
 #include "../lib/yapl_debug.h"
 #endif
 
@@ -283,14 +284,14 @@ static void initCompiler(ProgramCompiler *programCompiler, FunctionCompiler *com
 /**
  * Ends the compilation process.
  */
-static ObjFunction *endCompiler(ProgramCompiler *programCompiler) {
-    emitReturn(programCompiler);
-    ObjFunction *function = programCompiler->functionCompiler->function;
+static ObjFunction *endCompiler(ProgramCompiler *compiler) {
+    emitReturn(compiler);
+    ObjFunction *function = compiler->functionCompiler->function;
 
 #ifdef YAPL_DEBUG_PRINT_CODE
-    if (!programCompiler->parser->hadError) {
+    if (!compiler->parser->hadError) {
         printOpcodesHeader();
-        disassembleBytecodeChunk(currentBytecodeChunk(),
+        disassembleBytecodeChunk(currentBytecodeChunk(compiler->functionCompiler),
                                  function->name != NULL ? function->name->chars : SCRIPT_TAG);
 #ifdef YAPL_DEBUG_TRACE_EXECUTION
         printf("\n");
@@ -298,7 +299,7 @@ static ObjFunction *endCompiler(ProgramCompiler *programCompiler) {
     }
 #endif
 
-    programCompiler->functionCompiler = programCompiler->functionCompiler->enclosing;
+    compiler->functionCompiler = compiler->functionCompiler->enclosing;
     return function;
 }
 

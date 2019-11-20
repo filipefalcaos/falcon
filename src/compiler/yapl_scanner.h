@@ -7,15 +7,16 @@
 #ifndef YAPL_SCANNER_H
 #define YAPL_SCANNER_H
 
+#include "../commons.h"
 #include "yapl_tokens.h"
 
 /* YAPL's token representation */
 typedef struct {
     TokenType type;
     const char *start;
-    int length;
-    int line;
-    int column;
+    uint64_t length;
+    uint64_t line;
+    uint64_t column;
 } Token;
 
 /* YAPL's scanner representation (lexical analysis) */
@@ -23,8 +24,8 @@ typedef struct {
     const char *start;
     const char *current;
     const char *lineContent;
-    int line;
-    int column;
+    uint64_t line;
+    uint64_t column;
 } Scanner;
 
 /* Scanning operations */

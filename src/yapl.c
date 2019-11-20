@@ -9,6 +9,7 @@
 #include "vm/yapl_vm.h"
 #include <ctype.h>
 #include <readline/readline.h>
+#include <readline/history.h>
 #include <stdlib.h>
 #include <unistd.h>
 
