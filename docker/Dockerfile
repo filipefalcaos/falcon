@@ -1,4 +1,4 @@
-# Run in dir "/yapl/docker/gdb-alpine":
+# Run in dir "/yapl/docker":
 # docker build -t gdb-alpine .
 
 # Run in dir "/yapl":
@@ -6,7 +6,6 @@
 
 FROM alpine:latest
 
-# gcc, g++, gdb, make, readline, openssl, cmake, bash, and vim
+# gcc, g++, gdb, openssl, make, cmake, and bash
 RUN apk update
-RUN apk add gcc g++ gdb make readline-dev openssl cmake
-RUN apk add bash vim
+RUN apk add gcc g++ gdb openssl make cmake bash

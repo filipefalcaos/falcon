@@ -8,10 +8,36 @@
 #include "lib/io/yapl_io.h"
 #include "vm/yapl_vm.h"
 #include <ctype.h>
-#include <readline/readline.h>
-#include <readline/history.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+/* Defines the "yapl_readline", "yapl_add_history", and "yapl_free_input" functions to handle the
+ * user input in REPL mode.
+ * If the "readline" lib is available, uses the "readline" and "add_history" functions from the lib
+ * to handle user input and history management.
+ * Otherwise, uses the standard "fputs" and "fgets" to handle user input and disables history
+ * management */
+#ifdef YAPL_READLINE_AVAILABLE
+
+/* Use "readline" lib for input and history */
+#include <readline/readline.h>
+#include <readline/history.h>
+#include <string.h>
+
+#define yapl_readline(input, prompt) input = readline(prompt)
+#define yapl_free_input(input)       free(input)
+#define yapl_add_history(input) \
+    if (strlen(input) > 0) add_history(input)
+
+#else
+
+/* Use fgets for input and disables history */
+#define yapl_readline(input, prompt) \
+    (fputs(prompt, stdout), fflush(stdout), fgets(input, REPL_MAX_INPUT, stdin))
+#define yapl_free_input(input)  ((void) input)
+#define yapl_add_history(input) ((void) input)
+
+#endif
 
 /**
  * Prints help functions for the REPL.
@@ -63,23 +89,22 @@ static void runFile(VM *vm, const char *path) {
  * Starts YAPL REPL.
  */
 static void repl(VM *vm) {
-    char *inputLine;
+    char inputLine[REPL_MAX_INPUT], *input = inputLine;
     printInfo();
     printHelp();
 
     while (true) {
-        inputLine = readline(PROMPT); /* Reads the input line */
-        add_history(inputLine);       /* Adds history to the REPL */
-
-        if (!inputLine) { /* Checks if failed to read */
-            free(inputLine);
+        yapl_readline(input, PROMPT); /* Reads the input line */
+        if (!input) {                 /* Checks if failed to read */
+            free(input);
             break;
         }
 
-        interpret(vm, inputLine); /* Interprets the source line */
+        yapl_add_history(input); /* Adds history to the REPL */
+        interpret(vm, input);    /* Interprets the source line */
     }
 
-    free(inputLine); /* Frees the input line when over */
+    yapl_free_input(input); /* Frees the input line when over */
 }
 
 /**

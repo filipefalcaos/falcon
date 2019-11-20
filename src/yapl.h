@@ -39,6 +39,7 @@ void printUsage();
 
 /* Limits */
 /* TODO: make the last two work as configurable parameters */
+#define REPL_MAX_INPUT  500
 #define MAX_SINGLE_BYTE (UINT8_MAX + 1) /* 256 */
 #define VM_FRAMES_MAX   1000
 #define VM_STACK_MAX    (VM_FRAMES_MAX * MAX_SINGLE_BYTE) /* 256000 */
