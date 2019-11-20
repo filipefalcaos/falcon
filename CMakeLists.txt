@@ -80,6 +80,6 @@ add_executable(
 find_package(Readline)
 if (READLINE_FOUND)
     add_compile_definitions(YAPL_READLINE_AVAILABLE)
-    include_directories(${Readline_INCLUDE_DIR})
-    target_link_libraries(yapl ${Readline_LIBRARY})
+    include_directories(${READLINE_INCLUDE_DIR})
+    target_link_libraries(yapl ${READLINE_LIBRARY})
 endif (READLINE_FOUND)
