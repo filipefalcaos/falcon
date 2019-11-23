@@ -89,7 +89,12 @@ static void runFile(VM *vm, const char *path) {
  * Starts YAPL REPL.
  */
 static void repl(VM *vm) {
-    char inputLine[REPL_MAX_INPUT], *input = inputLine;
+    char *input;
+#ifndef YAPL_READLINE_AVAILABLE
+    char inputLine[REPL_MAX_INPUT];
+    input = inputLine;
+#endif
+
     printInfo();
     printHelp();
 
