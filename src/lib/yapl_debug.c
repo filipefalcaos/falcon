@@ -5,8 +5,8 @@
  */
 
 #include "yapl_debug.h"
-#include "../vm/yapl_object.h"
 #include "../vm/yapl_value.h"
+#include "../vm/yapl_vm.h"
 #include <stdio.h>
 
 /**

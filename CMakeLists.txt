@@ -67,8 +67,6 @@ add_executable(
         src/vm/yapl_bytecodechunk.c
         src/vm/yapl_memmanager.h
         src/vm/yapl_memmanager.c
-        src/vm/yapl_object.h
-        src/vm/yapl_object.c
         src/vm/yapl_opcodes.h
         src/vm/yapl_value.h
         src/vm/yapl_value.c

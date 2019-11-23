@@ -11,7 +11,6 @@
 #include "../lib/yapl_error.h"
 #include "../lib/yapl_natives.h"
 #include "yapl_memmanager.h"
-#include "yapl_object.h"
 #include <stdarg.h>
 #include <stdio.h>
 

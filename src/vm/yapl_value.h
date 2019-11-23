@@ -9,7 +9,7 @@
 
 #include "../commons.h"
 
-/* YAPL object types */
+/* Forward object declaration */
 typedef struct sObj Obj;
 typedef struct sObjString ObjString;
 
@@ -61,5 +61,8 @@ void writeValueArray(ValueArray *valueArray, Value value);
 void printValue(Value value);
 bool valuesEqual(Value a, Value b);
 char *valueToString(Value *value);
+
+/* Object operations */
+void printObject(Value value);
 
 #endif // YAPL_VALUE_H

@@ -7,7 +7,6 @@
 #ifndef YAPL_MEMORY_MANAGER_H
 #define YAPL_MEMORY_MANAGER_H
 
-#include "yapl_object.h"
 #include "yapl_vm.h"
 
 /* Allocates an array with a given element type and count */
