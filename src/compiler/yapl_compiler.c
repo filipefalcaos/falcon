@@ -17,22 +17,19 @@
 
 /* Compilation flags */
 #define ERROR_STATE      -1
-#define NO_LOOP          ERROR_STATE
 #define UNDEFINED_SCOPE  ERROR_STATE
 #define UNRESOLVED_LOCAL ERROR_STATE
 #define GLOBAL_SCOPE     0
 
-/* YAPL's parser representation */
+/* Parser representation */
 typedef struct {
-    Token current;
-    Token previous;
-    int innermostLoopStart;
-    int innermostLoopScopeDepth;
-    bool hadError;
-    bool panicMode;
+    Token current;  /* The last "lexed" token */
+    Token previous; /* The last consumed token */
+    bool hadError;  /* Whether a syntax/compile error occurred or not */
+    bool panicMode; /* Whether the parser is in error recovery (Panic Mode) or not */
 } Parser;
 
-/* YAPL's precedence levels, from lowest to highest */
+/* Precedence levels, from lowest to highest */
 typedef enum {
     PREC_NONE,
     PREC_ASSIGN,  /* 1: "=", "-=", "+=", "*=", "/=", "%=" */
@@ -48,45 +45,57 @@ typedef enum {
     PREC_POSTFIX  /* 11: ".", "()", "[]" */
 } Precedence;
 
+/* Function types:
+ * TYPE_FUNCTION represents an user-defined function
+ * TYPE_SCRIPT represents the top-level (global scope) code */
+typedef enum { TYPE_FUNCTION, TYPE_SCRIPT } FunctionType;
+
 /* Local variable representation */
 typedef struct {
-    Token name;
-    int depth;
-    bool isCaptured;
+    Token name;      /* The identifier of the local variable */
+    int depth;       /* The depth in the scope chain where the local was declared */
+    bool isCaptured; /* Whether the variable was captured as an upvalue */
 } Local;
 
 /* Upvalue representation */
 typedef struct {
-    uint8_t index;
-    bool isLocal;
+    uint8_t index; /* The index of the local/upvalue being captured */
+    bool isLocal;  /* Whether the captured upvalue is a local variable in the enclosing function */
 } Upvalue;
 
-/* YAPL's function types */
-typedef enum { TYPE_FUNCTION, TYPE_SCRIPT } FunctionType;
+/* Loop representation */
+typedef struct sLoop {
+    struct sLoop *enclosing; /* The enclosing loop */
+    int entryPoint;          /* The index of the first loop instruction */
+    int scopeDepth;          /* Depth of the loop scope */
+} Loop;
 
-/* YAPL's compiler representation */
-typedef struct fCompiler {
-    struct fCompiler *enclosing;
-    ObjFunction *function;
-    FunctionType type;
-    Local locals[MAX_SINGLE_BYTE]; // TODO: make it possible to have more than 256
-    Upvalue upvalues[MAX_SINGLE_BYTE];
-    int localCount;
-    int scopeDepth;
+/* Function compiler representation */
+typedef struct sCompiler {
+    struct sCompiler *enclosing; /* The compiler for the enclosing function or NULL (when the
+                                    compiling code is at the top-level) */
+    ObjFunction *function;       /* The function being compiled */
+    FunctionType type; /* Whether scope is global (TYPE_SCRIPT) or local (TYPE_FUNCTION) */
+    Local locals[MAX_SINGLE_BYTE];     /* List of locals declared in the compiling function */
+    Upvalue upvalues[MAX_SINGLE_BYTE]; /* List of upvalues captured from outer scope by the
+                                          compiling function */
+    Loop *loop; /* The innermost loop ("for" or "while") being compiled or NULL if not in a loop */
+    int localCount; /* Number of local variables in the compiling function */
+    int scopeDepth; /* The current depth of block scope nesting */
 } FunctionCompiler;
 
-/* YAPL's compiler representation */
+/* Program compiler representation */
 typedef struct {
-    VM *vm;
-    Parser *parser;
-    Scanner *scanner;
-    FunctionCompiler *fCompiler;
+    VM *vm;                      /* YAPL's virtual machine instance */
+    Parser *parser;              /* YAPL's parser instance */
+    Scanner *scanner;            /* YAPL's scanner instance */
+    FunctionCompiler *fCompiler; /* The compiler for the currently compiling function */
 } ProgramCompiler;
 
-/* Function pointer to parse functions */
+/* Function pointer to the parsing functions */
 typedef void (*ParseFunction)(ProgramCompiler *compiler, bool canAssign);
 
-/* YAPL's parsing rules (prefix function, infix function, precedence function) */
+/* Parsing rules (prefix function, infix function, precedence level) */
 typedef struct {
     ParseFunction prefix;
     ParseFunction infix;
@@ -97,8 +106,6 @@ typedef struct {
  * Initializes a given Parser instance as error-free and with no loops.
  */
 static void initParser(Parser *parser) {
-    parser->innermostLoopStart = NO_LOOP;
-    parser->innermostLoopScopeDepth = GLOBAL_SCOPE;
     parser->hadError = false;
     parser->panicMode = false;
 }
@@ -265,6 +272,7 @@ static void initCompiler(ProgramCompiler *compiler, FunctionCompiler *fCompiler,
                          FunctionCompiler *enclosing, FunctionType type) {
     fCompiler->enclosing = enclosing;
     fCompiler->function = NULL;
+    fCompiler->loop = NULL;
     fCompiler->type = type;
     fCompiler->localCount = 0;
     fCompiler->scopeDepth = GLOBAL_SCOPE;
@@ -850,7 +858,7 @@ static ParseRule *getRule(TokenType type) { return &rules[type]; }
  * Compiles an expression by parsing the lowest precedence level, which subsumes all of the higher
  * precedence expressions too.
  */
-void expression(ProgramCompiler *compiler) { parsePrecedence(compiler, PREC_ASSIGN); }
+static void expression(ProgramCompiler *compiler) { parsePrecedence(compiler, PREC_ASSIGN); }
 
 /**
  * Compiles a block of code by parsing declarations and statements until a closing brace (end of
@@ -1054,58 +1062,55 @@ static void switchStatement(ProgramCompiler *compiler) {
     emitByte(compiler, OP_POP); /* Pops the switch value */
 }
 
+/* Begin START_LOOP - Starts the compilation of a new loop by setting the entry point to the
+ * current bytecode chunk instruction */
+#define START_LOOP(fCompiler)                                 \
+    Loop loop;                                                \
+    loop.enclosing = fCompiler->loop;                         \
+    loop.entryPoint = currentBytecodeChunk(fCompiler)->count; \
+    loop.scopeDepth = fCompiler->scopeDepth;                  \
+    fCompiler->loop = &loop
+
 /**
  * Compiles a "while" loop statement.
  */
 static void whileStatement(ProgramCompiler *compiler) {
-    Parser *parser = compiler->parser;
+    FunctionCompiler *fCompiler = compiler->fCompiler;
 
-    /* Loop's control flow marks */
-    int surroundingLoopStart = parser->innermostLoopStart;
-    int surroundingLoopScopeDepth = parser->innermostLoopScopeDepth;
-    parser->innermostLoopStart = currentBytecodeChunk(compiler->fCompiler)->count;
-    parser->innermostLoopScopeDepth = compiler->fCompiler->scopeDepth;
-
-    expression(compiler); /* Compiles the loop condition */
+    START_LOOP(fCompiler); /* Starts a bew loop */
+    expression(compiler);  /* Compiles the loop condition */
     consume(compiler, TK_LEFT_BRACE, WHILE_STMT_ERR);
-
     int exitJump = emitJump(compiler, OP_JUMP_IF_FALSE);
     emitByte(compiler, OP_POP);
 
     /* Compiles the "while" block */
-    beginScope(compiler->fCompiler);
+    beginScope(fCompiler);
     block(compiler);
     endScope(compiler);
 
     /* Emits the loop and patches the next jump */
-    emitLoop(compiler, parser->innermostLoopStart);
+    emitLoop(compiler, fCompiler->loop->entryPoint);
     patchJump(compiler, exitJump);
     emitByte(compiler, OP_POP);
-
-    parser->innermostLoopStart = surroundingLoopStart;
-    parser->innermostLoopScopeDepth = surroundingLoopScopeDepth;
+    fCompiler->loop = fCompiler->loop->enclosing;
 }
 
 /**
  * Compiles a "for" loop statement.
  */
 static void forStatement(ProgramCompiler *compiler) {
-    Parser *parser = compiler->parser;
+    FunctionCompiler *fCompiler = compiler->fCompiler;
     beginScope(compiler->fCompiler); /* Begins the loop scope */
 
     /* Compiles the initializer clause */
-    if (match(compiler, TK_COMMA)) {
-        compilerError(compiler, &parser->previous, FOR_STMT_INIT_ERR); /* Empty initializer */
+    if (match(compiler, TK_COMMA)) { /* Empty initializer? */
+        compilerError(compiler, &compiler->parser->previous, FOR_STMT_INIT_ERR);
     } else {
         singleVarDeclaration(compiler); /* Variable declaration initializer */
         consume(compiler, TK_COMMA, FOR_STMT_CM1_ERR);
     }
 
-    /* Loop's control flow marks */
-    int surroundingLoopStart = parser->innermostLoopStart;
-    int surroundingLoopScopeDepth = parser->innermostLoopScopeDepth;
-    parser->innermostLoopStart = currentBytecodeChunk(compiler->fCompiler)->count;
-    parser->innermostLoopScopeDepth = compiler->fCompiler->scopeDepth;
+    START_LOOP(fCompiler); /* Starts a bew loop */
 
     /* Compiles the conditional clause */
     expression(compiler);
@@ -1115,46 +1120,55 @@ static void forStatement(ProgramCompiler *compiler) {
 
     /* Compiles the increment clause */
     int bodyJump = emitJump(compiler, OP_JUMP);
-    int incrementStart = currentBytecodeChunk(compiler->fCompiler)->count;
+    int incrementStart = currentBytecodeChunk(fCompiler)->count;
     expression(compiler);
     emitByte(compiler, OP_POP); /* Pops increment */
     consume(compiler, TK_LEFT_BRACE, FOR_STMT_BRC_ERR);
-    emitLoop(compiler, parser->innermostLoopStart);
-    parser->innermostLoopStart = incrementStart;
+    emitLoop(compiler, fCompiler->loop->entryPoint);
+    fCompiler->loop->entryPoint = incrementStart;
     patchJump(compiler, bodyJump);
 
     block(compiler); /* Compiles the "for" block */
-    emitLoop(compiler, parser->innermostLoopStart);
+    emitLoop(compiler, fCompiler->loop->entryPoint);
     if (exitJump != -1) {
         patchJump(compiler, exitJump);
         emitByte(compiler, OP_POP); /* Pops condition */
     }
 
-    parser->innermostLoopStart = surroundingLoopStart;
-    parser->innermostLoopScopeDepth = surroundingLoopScopeDepth;
     endScope(compiler); /* Ends the loop scope */
+    fCompiler->loop = fCompiler->loop->enclosing;
 }
+
+/* End START_LOOP */
+#undef START_LOOP
+
+/* Begin CHECK_LOOP_ERROR - Checks if the current scope is outside of a loop body */
+#define CHECK_LOOP_ERROR(fCompiler, error) \
+do { \
+if (fCompiler->loop == NULL) /* Is outside of a loop body? */ \
+    compilerError(compiler, &compiler->parser->previous, error); \
+} while (false)
 
 /**
  * Compiles a "next" control flow statement, advancing to the next iteration of a loop and
  * discarding locals created in the loop.
  */
 static void nextStatement(ProgramCompiler *compiler) {
-    Parser *parser = compiler->parser;
     FunctionCompiler *fCompiler = compiler->fCompiler;
-
-    if (parser->innermostLoopStart == NO_LOOP) /* Is outside of a loop body? */
-        compilerError(compiler, &parser->previous, NEXT_LOOP_ERR);
+    CHECK_LOOP_ERROR(fCompiler, NEXT_LOOP_ERR); /* Checks if not inside a loop */
     consume(compiler, TK_SEMICOLON, NEXT_STMT_ERR);
 
     /* Discards locals created in loop */
     for (int i = fCompiler->localCount - 1;
-         i >= 0 && fCompiler->locals[i].depth > parser->innermostLoopScopeDepth; i--) {
+         i >= 0 && fCompiler->locals[i].depth > fCompiler->loop->scopeDepth; i--) {
         emitByte(compiler, OP_POP);
     }
 
-    emitLoop(compiler, parser->innermostLoopStart); /* Jumps to top of current innermost loop */
+    emitLoop(compiler, fCompiler->loop->entryPoint); /* Jumps to top of current innermost loop */
 }
+
+/* End CHECK_LOOP_ERROR */
+#undef CHECK_LOOP_ERROR
 
 /**
  * Compiles a "return" statement.
