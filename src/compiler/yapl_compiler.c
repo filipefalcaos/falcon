@@ -845,7 +845,6 @@ static void parsePrecedence(ProgramCompiler *compiler, Precedence precedence) {
 
     if (canAssign && match(compiler, TK_EQUAL)) { /* Checks if is an invalid assignment */
         compilerError(compiler, &parser->previous, INV_ASSG_ERR);
-        expression(compiler);
     }
 }
 
@@ -1212,7 +1211,10 @@ static void statement(ProgramCompiler *compiler) {
 }
 
 /**
- * Synchronize error recovery.
+ * Synchronize error recovery (Panic Mode). Error recovery is used to minimize the number of
+ * cascaded compile errors reported. While Panic Mode is active, the compiler will keep skipping
+ * tokens until a synchronization point is reached - an expression end or a statement/declaration
+ * begin.
  */
 static void synchronize(ProgramCompiler *compiler) {
     Parser *parser = compiler->parser;
@@ -1222,14 +1224,16 @@ static void synchronize(ProgramCompiler *compiler) {
         if (parser->previous.type == TK_SEMICOLON)
             return; /* Sync point (expression end) */
 
-        switch (parser->current.type) { /* Sync point (expression begin) */
+        switch (parser->current.type) { /* Sync point (statement/declaration begin) */
             case TK_CLASS:
-            case TK_FUNCTION:
-            case TK_VAR:
             case TK_FOR:
+            case TK_FUNCTION:
             case TK_IF:
-            case TK_WHILE:
+            case TK_NEXT:
             case TK_RETURN:
+            case TK_SWITCH:
+            case TK_VAR:
+            case TK_WHILE:
                 return;
             default:; /* Keep skipping tokens */
         }
