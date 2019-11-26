@@ -13,7 +13,7 @@
 #include <string.h>
 #include <time.h>
 
-/* Begin CHECK_ARGS - Checks the validity of a given argument count */
+/* Checks the validity of a given argument count */
 #define CHECK_ARGS(vm, op, argCount, expectedCount)               \
     do {                                                          \
         if (argCount op expectedCount) {                          \
@@ -222,7 +222,6 @@ static Value printlnNative(VM *vm, int argCount, Value *args) {
     return NULL_VAL;
 }
 
-/* End CHECK_ARGS */
 #undef CHECK_ARGS
 
 /*

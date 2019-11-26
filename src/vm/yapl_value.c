@@ -122,7 +122,7 @@ bool valuesEqual(Value a, Value b) {
     }
 }
 
-/* Begin string constants */
+/* String conversion constants */
 #define MAX_NUM_TO_STR       50
 #define NUM_TO_STR_FORMATTER "%.14g"
 
@@ -162,6 +162,5 @@ char *valueToString(Value *value) {
     return string; /* Returns the string */
 }
 
-/* End string constants */
 #undef MAX_NUM_TO_STR
 #undef NUM_TO_STR_FORMATTER

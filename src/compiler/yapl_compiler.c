@@ -1061,8 +1061,8 @@ static void switchStatement(ProgramCompiler *compiler) {
     emitByte(compiler, OP_POP); /* Pops the switch value */
 }
 
-/* Begin START_LOOP - Starts the compilation of a new loop by setting the entry point to the
- * current bytecode chunk instruction */
+/* Starts the compilation of a new loop by setting the entry point to the current bytecode chunk
+ * instruction */
 #define START_LOOP(fCompiler)                                 \
     Loop loop;                                                \
     loop.enclosing = fCompiler->loop;                         \
@@ -1138,10 +1138,9 @@ static void forStatement(ProgramCompiler *compiler) {
     fCompiler->loop = fCompiler->loop->enclosing;
 }
 
-/* End START_LOOP */
 #undef START_LOOP
 
-/* Begin CHECK_LOOP_ERROR - Checks if the current scope is outside of a loop body */
+/* Checks if the current scope is outside of a loop body */
 #define CHECK_LOOP_ERROR(fCompiler, error) \
 do { \
 if (fCompiler->loop == NULL) /* Is outside of a loop body? */ \
@@ -1166,7 +1165,6 @@ static void nextStatement(ProgramCompiler *compiler) {
     emitLoop(compiler, fCompiler->loop->entryPoint); /* Jumps to top of current innermost loop */
 }
 
-/* End CHECK_LOOP_ERROR */
 #undef CHECK_LOOP_ERROR
 
 /**
