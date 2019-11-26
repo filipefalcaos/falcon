@@ -15,9 +15,9 @@ void printUsage();
 /* YAPL version and copyright */
 #define YAPL_VERSION_MAJOR   "0"
 #define YAPL_VERSION_MINOR   "0"
-#define YAPL_VERSION_RELEASE "2"
+#define YAPL_VERSION_RELEASE "1"
 #define YAPL_VERSION_TYPE    "master"
-#define YAPL_VERSION_DATE    "Aug 15 2019"
+#define YAPL_VERSION_DATE    "Oct 18 2019"
 #define YAPL_VERSION         "YAPL version " YAPL_VERSION_MAJOR "." YAPL_VERSION_MINOR
 #define YAPL_RELEASE         YAPL_VERSION "." YAPL_VERSION_RELEASE
 #define YAPL_COPYRIGHT       YAPL_RELEASE ", Copyright (c) 2019 Filipe Falcão"
@@ -26,6 +26,7 @@ void printUsage();
 /* REPL macros */
 #define PROMPT       ">>> "
 #define SCRIPT_TAG   "<script>"
+#define REPL         "repl"
 #define YAPL_USAGE   "yapl [flags] [options] [script]"
 #define HELP_FLAG    "-h    output usage information"
 #define VERSION_FLAG "-v    output version information"
