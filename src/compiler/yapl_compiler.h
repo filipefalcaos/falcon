@@ -34,6 +34,8 @@ ObjFunction *compile(VM *vm, const char *source);
 #define FOR_STMT_BRC_ERR  "Expected a '{' after 'for' loop increment clause."
 #define NEXT_STMT_ERR     "Expected a ';' after 'next' statement."
 #define NEXT_LOOP_ERR     "'next' statement outside of a loop body."
+#define BREAK_STMT_ERR    "Expected a ';' after 'break' statement."
+#define BREAK_LOOP_ERR    "'break' statement outside of a loop body."
 
 /* Variables */
 #define RED_INIT_ERR   "Cannot read variable in its own initializer."

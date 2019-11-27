@@ -150,6 +150,8 @@ static TokenType findType(Scanner *scanner) {
     switch (start) {
         case 'a':
             return checkKeyword(1, 2, "nd", TK_AND, scanner);
+        case 'b':
+            return checkKeyword(1, 4, "reak", TK_BREAK, scanner);
         case 'c':
             return checkKeyword(1, 4, "lass", TK_CLASS, scanner);
         case 'e':

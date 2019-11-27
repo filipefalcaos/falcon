@@ -52,6 +52,7 @@ typedef enum {
     TK_NUMBER,
 
     /* Keywords */
+    TK_BREAK,
     TK_CLASS,
     TK_ELSE,
     TK_FALSE, /* Also a literal */

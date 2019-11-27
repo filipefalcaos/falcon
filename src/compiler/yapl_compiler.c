@@ -66,7 +66,8 @@ typedef struct {
 /* Loop representation */
 typedef struct sLoop {
     struct sLoop *enclosing; /* The enclosing loop */
-    int entryPoint;          /* The index of the first loop instruction */
+    int entry;               /* The index of the first loop instruction */
+    int body;                /* The index of the first instruction of the loop's body */
     int scopeDepth;          /* Depth of the loop scope */
 } Loop;
 
@@ -793,6 +794,7 @@ ParseRule rules[] = {
     PREFIX_RULE(variable),              /* TK_IDENTIFIER */
     PREFIX_RULE(string),                /* TK_STRING */
     PREFIX_RULE(number),                /* TK_NUMBER */
+    EMPTY_RULE,                         /* TK_BREAK */
     EMPTY_RULE,                         /* TK_CLASS */
     EMPTY_RULE,                         /* TK_ELSE */
     PREFIX_RULE(literal),               /* TK_FALSE */
@@ -1066,9 +1068,37 @@ static void switchStatement(ProgramCompiler *compiler) {
 #define START_LOOP(fCompiler)                                 \
     Loop loop;                                                \
     loop.enclosing = fCompiler->loop;                         \
-    loop.entryPoint = currentBytecodeChunk(fCompiler)->count; \
+    loop.entry = currentBytecodeChunk(fCompiler)->count; \
     loop.scopeDepth = fCompiler->scopeDepth;                  \
     fCompiler->loop = &loop
+
+/* Compiles the body of a loop and sets its index */
+#define LOOP_BODY(compiler)                                                               \
+    compiler->fCompiler->loop->body = compiler->fCompiler->function->bytecodeChunk.count; \
+    block(compiler)
+
+/**
+ * Ends the current innermost loop on the compiler. If any temporary "OP_TEMP" instruction is in
+ * the bytecode, replaces it with the correct "OP_JUMP" instruction and patches the jump to the end
+ * of the loop.
+ */
+static void endLoop(ProgramCompiler *compiler) {
+    FunctionCompiler *fCompiler = compiler->fCompiler;
+    BytecodeChunk *chunk = &fCompiler->function->bytecodeChunk;
+    int index = fCompiler->loop->body;
+
+    while (index < chunk->count) {
+        if (chunk->code[index] == OP_TEMP) { /* Is a temporary for a "break"? */
+            chunk->code[index] = OP_JUMP;    /* Set the correct "OP_JUMP" instruction */
+            patchJump(compiler, index + 1);  /* Patch the jump to the end of the loop */
+            index += 3;
+        } else {
+            index++;
+        }
+    }
+
+    fCompiler->loop = fCompiler->loop->enclosing;
+}
 
 /**
  * Compiles a "while" loop statement.
@@ -1084,14 +1114,14 @@ static void whileStatement(ProgramCompiler *compiler) {
 
     /* Compiles the "while" block */
     beginScope(fCompiler);
-    block(compiler);
+    LOOP_BODY(compiler);
     endScope(compiler);
 
     /* Emits the loop and patches the next jump */
-    emitLoop(compiler, fCompiler->loop->entryPoint);
+    emitLoop(compiler, fCompiler->loop->entry);
     patchJump(compiler, exitJump);
     emitByte(compiler, OP_POP);
-    fCompiler->loop = fCompiler->loop->enclosing;
+    endLoop(compiler); /* Ends the loop */
 }
 
 /**
@@ -1123,22 +1153,23 @@ static void forStatement(ProgramCompiler *compiler) {
     expression(compiler);
     emitByte(compiler, OP_POP); /* Pops increment */
     consume(compiler, TK_LEFT_BRACE, FOR_STMT_BRC_ERR);
-    emitLoop(compiler, fCompiler->loop->entryPoint);
-    fCompiler->loop->entryPoint = incrementStart;
+    emitLoop(compiler, fCompiler->loop->entry);
+    fCompiler->loop->entry = incrementStart;
     patchJump(compiler, bodyJump);
 
-    block(compiler); /* Compiles the "for" block */
-    emitLoop(compiler, fCompiler->loop->entryPoint);
+    LOOP_BODY(compiler); /* Compiles the "for" block */
+    emitLoop(compiler, fCompiler->loop->entry);
     if (exitJump != -1) {
         patchJump(compiler, exitJump);
         emitByte(compiler, OP_POP); /* Pops condition */
     }
 
     endScope(compiler); /* Ends the loop scope */
-    fCompiler->loop = fCompiler->loop->enclosing;
+    endLoop(compiler);  /* Ends the loop */
 }
 
 #undef START_LOOP
+#undef LOOP_BODY
 
 /* Checks if the current scope is outside of a loop body */
 #define CHECK_LOOP_ERROR(fCompiler, error) \
@@ -1148,21 +1179,47 @@ if (fCompiler->loop == NULL) /* Is outside of a loop body? */ \
 } while (false)
 
 /**
+ * Discards the local variables or upvalues created/captured in a loop scope.
+ */
+static void discardLocalsLoop(ProgramCompiler *compiler) {
+    FunctionCompiler *fCompiler = compiler->fCompiler;
+    for (int i = fCompiler->localCount - 1;
+         i >= 0 && fCompiler->locals[i].depth > fCompiler->loop->scopeDepth; i--) {
+        if (fCompiler->locals[fCompiler->localCount - 1].isCaptured) {
+            emitByte(compiler, OP_CLOSE_UPVALUE);
+        } else {
+            emitByte(compiler, OP_POP);
+        }
+    }
+}
+
+/**
+ * Compiles a "break" control flow statement, breaking the current iteration of a loop and
+ * discarding locals created.
+ */
+static void breakStatement(ProgramCompiler *compiler) {
+    FunctionCompiler *fCompiler = compiler->fCompiler;
+    CHECK_LOOP_ERROR(fCompiler, BREAK_LOOP_ERR); /* Checks if not inside a loop */
+    consume(compiler, TK_SEMICOLON, BREAK_STMT_ERR);
+    discardLocalsLoop(compiler); /* Discards locals created in loop */
+
+    /* Emits a temporary instruction to signal a "break" statement. It should become an "OP_JUMP"
+     * instruction, once the size of the loop body is known */
+    emitJump(compiler, OP_TEMP);
+}
+
+/**
  * Compiles a "next" control flow statement, advancing to the next iteration of a loop and
- * discarding locals created in the loop.
+ * discarding locals created.
  */
 static void nextStatement(ProgramCompiler *compiler) {
     FunctionCompiler *fCompiler = compiler->fCompiler;
     CHECK_LOOP_ERROR(fCompiler, NEXT_LOOP_ERR); /* Checks if not inside a loop */
     consume(compiler, TK_SEMICOLON, NEXT_STMT_ERR);
+    discardLocalsLoop(compiler); /* Discards locals created in loop */
 
-    /* Discards locals created in loop */
-    for (int i = fCompiler->localCount - 1;
-         i >= 0 && fCompiler->locals[i].depth > fCompiler->loop->scopeDepth; i--) {
-        emitByte(compiler, OP_POP);
-    }
-
-    emitLoop(compiler, fCompiler->loop->entryPoint); /* Jumps to top of current innermost loop */
+    /* Jumps to the entry point of the current innermost loop */
+    emitLoop(compiler, fCompiler->loop->entry);
 }
 
 #undef CHECK_LOOP_ERROR
@@ -1195,6 +1252,8 @@ static void statement(ProgramCompiler *compiler) {
         whileStatement(compiler);
     } else if (match(compiler, TK_FOR)) {
         forStatement(compiler);
+    } else if (match(compiler, TK_BREAK)) {
+        breakStatement(compiler);
     } else if (match(compiler, TK_NEXT)) {
         nextStatement(compiler);
     } else if (match(compiler, TK_RETURN)) {
