@@ -25,7 +25,7 @@ declaration -> class_declaration
             | statement ;
 
 class_declaration    -> "class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}" ;
-function_declaration -> "fun" function ;
+function_declaration -> "fn" function ;
 variable_declaration -> "var" declaration_list ";" ;
 declaration_list     -> single_declaration ( "," single_declaration )* ;
 single_declaration   -> IDENTIFIER ( "=" expression )? ;
@@ -41,6 +41,7 @@ statement -> expression_statement
           | while_statement
           | if_statement
           | switch_statement
+          | break_statement
           | next_statement
           | return_statement
           | block ;
@@ -52,6 +53,7 @@ if_statement         -> ( "if" | "unless" ) expression block ( "else" ( block | 
 switch_statement     -> "switch" expression "{" switch_case* else_case? "}" ;
 switch_case          -> "when" expression "->" statement* ;
 else_case            -> "else" "->" statement* ;
+break_statement      -> "break" ";"
 next_statement       -> "next" ";" ;
 return_statement     -> "return" expression? ";" ;
 block                -> "{" declaration* "}" ;

@@ -161,10 +161,10 @@ static TokenType findType(Scanner *scanner) {
                 switch (scanner->start[1]) {
                     case 'a':
                         return checkKeyword(2, 3, "lse", TK_FALSE, scanner);
+                    case 'n':
+                        return checkKeyword(2, 0, "", TK_FUNCTION, scanner);
                     case 'o':
                         return checkKeyword(2, 1, "r", TK_FOR, scanner);
-                    case 'u':
-                        return checkKeyword(2, 1, "n", TK_FUNCTION, scanner);
                     default:
                         break;
                 }
