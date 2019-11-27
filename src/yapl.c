@@ -152,7 +152,9 @@ static void processArgs(VM *vm, int argc, char **argv) {
     hasHelp = hasVersion = hasScript = false;
 
     if (argc == 1) { /* No arguments provided? */
-        repl(vm);    /* Starts the REPL */
+        vm->fileName = REPL;
+        vm->isREPL = true;
+        repl(vm); /* Starts the REPL */
         return;
     }
 
