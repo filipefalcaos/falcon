@@ -109,18 +109,10 @@ int addConstant(BytecodeChunk *bytecodeChunk, Value value) {
 }
 
 /**
- * Writes a constant to the bytecode chunk through two instructions of different sizes: OP_CONSTANT
- * (1 byte) and OP_CONSTANT_16 (2 bytes).
+ * Writes a 2 bytes constant to the bytecode chunk.
  */
-int writeConstant(BytecodeChunk *bytecodeChunk, int index, int line) {
-    if (index < MAX_SINGLE_BYTE) {
-        writeToBytecodeChunk(bytecodeChunk, OP_CONSTANT, line);
-        writeToBytecodeChunk(bytecodeChunk, (uint8_t) index, line);
-    } else {
-        writeToBytecodeChunk(bytecodeChunk, OP_CONSTANT_16, line);
-        writeToBytecodeChunk(bytecodeChunk, (uint8_t) (index & 0xff), line);
-        writeToBytecodeChunk(bytecodeChunk, (uint8_t) ((index >> 8) & 0xff), line);
-    }
-
-    return index;
+void writeConstant(BytecodeChunk *bytecodeChunk, int index, int line) {
+    writeToBytecodeChunk(bytecodeChunk, OP_CONSTANT, line);
+    writeToBytecodeChunk(bytecodeChunk, (uint8_t) (index & 0xff), line);
+    writeToBytecodeChunk(bytecodeChunk, (uint8_t) ((index >> 8) & 0xff), line);
 }
