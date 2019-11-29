@@ -91,7 +91,6 @@ typedef struct {
     Parser *parser;              /* YAPL's parser instance */
     Scanner *scanner;            /* YAPL's scanner instance */
     FunctionCompiler *fCompiler; /* The compiler for the currently compiling function */
-    Table globalNames;           /* The global identifiers names */
 } ProgramCompiler;
 
 /* Function pointer to the parsing functions */
@@ -265,7 +264,6 @@ static void initProgramCompiler(ProgramCompiler *compiler, VM *vm, Parser *parse
     compiler->vm = vm;
     compiler->parser = parser;
     compiler->scanner = scanner;
-    initTable(&compiler->globalNames);
 }
 
 /**
@@ -351,19 +349,11 @@ static ParseRule *getRule(TokenType type);
 static void parsePrecedence(ProgramCompiler *compiler, Precedence precedence);
 
 /**
- * Checks if an identifier constant was already defined in the constants table. If so, returns its
- * index. If not, adds the identifier to the constants table and sets it in the global names table.
+ * Checks if an identifier constant was already defined. If so, return its index. If not, set the
+ * identifier in the global names table.
  */
 static uint8_t identifierConstant(ProgramCompiler *compiler, Token *name) {
-    ObjString *string = copyString(compiler->vm, name->start, name->length);
-    Value indexValue;
-
-    if (tableGet(&compiler->globalNames, string, &indexValue)) /* Already defined? */
-        return (uint8_t) AS_NUM(indexValue); /* Returns the index on the constants table */
-
-    uint8_t newIndex = makeConstant(compiler, OBJ_VAL(string)); /* Add to the constants table */
-    tableSet(&compiler->globalNames, string, NUM_VAL((double) newIndex)); /* Set as defined */
-    return newIndex;
+    return makeConstant(compiler, OBJ_VAL(copyString(compiler->vm, name->start, name->length)));
 }
 
 /**
