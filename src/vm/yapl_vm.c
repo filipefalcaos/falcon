@@ -341,7 +341,10 @@ static ResultCode run(VM *vm) {
         switch (instruction) { /* Reads the next byte and switches through the opcodes */
 
             /* Constants and literals */
-            case OP_CONSTANT: {
+            case OP_CONSTANT:
+                if (!push(vm, READ_CONSTANT())) return RUNTIME_ERROR;
+                break;
+            case OP_CONSTANT_16: {
                 uint16_t index = READ_BYTE() | READ_BYTE() << 8;
                 if (!push(vm, frame->closure->function->bytecodeChunk.constants.values[index]))
                     return RUNTIME_ERROR;

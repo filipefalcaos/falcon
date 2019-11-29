@@ -11,10 +11,11 @@
 typedef enum {
 
     /* Constants and literals */
-    OP_CONSTANT, /* 2 bytes constant */
-    OP_FALSE,    /* "false" literal */
-    OP_TRUE,     /* "true" literal */
-    OP_NULL,     /* "null" literal */
+    OP_CONSTANT,    /* 1 byte constant */
+    OP_CONSTANT_16, /* 2 bytes constant */
+    OP_FALSE,       /* "false" literal */
+    OP_TRUE,        /* "true" literal */
+    OP_NULL,        /* "null" literal */
 
     /* Relational operations */
     OP_AND,     /* 'and' logical operator */

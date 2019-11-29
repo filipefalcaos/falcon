@@ -124,7 +124,9 @@ int disassembleInstruction(BytecodeChunk *bytecodeChunk, int offset) {
     uint8_t instruction = bytecodeChunk->code[offset]; /* Current instruction */
     switch (instruction) { /* Verifies the instruction type */
         case OP_CONSTANT:
-            return constantInstruction16("OP_CONSTANT", bytecodeChunk, offset);
+            return constantInstruction("OP_CONSTANT", bytecodeChunk, offset);
+        case OP_CONSTANT_16:
+            return constantInstruction16("OP_CONSTANT_16", bytecodeChunk, offset);
         case OP_FALSE:
             return simpleInstruction("OP_FALSE", offset);
         case OP_TRUE:
