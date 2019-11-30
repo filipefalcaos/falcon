@@ -548,11 +548,14 @@ static ResultCode run(VM *vm) {
                 printf("\n");
                 break;
             }
+            case OP_TEMP:
+                VMError(vm, UNREACHABLE_ERR, instruction);
+                return RUNTIME_ERROR;
 
             /* Unknown opcode */
             default:
                 VMError(vm, UNKNOWN_OPCODE_ERR, instruction);
-                break;
+                return RUNTIME_ERROR;
         }
     }
 

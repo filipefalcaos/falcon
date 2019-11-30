@@ -1078,22 +1078,77 @@ static void switchStatement(ProgramCompiler *compiler) {
     block(compiler)
 
 /**
+ * Gets the number of arguments for a instruction at the given program counter.
+ */
+int getInstructionArgs(const BytecodeChunk *bytecodeChunk, int pc) {
+    switch (bytecodeChunk->code[pc]) {
+        case OP_FALSE:
+        case OP_TRUE:
+        case OP_NULL:
+        case OP_NOT:
+        case OP_EQUAL:
+        case OP_GREATER:
+        case OP_LESS:
+        case OP_ADD:
+        case OP_SUBTRACT:
+        case OP_NEGATE:
+        case OP_DIVIDE:
+        case OP_MOD:
+        case OP_MULTIPLY:
+        case OP_POW:
+        case OP_CLOSE_UPVALUE:
+        case OP_RETURN:
+        case OP_DUP:
+        case OP_POP:
+        case OP_POP_EXPR:
+        case OP_TEMP:
+            return 0; /* Instructions with no arguments */
+
+        case OP_DEFINE_GLOBAL:
+        case OP_GET_GLOBAL:
+        case OP_SET_GLOBAL:
+        case OP_GET_UPVALUE:
+        case OP_SET_UPVALUE:
+        case OP_GET_LOCAL:
+        case OP_SET_LOCAL:
+        case OP_CALL:
+            return 1; /* Instructions with single byte as argument */
+
+        case OP_CONSTANT:
+        case OP_AND:
+        case OP_OR:
+        case OP_JUMP:
+        case OP_JUMP_IF_FALSE:
+        case OP_LOOP:
+            return 2; /* Instructions with 2 bytes as arguments */
+
+        case OP_CLOSURE: {
+            int index = bytecodeChunk->code[pc + 1];
+            ObjFunction *function = AS_FUNCTION(bytecodeChunk->constants.values[index]);
+            return 1 + function->upvalueCount * 2; /* Function: 1 byte; Upvalues: 2 bytes each */
+        }
+    }
+
+    return 0;
+}
+
+/**
  * Ends the current innermost loop on the compiler. If any temporary "OP_TEMP" instruction is in
  * the bytecode, replaces it with the correct "OP_JUMP" instruction and patches the jump to the end
  * of the loop.
  */
 static void endLoop(ProgramCompiler *compiler) {
     FunctionCompiler *fCompiler = compiler->fCompiler;
-    BytecodeChunk *chunk = &fCompiler->function->bytecodeChunk;
+    BytecodeChunk *bytecodeChunk = &fCompiler->function->bytecodeChunk;
     int index = fCompiler->loop->body;
 
-    while (index < chunk->count) {
-        if (chunk->code[index] == OP_TEMP) { /* Is a temporary for a "break"? */
-            chunk->code[index] = OP_JUMP;    /* Set the correct "OP_JUMP" instruction */
-            patchJump(compiler, index + 1);  /* Patch the jump to the end of the loop */
+    while (index < bytecodeChunk->count) {
+        if (bytecodeChunk->code[index] == OP_TEMP) { /* Is a temporary for a "break"? */
+            bytecodeChunk->code[index] = OP_JUMP;    /* Set the correct "OP_JUMP" instruction */
+            patchJump(compiler, index + 1);          /* Patch the jump to the end of the loop */
             index += 3;
-        } else {
-            index++;
+        } else { /* Jumps the instruction and its arguments */
+            index += 1 + getInstructionArgs(bytecodeChunk, index); /* +1 byte for the instruction */
         }
     }
 

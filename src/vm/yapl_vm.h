@@ -113,8 +113,9 @@ ObjClosure* newClosure(VM *vm, ObjFunction *function);
 ObjFunction *newFunction(VM *vm);
 
 /* Runtime error messages */
-#define UNKNOWN_OPCODE_ERR \
-    "Unknown opcode %d. This is most likely a bug in YAPL itself. Please provide a bug report."
+#define YAPL_BUG            "This is most likely a bug in YAPL itself. Please provide a bug report."
+#define UNKNOWN_OPCODE_ERR  "Unknown opcode %d. " YAPL_BUG
+#define UNREACHABLE_ERR     "Opcode %d should be unreachable. " YAPL_BUG
 #define STACK_OVERFLOW      "Stack overflow."
 #define UNDEF_VAR_ERR       "Undefined variable '%s'."
 #define ARGS_COUNT_ERR      "Expected %d arguments, but got %d."
