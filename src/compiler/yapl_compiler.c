@@ -521,6 +521,7 @@ static uint8_t argumentList(ProgramCompiler *compiler) {
  * Handles the "and" logical operator with short-circuit.
  */
 static void and_(ProgramCompiler *compiler, bool canAssign) {
+    (void) canAssign; /* Unused */
     int jump = emitJump(compiler, OP_AND);
     parsePrecedence(compiler, PREC_AND);
     patchJump(compiler, jump);
@@ -530,6 +531,7 @@ static void and_(ProgramCompiler *compiler, bool canAssign) {
  * Handles the "or" logical operator with short-circuit.
  */
 static void or_(ProgramCompiler *compiler, bool canAssign) {
+    (void) canAssign; /* Unused */
     int jump = emitJump(compiler, OP_OR);
     parsePrecedence(compiler, PREC_OR);
     patchJump(compiler, jump);
@@ -541,6 +543,7 @@ static void or_(ProgramCompiler *compiler, bool canAssign) {
  * operation.
  */
 static void binary(ProgramCompiler *compiler, bool canAssign) {
+    (void) canAssign; /* Unused */
     TokenType operatorType = compiler->parser->previous.type;
     ParseRule *rule = getRule(operatorType); /* Gets the current rule */
     parsePrecedence(compiler, rule->precedence + 1); /* Compiles with the correct precedence */
@@ -590,6 +593,7 @@ static void binary(ProgramCompiler *compiler, bool canAssign) {
  * proceed with the execution of the function.
  */
 static void call(ProgramCompiler *compiler, bool canAssign) {
+    (void) canAssign; /* Unused */
     uint8_t argCount = argumentList(compiler);
     emitBytes(compiler, OP_CALL, argCount);
 }
@@ -599,6 +603,7 @@ static void call(ProgramCompiler *compiler, bool canAssign) {
  * parsing the closing parenthesis.
  */
 static void grouping(ProgramCompiler *compiler, bool canAssign) {
+    (void) canAssign; /* Unused */
     expression(compiler);
     consume(compiler, TK_RIGHT_PAREN, GRP_EXPR_ERR);
 }
@@ -607,6 +612,7 @@ static void grouping(ProgramCompiler *compiler, bool canAssign) {
  * Handles a literal (booleans or null) expression by outputting the proper instruction.
  */
 static void literal(ProgramCompiler *compiler, bool canAssign) {
+    (void) canAssign; /* Unused */
     switch (compiler->parser->previous.type) {
         case TK_FALSE:
             emitByte(compiler, OP_FALSE);
@@ -627,6 +633,7 @@ static void literal(ProgramCompiler *compiler, bool canAssign) {
  * code to load that value by calling "emitConstant".
  */
 static void number(ProgramCompiler *compiler, bool canAssign) {
+    (void) canAssign; /* Unused */
     double value = strtod(compiler->parser->previous.start, NULL);
     emitConstant(compiler, NUM_VAL(value));
 }
@@ -635,6 +642,7 @@ static void number(ProgramCompiler *compiler, bool canAssign) {
  * Handles a exponentiation expression.
  */
 static void pow_(ProgramCompiler *compiler, bool canAssign) {
+    (void) canAssign;                    /* Unused */
     parsePrecedence(compiler, PREC_POW); /* Compiles the operand */
     emitByte(compiler, OP_POW);
 }
@@ -644,6 +652,7 @@ static void pow_(ProgramCompiler *compiler, bool canAssign) {
  * adding it to the constants table.
  */
 static void string(ProgramCompiler *compiler, bool canAssign) {
+    (void) canAssign; /* Unused */
     Parser *parser = compiler->parser;
     emitConstant(compiler, OBJ_VAL(copyString(compiler->vm, parser->previous.start + 1,
                                               parser->previous.length - 2)));
@@ -714,6 +723,7 @@ static void variable(ProgramCompiler *compiler, bool canAssign) {
  * Handles the ternary "?:" conditional operator expression.
  */
 static void ternary(ProgramCompiler *compiler, bool canAssign) {
+    (void) canAssign;                                  /* Unused */
     int ifJump = emitJump(compiler, OP_JUMP_IF_FALSE); /* Jumps if the condition is false */
     emitByte(compiler, OP_POP);                        /* Pops the condition result */
     parsePrecedence(compiler, PREC_TERNARY);           /* Compiles the first branch */
@@ -731,6 +741,7 @@ static void ternary(ProgramCompiler *compiler, bool canAssign) {
  * the unary operation itself.
  */
 static void unary(ProgramCompiler *compiler, bool canAssign) {
+    (void) canAssign; /* Unused */
     TokenType operatorType = compiler->parser->previous.type;
     parsePrecedence(compiler, PREC_UNARY); /* Compiles the operand */
 
@@ -1127,6 +1138,9 @@ int getInstructionArgs(const BytecodeChunk *bytecodeChunk, int pc) {
             ObjFunction *function = AS_FUNCTION(bytecodeChunk->constants.values[index]);
             return 1 + function->upvalueCount * 2; /* Function: 1 byte; Upvalues: 2 bytes each */
         }
+
+        default:
+            return 0;
     }
 
     return 0;

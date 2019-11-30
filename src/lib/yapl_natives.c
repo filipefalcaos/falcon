@@ -32,6 +32,7 @@
  * Native YAPL function to print YAPL's authors.
  */
 static Value authorsNative(VM *vm, int argCount, Value *args) {
+    (void) args; /* Unused */
     CHECK_ARGS(vm, !=, argCount, 0);
     printAuthors();
     return NULL_VAL;
@@ -41,6 +42,7 @@ static Value authorsNative(VM *vm, int argCount, Value *args) {
  * Native YAPL function to print YAPL's MIT license.
  */
 static Value licenseNative(VM *vm, int argCount, Value *args) {
+    (void) args; /* Unused */
     CHECK_ARGS(vm, !=, argCount, 0);
     printLicense();
     return NULL_VAL;
@@ -50,6 +52,7 @@ static Value licenseNative(VM *vm, int argCount, Value *args) {
  * Native YAPL function to print interpreter usage details.
  */
 static Value helpNative(VM *vm, int argCount, Value *args) {
+    (void) args; /* Unused */
     CHECK_ARGS(vm, !=, argCount, 0);
     printUsage();
     return NULL_VAL;
@@ -72,6 +75,7 @@ static Value exitNative(VM *vm, int argCount, Value *args) {
  * Native YAPL function to compute the elapsed time since the program started running, in seconds.
  */
 static Value clockNative(VM *vm, int argCount, Value *args) {
+    (void) args; /* Unused */
     CHECK_ARGS(vm, !=, argCount, 0);
     return NUM_VAL((double) clock() / CLOCKS_PER_SEC);
 }
@@ -80,6 +84,7 @@ static Value clockNative(VM *vm, int argCount, Value *args) {
  * Native YAPL function to compute the UNIX timestamp, in seconds.
  */
 static Value timeNative(VM *vm, int argCount, Value *args) {
+    (void) args; /* Unused */
     CHECK_ARGS(vm, !=, argCount, 0);
     return NUM_VAL((double) time(NULL));
 }

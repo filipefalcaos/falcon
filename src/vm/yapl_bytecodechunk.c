@@ -5,7 +5,6 @@
  */
 
 #include "yapl_bytecodechunk.h"
-#include "../yapl.h"
 #include "yapl_memmanager.h"
 
 /**
