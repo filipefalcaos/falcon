@@ -7,6 +7,7 @@
 #include "yapl_natives.h"
 #include "../vm/yapl_memmanager.h"
 #include "io/yapl_io.h"
+#include "math/yapl_math.h"
 #include "string/yapl_string.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -141,7 +142,8 @@ static Value typeNative(VM *vm, int argCount, Value *args) {
 }
 
 /**
- * Native YAPL function to convert a given YAPL Value to a boolean.
+ * Native YAPL function to convert a given YAPL Value to a number. The conversion is implemented
+ * through the "isFalsey" function.
  */
 static Value boolNative(VM *vm, int argCount, Value *args) {
     CHECK_ARGS(vm, !=, argCount, 1);
@@ -153,7 +155,8 @@ static Value boolNative(VM *vm, int argCount, Value *args) {
 }
 
 /**
- * Native YAPL function to convert a given YAPL Value to a string.
+ * Native YAPL function to convert a given YAPL Value to a string. The conversion is implemented
+ * through the "valueToString" function.
  */
 static Value strNative(VM *vm, int argCount, Value *args) {
     CHECK_ARGS(vm, !=, argCount, 1);
@@ -178,7 +181,7 @@ static Value numNative(VM *vm, int argCount, Value *args) {
 
         if (IS_STRING(*args)) { /* String to number */
             char *start = AS_CLANG_STRING(*args), *end;
-            double number = strtod(AS_CLANG_STRING(*args), &end); /* Converts a string to double */
+            double number = strtod(AS_CLANG_STRING(*args), &end); /* Converts to double */
 
             if (start == end) { /* Checks for conversion success */
                 VMError(vm, CONV_STR_NUM_ERR);
@@ -192,6 +195,26 @@ static Value numNative(VM *vm, int argCount, Value *args) {
     }
 
     return *args; /* Given value is already a number */
+}
+
+/*
+ * ================================================================================================
+ * ===================================== Math native functions ====================================
+ * ================================================================================================
+ */
+
+/**
+ * Native YAPL function to get the absolute value of a given YAPL Value.
+ */
+static Value absNative(VM *vm, int argCount, Value *args) {
+    CHECK_ARGS(vm, !=, argCount, 1);
+    if (!IS_NUM(*args)) {
+        VMError(vm, ARGS_TYPE_ERR, 1, "number");
+        return ERR_VAL;
+    }
+
+    double absValue = getAbs(AS_NUM(*args)); /* Gets the abs value */
+    return NUM_VAL(absValue);
 }
 
 /*
@@ -216,8 +239,8 @@ static Value inputNative(VM *vm, int argCount, Value *args) {
         printf("%s", AS_CLANG_STRING(prompt)); /* Prints the prompt */
     }
 
-    char *inputString = readStrStdin();                               /* Reads the input string */
-    return OBJ_VAL(copyString(vm, inputString, strlen(inputString))); /* Creates the YAPL string */
+    char *inputString = readStrStdin(); /* Reads the input string */
+    return OBJ_VAL(copyString(vm, inputString, strlen(inputString)));
 }
 
 /**
@@ -282,6 +305,7 @@ void defineNatives(VM *vm) {
         "bool",
         "str",
         "num",
+        "abs",
         "input",
         "print",
         "println"
@@ -298,6 +322,7 @@ void defineNatives(VM *vm) {
         boolNative,
         strNative,
         numNative,
+        absNative,
         inputNative,
         printNative,
         printlnNative
