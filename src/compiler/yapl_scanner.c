@@ -123,6 +123,7 @@ static void preProcessSource(Scanner *scanner) {
             case '#':
                 while (peek(scanner) != '\n' && !reachedEOF(scanner)) /* Loop on comments */
                     advance(scanner);
+                break;
             default:
                 return;
         }
