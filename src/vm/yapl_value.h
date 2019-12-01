@@ -60,6 +60,7 @@ void writeValueArray(ValueArray *valueArray, Value value);
 /* Value operations */
 void printValue(Value value);
 bool valuesEqual(Value a, Value b);
+bool isFalsey(Value value);
 char *valueToString(Value *value);
 
 /* Object operations */

@@ -239,15 +239,6 @@ static void closeUpvalues(VM *vm, Value *last) {
 }
 
 /**
- * Takes the logical not (falsiness) of a value (boolean or null). In YAPL, 'null', 'false', the
- * number zero, and an empty string are falsey, while every other value behaves like 'true'.
- */
-static bool isFalsey(Value value) {
-    return IS_NULL(value) || (IS_BOOL(value) && !AS_BOOL(value)) ||
-           (IS_NUM(value) && AS_NUM(value) == 0);
-}
-
-/**
  * Concatenates the two values on the top of the virtual machine stack. Then, pushes the new string
  * to the stack.
  */

@@ -141,6 +141,18 @@ static Value typeNative(VM *vm, int argCount, Value *args) {
 }
 
 /**
+ * Native YAPL function to convert a given YAPL Value to a boolean.
+ */
+static Value boolNative(VM *vm, int argCount, Value *args) {
+    CHECK_ARGS(vm, !=, argCount, 1);
+    if (!IS_BOOL(*args)) {
+        return BOOL_VAL(!isFalsey(*args));
+    }
+
+    return *args; /* Given value is already a boolean */
+}
+
+/**
  * Native YAPL function to convert a given YAPL Value to a string.
  */
 static Value strNative(VM *vm, int argCount, Value *args) {
@@ -267,6 +279,7 @@ void defineNatives(VM *vm) {
         "clock",
         "time",
         "type",
+        "bool",
         "str",
         "num",
         "input",
@@ -282,6 +295,7 @@ void defineNatives(VM *vm) {
         clockNative,
         timeNative,
         typeNative,
+        boolNative,
         strNative,
         numNative,
         inputNative,
