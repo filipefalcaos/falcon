@@ -122,6 +122,15 @@ bool valuesEqual(Value a, Value b) {
     }
 }
 
+/**
+ * Takes the logical not (falsiness) of a value. In YAPL, 'null', 'false', the number zero, and an empty string are
+ * falsey, while every other value behaves like 'true'.
+ */
+bool isFalsey(Value value) {
+    return IS_NULL(value) || (IS_BOOL(value) && !AS_BOOL(value)) || (IS_NUM(value) && AS_NUM(value) == 0) ||
+           (IS_STRING(value) && AS_STRING(value)->length == 0);
+}
+
 /* String conversion constants */
 #define MAX_NUM_TO_STR       50
 #define NUM_TO_STR_FORMATTER "%.14g"

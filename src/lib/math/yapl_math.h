@@ -11,8 +11,8 @@
 
 /* Mathematical operations */
 int getDigits(int n);
-
-/* Computes a^b */
-#define YAPL_POW(a, b) pow(a, b)
+double getAbs(double value);
+double getSqrt(double value);
+double getPow(double x, double y);
 
 #endif // YAPL_MATH_H

@@ -18,9 +18,13 @@ typedef struct {
     NativeFn function;
 } ObjNative;
 
+/* Native function implementation */
+typedef struct {
+    const char *functionName;
+    NativeFn nativeFn;
+} NativeFnImp;
+
 /* Native functions operations */
-ObjNative *newNative(VM *vm, NativeFn function);
-void defineNative(VM *vm, const char *name, NativeFn function);
 void defineNatives(VM *vm);
 
 /* Native functions errors */
