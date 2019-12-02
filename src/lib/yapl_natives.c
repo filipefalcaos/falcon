@@ -220,6 +220,20 @@ YAPL_NATIVE(absNative) {
     return NUM_VAL(absValue);
 }
 
+/**
+ * Native YAPL function to get the absolute value of a given YAPL Value.
+ */
+YAPL_NATIVE(sqrtNative) {
+    CHECK_ARGS(vm, !=, argCount, 1);
+    if (!IS_NUM(*args)) {
+        VMError(vm, ARGS_TYPE_ERR, 1, "number");
+        return ERR_VAL;
+    }
+
+    double sqrtValue = getSqrt(AS_NUM(*args)); /* Gets the sqrt value */
+    return NUM_VAL(sqrtValue);
+}
+
 /*
  * ================================================================================================
  * ====================================== IO native functions =====================================
@@ -309,6 +323,7 @@ void defineNatives(VM *vm) {
         { "num", numNative },
         { "str", strNative },
         { "abs", absNative },
+        { "sqrt", sqrtNative },
         { "input", inputNative },
         { "print", printNative },
         { "println", printlnNative }
