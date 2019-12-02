@@ -23,6 +23,16 @@
         }                                                         \
     } while (false)
 
+/* Checks if a given value "value" of a given type "type" at a given position "pos" is a value of
+ * the requested type */
+#define CHECK_TYPE(type, typeName, value, vm, pos)     \
+    do {                                               \
+        if (!type(value)) {                            \
+            VMError(vm, ARGS_TYPE_ERR, pos, typeName); \
+            return ERR_VAL;                            \
+        }                                              \
+    } while (false)
+
 /* Defines a common interface to all YAPL native functions */
 #define YAPL_NATIVE(name) static Value name(VM *vm, int argCount, Value *args)
 
@@ -67,11 +77,7 @@ YAPL_NATIVE(helpNative) {
  */
 YAPL_NATIVE(exitNative) {
     CHECK_ARGS(vm, !=, argCount, 1);
-    if (!IS_NUM(*args)) {
-        VMError(vm, ARGS_TYPE_ERR, 1, "number");
-        return ERR_VAL;
-    }
-
+    CHECK_TYPE(IS_NUM, "number", *args, vm, 1);
     exit((int) AS_NUM(*args)); /* Exits the process */
 }
 
@@ -150,10 +156,7 @@ YAPL_NATIVE(typeNative) {
  */
 YAPL_NATIVE(boolNative) {
     CHECK_ARGS(vm, !=, argCount, 1);
-    if (!IS_BOOL(*args)) {
-        return BOOL_VAL(!isFalsey(*args));
-    }
-
+    if (!IS_BOOL(*args)) return BOOL_VAL(!isFalsey(*args));
     return *args; /* Given value is already a boolean */
 }
 
@@ -211,27 +214,30 @@ YAPL_NATIVE(strNative) {
  */
 YAPL_NATIVE(absNative) {
     CHECK_ARGS(vm, !=, argCount, 1);
-    if (!IS_NUM(*args)) {
-        VMError(vm, ARGS_TYPE_ERR, 1, "number");
-        return ERR_VAL;
-    }
-
+    CHECK_TYPE(IS_NUM, "number", *args, vm, 1);
     double absValue = getAbs(AS_NUM(*args)); /* Gets the abs value */
     return NUM_VAL(absValue);
 }
 
 /**
- * Native YAPL function to get the absolute value of a given YAPL Value.
+ * Native YAPL function to get the square root of a given YAPL Value.
  */
 YAPL_NATIVE(sqrtNative) {
     CHECK_ARGS(vm, !=, argCount, 1);
-    if (!IS_NUM(*args)) {
-        VMError(vm, ARGS_TYPE_ERR, 1, "number");
-        return ERR_VAL;
-    }
-
+    CHECK_TYPE(IS_NUM, "number", *args, vm, 1);
     double sqrtValue = getSqrt(AS_NUM(*args)); /* Gets the sqrt value */
     return NUM_VAL(sqrtValue);
+}
+
+/**
+ * Native YAPL function to get the value of a number "x" to the power of a number "y".
+ */
+YAPL_NATIVE(powNative) {
+    CHECK_ARGS(vm, !=, argCount, 2);
+    CHECK_TYPE(IS_NUM, "number", args[0], vm, 1);
+    CHECK_TYPE(IS_NUM, "number", args[1], vm, 2);
+    double powValue = getPow(AS_NUM(args[0]), AS_NUM(args[1])); /* Gets the pow value */
+    return NUM_VAL(powValue);
 }
 
 /*
@@ -245,15 +251,10 @@ YAPL_NATIVE(sqrtNative) {
  */
 YAPL_NATIVE(inputNative) {
     CHECK_ARGS(vm, >, argCount, 1);
-
     if (argCount == 1) {
         Value prompt = *args;
-        if (!IS_STRING(prompt)) { /* Checks if the prompt is valid */
-            VMError(vm, ARGS_TYPE_ERR, 1, "string");
-            return ERR_VAL;
-        }
-
-        printf("%s", AS_CLANG_STRING(prompt)); /* Prints the prompt */
+        CHECK_TYPE(IS_STRING, "string", prompt, vm, 1); /* Checks if the prompt is valid */
+        printf("%s", AS_CLANG_STRING(prompt));          /* Prints the prompt */
     }
 
     char *inputString = readStrStdin(); /* Reads the input string */
@@ -324,6 +325,7 @@ void defineNatives(VM *vm) {
         { "str", strNative },
         { "abs", absNative },
         { "sqrt", sqrtNative },
+        { "pow", powNative },
         { "input", inputNative },
         { "print", printNative },
         { "println", printlnNative }

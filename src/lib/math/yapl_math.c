@@ -20,3 +20,8 @@ double getAbs(double value) { return fabs(value); }
  * Gets the square root value of a given double number.
  */
 double getSqrt(double value) { return sqrt(value); }
+
+/**
+ * Gets the value of a number "x" to the power of a number "y".
+ */
+double getPow(double x, double y) { return pow(x, y); }

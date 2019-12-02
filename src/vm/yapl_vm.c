@@ -413,7 +413,7 @@ static ResultCode run(VM *vm) {
             case OP_POW: {
                 ASSERT_TOP2_NUM(vm);
                 double a = AS_NUM(pop(vm));
-                vm->stackTop[-1] = NUM_VAL(YAPL_POW(AS_NUM(vm->stackTop[-1]), a));
+                vm->stackTop[-1] = NUM_VAL(getPow(AS_NUM(vm->stackTop[-1]), a));
                 break;
             }
 

@@ -13,8 +13,6 @@
 int getDigits(int n);
 double getAbs(double value);
 double getSqrt(double value);
-
-/* Computes a^b */
-#define YAPL_POW(a, b) pow(a, b)
+double getPow(double x, double y);
 
 #endif // YAPL_MATH_H
