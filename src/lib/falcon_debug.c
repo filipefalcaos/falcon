@@ -96,7 +96,7 @@ static int closureInstruction(const char *name, FalconBytecodeChunk *bytecodeChu
     FalconPrintValue(bytecodeChunk->constants.values[constant]);
     printf("\n");
 
-    FalconObjFunction *function = AS_FUNCTION(bytecodeChunk->constants.values[constant]);
+    FalconObjFunction *function = FALCON_AS_FUNCTION(bytecodeChunk->constants.values[constant]);
     for (int i = 0; i < function->upvalueCount; i++) {
         int isLocal = bytecodeChunk->code[offset++];
         int index = bytecodeChunk->code[offset++];

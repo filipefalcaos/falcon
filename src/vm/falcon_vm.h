@@ -61,17 +61,17 @@ static inline bool isObjType(FalconValue value, FalconObjType type) {
 }
 
 /* Gets a object type from an Falcon Value */
-#define OBJ_TYPE(value) (FALCON_AS_OBJ(value)->type)
+#define FALCON_OBJ_TYPE(value) (FALCON_AS_OBJ(value)->type)
 
 /* Checks if a Value is an FalconObj type */
-#define IS_STRING(value)   isObjType(value, OBJ_STRING)
+#define FALCON_IS_STRING(value)   isObjType(value, OBJ_STRING)
 
 /* Gets the object value from a Falcon Value */
-#define AS_CLOSURE(value)      ((FalconObjClosure *) FALCON_AS_OBJ(value))
-#define AS_FUNCTION(value)     ((FalconObjFunction *) FALCON_AS_OBJ(value))
-#define AS_NATIVE(value)       (((FalconObjNative *) FALCON_AS_OBJ(value))->function)
-#define AS_STRING(value)       ((FalconObjString *) FALCON_AS_OBJ(value))
-#define AS_CLANG_STRING(value) (((FalconObjString *) FALCON_AS_OBJ(value))->chars)
+#define FALCON_AS_CLOSURE(value)  ((FalconObjClosure *) FALCON_AS_OBJ(value))
+#define FALCON_AS_FUNCTION(value) ((FalconObjFunction *) FALCON_AS_OBJ(value))
+#define FALCON_AS_NATIVE(value)   (((FalconObjNative *) FALCON_AS_OBJ(value))->function)
+#define FALCON_AS_STRING(value)   ((FalconObjString *) FALCON_AS_OBJ(value))
+#define FALCON_AS_CSTRING(value)  (((FalconObjString *) FALCON_AS_OBJ(value))->chars)
 
 /* Call frame representation */
 typedef struct {

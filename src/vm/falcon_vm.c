@@ -111,13 +111,13 @@ FalconObjFunction *FalconNewFunction(VM *vm) {
 }
 
 /* Returns the count of elements in the VM stack */
-#define STACK_COUNT(vm) (vm->stackTop - &vm->stack[0])
+#define FALCON_STACK_COUNT(vm) (vm->stackTop - &vm->stack[0])
 
 /**
  * Pushes a value to the Falcon's virtual machine stack.
  */
 bool FalconPush(VM *vm, FalconValue value) {
-    if (STACK_COUNT(vm) > FALCON_VM_STACK_MAX - 1) {
+    if (FALCON_STACK_COUNT(vm) > FALCON_VM_STACK_MAX - 1) {
         FalconVMError(vm, FALCON_STACK_OVERFLOW);
         return false;
     }
@@ -150,7 +150,7 @@ void printStack(VM *vm) {
         FalconPrintValue(*slot);
         printf(" ] ");
     }
-    printf("\nStack count: %ld\n", STACK_COUNT(vm));
+    printf("\nStack count: %ld\n", FALCON_STACK_COUNT(vm));
 }
 
 /**
@@ -179,11 +179,11 @@ static bool call(VM *vm, FalconObjClosure *closure, int argCount) {
  */
 static bool callValue(VM *vm, FalconValue callee, int argCount) {
     if (FALCON_IS_OBJ(callee)) {
-        switch (OBJ_TYPE(callee)) {
+        switch (FALCON_OBJ_TYPE(callee)) {
             case OBJ_CLOSURE:
-                return call(vm, AS_CLOSURE(callee), argCount);
+                return call(vm, FALCON_AS_CLOSURE(callee), argCount);
             case OBJ_NATIVE: {
-                FalconNativeFn native = AS_NATIVE(callee);
+                FalconNativeFn native = FALCON_AS_NATIVE(callee);
                 FalconValue out =
                     native(vm, argCount, vm->stackTop - argCount); /* Runs native func */
                 if (FALCON_IS_ERR(out)) return false; /* Checks if a runtime error occurred */
@@ -245,8 +245,8 @@ static void closeUpvalues(VM *vm, FalconValue *last) {
  * to the stack.
  */
 static void concatenateStrings(VM *vm) {
-    FalconObjString *b = AS_STRING(FalconPop(vm));
-    FalconObjString *a = AS_STRING(vm->stackTop[-1]);
+    FalconObjString *b = FALCON_AS_STRING(FalconPop(vm));
+    FalconObjString *a = FALCON_AS_STRING(vm->stackTop[-1]);
     FalconObjString *result = FalconConcatStrings(vm, b, a); /* Concatenate both strings */
     vm->stackTop[-1] = FALCON_OBJ_VAL(result);               /* Update the stack top */
     FalconTableSet(&vm->strings, result, FALCON_NULL_VAL);   /* Intern the string */
@@ -267,7 +267,7 @@ static FalconResultCode run(VM *vm) {
  * corresponding location in the chunk’s constant table */
 #define FALCON_READ_CONSTANT() \
     (frame->closure->function->bytecodeChunk.constants.values[FALCON_READ_BYTE()])
-#define FALCON_READ_STRING() AS_STRING(FALCON_READ_CONSTANT())
+#define FALCON_READ_STRING() FALCON_AS_STRING(FALCON_READ_CONSTANT())
 
 /* Checks if the two elements at the top of the Falcon VM's stack are numerical Values. If not, a
  * runtime error is returned */
@@ -386,7 +386,7 @@ static FalconResultCode run(VM *vm) {
 
             /* Arithmetic operations */
             case FALCON_OP_ADD: {
-                if (IS_STRING(peek(vm, 0)) && IS_STRING(peek(vm, 1))) {
+                if (FALCON_IS_STRING(peek(vm, 0)) && FALCON_IS_STRING(peek(vm, 1))) {
                     concatenateStrings(vm);
                 } else if (FALCON_IS_NUM(peek(vm, 0)) && FALCON_IS_NUM(peek(vm, 1))) {
                     double a = FALCON_AS_NUM(FalconPop(vm));
@@ -489,7 +489,7 @@ static FalconResultCode run(VM *vm) {
 
             /* Function operations */
             case FALCON_OP_CLOSURE: {
-                FalconObjFunction *function = AS_FUNCTION(FALCON_READ_CONSTANT());
+                FalconObjFunction *function = FALCON_AS_FUNCTION(FALCON_READ_CONSTANT());
                 FalconObjClosure *closure = FalconNewClosure(vm, function);
                 if (!FalconPush(vm, FALCON_OBJ_VAL(closure))) return FALCON_RUNTIME_ERROR;
 
@@ -539,7 +539,7 @@ static FalconResultCode run(VM *vm) {
                 break;
             case FALCON_OP_POP_EXPR: {
                 FalconValue result = FalconPop(vm);
-                bool isString = IS_STRING(result);
+                bool isString = FALCON_IS_STRING(result);
                 printf(" => ");
                 if (isString) printf("\"");
                 FalconPrintValue(result);

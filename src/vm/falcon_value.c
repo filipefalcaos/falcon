@@ -83,17 +83,17 @@ static void printFunction(FalconObjFunction *function) {
  * Prints a single Falcon object.
  */
 void FalconPrintObject(FalconValue value) {
-    switch (OBJ_TYPE(value)) {
+    switch (FALCON_OBJ_TYPE(value)) {
         case OBJ_STRING:
-            printf("%s", AS_CLANG_STRING(value));
+            printf("%s", FALCON_AS_CSTRING(value));
             break;
         case OBJ_UPVALUE:
             break; /* Upvalues cannot be printed */
         case OBJ_CLOSURE:
-            printFunction(AS_CLOSURE(value)->function);
+            printFunction(FALCON_AS_CLOSURE(value)->function);
             break;
         case OBJ_FUNCTION:
-            printFunction(AS_FUNCTION(value));
+            printFunction(FALCON_AS_FUNCTION(value));
             break;
         case OBJ_NATIVE:
             printf("<native fn>");
@@ -128,7 +128,7 @@ bool FalconValuesEqual(FalconValue a, FalconValue b) {
 bool FalconIsFalsey(FalconValue value) {
     return FALCON_IS_NULL(value) || (FALCON_IS_BOOL(value) && !FALCON_AS_BOOL(value)) ||
            (FALCON_IS_NUM(value) && FALCON_AS_NUM(value) == 0) ||
-           (IS_STRING(value) && AS_STRING(value)->length == 0);
+           (FALCON_IS_STRING(value) && FALCON_AS_STRING(value)->length == 0);
 }
 
 /* String conversion constants */
@@ -153,7 +153,7 @@ char *FalconValueToString(FalconValue *value) {
             sprintf(string, FALCON_NUM_TO_STR_FORMATTER, FALCON_AS_NUM(*value));
             break;
         case VAL_OBJ:
-            switch (OBJ_TYPE(*value)) {
+            switch (FALCON_OBJ_TYPE(*value)) {
                 case OBJ_CLOSURE: /* TODO: add toString support for the objects below */
                 case OBJ_FUNCTION:
                 case OBJ_NATIVE:

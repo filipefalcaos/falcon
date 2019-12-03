@@ -1148,7 +1148,8 @@ int instructionArgs(const FalconBytecodeChunk *bytecodeChunk, int pc) {
 
         case FALCON_OP_CLOSURE: {
             int index = bytecodeChunk->code[pc + 1];
-            FalconObjFunction *function = AS_FUNCTION(bytecodeChunk->constants.values[index]);
+            FalconObjFunction *function =
+                FALCON_AS_FUNCTION(bytecodeChunk->constants.values[index]);
             return 1 + function->upvalueCount * 2; /* Function: 1 byte; Upvalues: 2 bytes each */
         }
 

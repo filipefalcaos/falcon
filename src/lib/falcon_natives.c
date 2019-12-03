@@ -128,7 +128,7 @@ FALCON_NATIVE(FalconTypeNative) {
             typeStringLen = 8;
             break;
         case VAL_OBJ:
-            switch (OBJ_TYPE(*args)) {
+            switch (FALCON_OBJ_TYPE(*args)) {
                 case OBJ_STRING:
                     typeString = "<string>";
                     typeStringLen = 8;
@@ -166,14 +166,14 @@ FALCON_NATIVE(FalconBoolNative) {
 FALCON_NATIVE(FalconNumNative) {
     FALCON_CHECK_ARGS(vm, !=, argCount, 1);
     if (!FALCON_IS_NUM(*args)) {
-        if (!IS_STRING(*args) && !FALCON_IS_BOOL(*args)) {
+        if (!FALCON_IS_STRING(*args) && !FALCON_IS_BOOL(*args)) {
             FalconVMError(vm, FALCON_ARGS_TYPE_ERR, 1, "string, boolean, or number");
             return FALCON_ERR_VAL;
         }
 
-        if (IS_STRING(*args)) { /* String to number */
-            char *start = AS_CLANG_STRING(*args), *end;
-            double number = strtod(AS_CLANG_STRING(*args), &end); /* Converts to double */
+        if (FALCON_IS_STRING(*args)) { /* String to number */
+            char *start = FALCON_AS_CSTRING(*args), *end;
+            double number = strtod(FALCON_AS_CSTRING(*args), &end); /* Converts to double */
 
             if (start == end) { /* Checks for conversion success */
                 FalconVMError(vm, FALCON_CONV_STR_NUM_ERR);
@@ -195,7 +195,7 @@ FALCON_NATIVE(FalconNumNative) {
  */
 FALCON_NATIVE(FalconStrNative) {
     FALCON_CHECK_ARGS(vm, !=, argCount, 1);
-    if (!IS_STRING(*args)) {
+    if (!FALCON_IS_STRING(*args)) {
         char *string = FalconValueToString(args); /* Converts value to a string */
         return FALCON_OBJ_VAL(FalconCopyString(vm, string, strlen(string)));
     }
@@ -256,8 +256,8 @@ FALCON_NATIVE(FalconInputNative) {
     FALCON_CHECK_ARGS(vm, >, argCount, 1);
     if (argCount == 1) {
         FalconValue prompt = *args;
-        FALCON_CHECK_TYPE(IS_STRING, "string", prompt, vm, 1); /* Checks if the prompt is valid */
-        printf("%s", AS_CLANG_STRING(prompt));                 /* Prints the prompt */
+        FALCON_CHECK_TYPE(FALCON_IS_STRING, "string", prompt, vm, 1); /* Checks if is valid */
+        printf("%s", FALCON_AS_CSTRING(prompt));                      /* Prints the prompt */
     }
 
     char *inputString = FalconReadStrStdin(); /* Reads the input string */
@@ -306,7 +306,7 @@ static FalconObjNative *FalconNewNative(VM *vm, FalconNativeFn function) {
 static void defineNative(VM *vm, const char *name, FalconNativeFn function) {
     FalconPush(vm, FALCON_OBJ_VAL(FalconCopyString(vm, name, (int) strlen(name))));
     FalconPush(vm, FALCON_OBJ_VAL(FalconNewNative(vm, function)));
-    FalconTableSet(&vm->globals, AS_STRING(vm->stack[0]), vm->stack[1]);
+    FalconTableSet(&vm->globals, FALCON_AS_STRING(vm->stack[0]), vm->stack[1]);
     FalconPop(vm);
     FalconPop(vm);
 }
