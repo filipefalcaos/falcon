@@ -93,8 +93,9 @@ typedef struct {
     FalconFunctionCompiler *fCompiler; /* The compiler for the currently compiling function */
 } FalconCompiler;
 
-/* Function pointer to the parsing functions */
+/* Function pointer to the parsing functions and a common interface to all parsing rules */
 typedef void (*FalconParseFunction)(FalconCompiler *compiler, bool canAssign);
+#define FALCON_PARSE_RULE(name) static void name(FalconCompiler *compiler, bool canAssign)
 
 /* Parsing rules (prefix function, infix function, precedence level) */
 typedef struct {
@@ -529,147 +530,6 @@ static uint8_t argumentList(FalconCompiler *compiler) {
 }
 
 /**
- * Handles the "and" logical operator with short-circuit.
- */
-static void and_(FalconCompiler *compiler, bool canAssign) {
-    (void) canAssign; /* Unused */
-    int jump = emitJump(compiler, FALCON_OP_AND);
-    parsePrecedence(compiler, FALCON_PREC_AND);
-    patchJump(compiler, jump);
-}
-
-/**
- * Handles the "or" logical operator with short-circuit.
- */
-static void or_(FalconCompiler *compiler, bool canAssign) {
-    (void) canAssign; /* Unused */
-    int jump = emitJump(compiler, FALCON_OP_OR);
-    parsePrecedence(compiler, FALCON_PREC_OR);
-    patchJump(compiler, jump);
-}
-
-/**
- * Handles a binary (infix) expression, by compiling the right operand of the expression (the left
- * one was already compiled). Then, emits the bytecode instruction that performs the binary
- * operation.
- */
-static void binary(FalconCompiler *compiler, bool canAssign) {
-    (void) canAssign; /* Unused */
-    FalconTokenType operatorType = compiler->parser->previous.type;
-    FalconParseRule *rule = getParseRule(operatorType); /* Gets the current rule */
-    parsePrecedence(compiler, rule->precedence + 1);    /* Compiles with the correct precedence */
-
-    /* Emits the operator instruction */
-    switch (operatorType) {
-        case FALCON_TK_NOT_EQUAL:
-            emitBytes(compiler, FALCON_OP_EQUAL, FALCON_OP_NOT);
-            break;
-        case FALCON_TK_EQUAL_EQUAL:
-            emitByte(compiler, FALCON_OP_EQUAL);
-            break;
-        case FALCON_TK_GREATER:
-            emitByte(compiler, FALCON_OP_GREATER);
-            break;
-        case FALCON_TK_GREATER_EQUAL:
-            emitBytes(compiler, FALCON_OP_LESS, FALCON_OP_NOT);
-            break;
-        case FALCON_TK_LESS:
-            emitByte(compiler, FALCON_OP_LESS);
-            break;
-        case FALCON_TK_LESS_EQUAL:
-            emitBytes(compiler, FALCON_OP_GREATER, FALCON_OP_NOT);
-            break;
-        case FALCON_TK_PLUS:
-            emitByte(compiler, FALCON_OP_ADD);
-            break;
-        case FALCON_TK_MINUS:
-            emitByte(compiler, FALCON_OP_SUBTRACT);
-            break;
-        case FALCON_TK_DIV:
-            emitByte(compiler, FALCON_OP_DIVIDE);
-            break;
-        case FALCON_TK_MOD:
-            emitByte(compiler, FALCON_OP_MOD);
-            break;
-        case FALCON_TK_MULTIPLY:
-            emitByte(compiler, FALCON_OP_MULTIPLY);
-            break;
-        default:
-            return; /* Unreachable */
-    }
-}
-
-/**
- * Handles a function call expression by parsing its arguments list and emitting the instruction to
- * proceed with the execution of the function.
- */
-static void call(FalconCompiler *compiler, bool canAssign) {
-    (void) canAssign; /* Unused */
-    uint8_t argCount = argumentList(compiler);
-    emitBytes(compiler, FALCON_OP_CALL, argCount);
-}
-
-/**
- * Handles the opening parenthesis by compiling the expression between the parentheses, and then
- * parsing the closing parenthesis.
- */
-static void grouping(FalconCompiler *compiler, bool canAssign) {
-    (void) canAssign; /* Unused */
-    expression(compiler);
-    consume(compiler, FALCON_TK_RIGHT_PAREN, FALCON_GRP_EXPR_ERR);
-}
-
-/**
- * Handles a literal (booleans or null) expression by outputting the proper instruction.
- */
-static void literal(FalconCompiler *compiler, bool canAssign) {
-    (void) canAssign; /* Unused */
-    switch (compiler->parser->previous.type) {
-        case FALCON_TK_FALSE:
-            emitByte(compiler, FALCON_OP_FALSE);
-            break;
-        case FALCON_TK_NULL:
-            emitByte(compiler, FALCON_OP_NULL);
-            break;
-        case FALCON_TK_TRUE:
-            emitByte(compiler, FALCON_OP_TRUE);
-            break;
-        default:
-            return; /* Unreachable */
-    }
-}
-
-/**
- * Handles a numeric expression by converting a string to a double number and then generates the
- * code to load that value by calling "emitConstant".
- */
-static void number(FalconCompiler *compiler, bool canAssign) {
-    (void) canAssign; /* Unused */
-    double value = strtod(compiler->parser->previous.start, NULL);
-    emitConstant(compiler, FALCON_NUM_VAL(value));
-}
-
-/**
- * Handles a exponentiation expression.
- */
-static void pow_(FalconCompiler *compiler, bool canAssign) {
-    (void) canAssign;                           /* Unused */
-    parsePrecedence(compiler, FALCON_PREC_POW); /* Compiles the operand */
-    emitByte(compiler, FALCON_OP_POW);
-}
-
-/**
- * Handles a string expression by creating a string object, wrapping it in a Value, and then
- * adding it to the constants table.
- */
-static void string(FalconCompiler *compiler, bool canAssign) {
-    (void) canAssign; /* Unused */
-    FalconParser *parser = compiler->parser;
-    emitConstant(compiler, FALCON_OBJ_VAL(FalconCopyString(compiler->vm, parser->previous.start + 1,
-                                                           parser->previous.length - 2)));
-}
-
-/**
  * Emits the instructions for a given compound assignment, which provide a shorter syntax for
  * assigning the result of an arithmetic operator.
  */
@@ -724,16 +584,157 @@ static void namedVariable(FalconCompiler *compiler, FalconToken name, bool canAs
 }
 
 /**
+ * Handles the "and" logical operator with short-circuit.
+ */
+FALCON_PARSE_RULE(and_) {
+    (void) canAssign; /* Unused */
+    int jump = emitJump(compiler, FALCON_OP_AND);
+    parsePrecedence(compiler, FALCON_PREC_AND);
+    patchJump(compiler, jump);
+}
+
+/**
+ * Handles the "or" logical operator with short-circuit.
+ */
+FALCON_PARSE_RULE(or_) {
+    (void) canAssign; /* Unused */
+    int jump = emitJump(compiler, FALCON_OP_OR);
+    parsePrecedence(compiler, FALCON_PREC_OR);
+    patchJump(compiler, jump);
+}
+
+/**
+ * Handles a binary (infix) expression, by compiling the right operand of the expression (the left
+ * one was already compiled). Then, emits the bytecode instruction that performs the binary
+ * operation.
+ */
+FALCON_PARSE_RULE(binary) {
+    (void) canAssign; /* Unused */
+    FalconTokenType operatorType = compiler->parser->previous.type;
+    FalconParseRule *rule = getParseRule(operatorType); /* Gets the current rule */
+    parsePrecedence(compiler, rule->precedence + 1);    /* Compiles with the correct precedence */
+
+    /* Emits the operator instruction */
+    switch (operatorType) {
+        case FALCON_TK_NOT_EQUAL:
+            emitBytes(compiler, FALCON_OP_EQUAL, FALCON_OP_NOT);
+            break;
+        case FALCON_TK_EQUAL_EQUAL:
+            emitByte(compiler, FALCON_OP_EQUAL);
+            break;
+        case FALCON_TK_GREATER:
+            emitByte(compiler, FALCON_OP_GREATER);
+            break;
+        case FALCON_TK_GREATER_EQUAL:
+            emitBytes(compiler, FALCON_OP_LESS, FALCON_OP_NOT);
+            break;
+        case FALCON_TK_LESS:
+            emitByte(compiler, FALCON_OP_LESS);
+            break;
+        case FALCON_TK_LESS_EQUAL:
+            emitBytes(compiler, FALCON_OP_GREATER, FALCON_OP_NOT);
+            break;
+        case FALCON_TK_PLUS:
+            emitByte(compiler, FALCON_OP_ADD);
+            break;
+        case FALCON_TK_MINUS:
+            emitByte(compiler, FALCON_OP_SUBTRACT);
+            break;
+        case FALCON_TK_DIV:
+            emitByte(compiler, FALCON_OP_DIVIDE);
+            break;
+        case FALCON_TK_MOD:
+            emitByte(compiler, FALCON_OP_MOD);
+            break;
+        case FALCON_TK_MULTIPLY:
+            emitByte(compiler, FALCON_OP_MULTIPLY);
+            break;
+        default:
+            return; /* Unreachable */
+    }
+}
+
+/**
+ * Handles a function call expression by parsing its arguments list and emitting the instruction to
+ * proceed with the execution of the function.
+ */
+FALCON_PARSE_RULE(call) {
+    (void) canAssign; /* Unused */
+    uint8_t argCount = argumentList(compiler);
+    emitBytes(compiler, FALCON_OP_CALL, argCount);
+}
+
+/**
+ * Handles the opening parenthesis by compiling the expression between the parentheses, and then
+ * parsing the closing parenthesis.
+ */
+FALCON_PARSE_RULE(grouping) {
+    (void) canAssign; /* Unused */
+    expression(compiler);
+    consume(compiler, FALCON_TK_RIGHT_PAREN, FALCON_GRP_EXPR_ERR);
+}
+
+/**
+ * Handles a literal (booleans or null) expression by outputting the proper instruction.
+ */
+FALCON_PARSE_RULE(literal) {
+    (void) canAssign; /* Unused */
+    switch (compiler->parser->previous.type) {
+        case FALCON_TK_FALSE:
+            emitByte(compiler, FALCON_OP_FALSE);
+            break;
+        case FALCON_TK_NULL:
+            emitByte(compiler, FALCON_OP_NULL);
+            break;
+        case FALCON_TK_TRUE:
+            emitByte(compiler, FALCON_OP_TRUE);
+            break;
+        default:
+            return; /* Unreachable */
+    }
+}
+
+/**
+ * Handles a numeric expression by converting a string to a double number and then generates the
+ * code to load that value by calling "emitConstant".
+ */
+FALCON_PARSE_RULE(number) {
+    (void) canAssign; /* Unused */
+    double value = strtod(compiler->parser->previous.start, NULL);
+    emitConstant(compiler, FALCON_NUM_VAL(value));
+}
+
+/**
+ * Handles a exponentiation expression.
+ */
+FALCON_PARSE_RULE(pow_) {
+    (void) canAssign;                           /* Unused */
+    parsePrecedence(compiler, FALCON_PREC_POW); /* Compiles the operand */
+    emitByte(compiler, FALCON_OP_POW);
+}
+
+/**
+ * Handles a string expression by creating a string object, wrapping it in a Value, and then
+ * adding it to the constants table.
+ */
+FALCON_PARSE_RULE(string) {
+    (void) canAssign; /* Unused */
+    FalconParser *parser = compiler->parser;
+    emitConstant(compiler, FALCON_OBJ_VAL(FalconCopyString(compiler->vm, parser->previous.start + 1,
+                                                           parser->previous.length - 2)));
+}
+
+/**
  * Handles a variable access.
  */
-static void variable(FalconCompiler *compiler, bool canAssign) {
+FALCON_PARSE_RULE(variable) {
     namedVariable(compiler, compiler->parser->previous, canAssign);
 }
 
 /**
  * Handles the ternary "?:" conditional operator expression.
  */
-static void ternary(FalconCompiler *compiler, bool canAssign) {
+FALCON_PARSE_RULE(ternary) {
     (void) canAssign;                                         /* Unused */
     int ifJump = emitJump(compiler, FALCON_OP_JUMP_IF_FALSE); /* Jumps if the condition is false */
     emitByte(compiler, FALCON_OP_POP);                        /* Pops the condition result */
@@ -752,7 +753,7 @@ static void ternary(FalconCompiler *compiler, bool canAssign) {
  * Handles a unary expression by compiling the operand and then emitting the bytecode to perform
  * the unary operation itself.
  */
-static void unary(FalconCompiler *compiler, bool canAssign) {
+FALCON_PARSE_RULE(unary) {
     (void) canAssign; /* Unused */
     FalconTokenType operatorType = compiler->parser->previous.type;
     parsePrecedence(compiler, FALCON_PREC_UNARY); /* Compiles the operand */
