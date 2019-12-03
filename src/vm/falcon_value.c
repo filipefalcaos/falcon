@@ -51,16 +51,16 @@ void FalconWriteValues(FalconValueArray *valueArray, FalconValue value) {
  */
 void FalconPrintValue(FalconValue value) {
     switch (value.type) {
-        case VAL_BOOL:
+        case FALCON_VAL_BOOL:
             printf(FALCON_AS_BOOL(value) ? "true" : "false");
             break;
-        case VAL_NULL:
+        case FALCON_VAL_NULL:
             printf("null");
             break;
-        case VAL_NUM:
+        case FALCON_VAL_NUM:
             printf("%g", FALCON_AS_NUM(value));
             break;
-        case VAL_OBJ:
+        case FALCON_VAL_OBJ:
             FalconPrintObject(value);
             break;
         default:
@@ -84,18 +84,18 @@ static void printFunction(FalconObjFunction *function) {
  */
 void FalconPrintObject(FalconValue value) {
     switch (FALCON_OBJ_TYPE(value)) {
-        case OBJ_STRING:
+        case FALCON_OBJ_STRING:
             printf("%s", FALCON_AS_CSTRING(value));
             break;
-        case OBJ_UPVALUE:
+        case FALCON_OBJ_UPVALUE:
             break; /* Upvalues cannot be printed */
-        case OBJ_CLOSURE:
+        case FALCON_OBJ_CLOSURE:
             printFunction(FALCON_AS_CLOSURE(value)->function);
             break;
-        case OBJ_FUNCTION:
+        case FALCON_OBJ_FUNCTION:
             printFunction(FALCON_AS_FUNCTION(value));
             break;
-        case OBJ_NATIVE:
+        case FALCON_OBJ_NATIVE:
             printf("<native fn>");
             break;
     }
@@ -108,13 +108,13 @@ bool FalconValuesEqual(FalconValue a, FalconValue b) {
     if (a.type != b.type) return false;
 
     switch (a.type) {
-        case VAL_BOOL:
+        case FALCON_VAL_BOOL:
             return FALCON_AS_BOOL(a) == FALCON_AS_BOOL(b);
-        case VAL_NULL:
+        case FALCON_VAL_NULL:
             return true;
-        case VAL_NUM:
+        case FALCON_VAL_NUM:
             return FALCON_AS_NUM(a) == FALCON_AS_NUM(b);
-        case VAL_OBJ:
+        case FALCON_VAL_OBJ:
             return FALCON_AS_OBJ(a) == FALCON_AS_OBJ(b);
         default:
             return false;
@@ -142,21 +142,21 @@ char *FalconValueToString(FalconValue *value) {
     char *string = NULL;
 
     switch (value->type) {
-        case VAL_BOOL:
+        case FALCON_VAL_BOOL:
             string = (FALCON_AS_BOOL(*value) ? "true" : "false");
             break;
-        case VAL_NULL:
+        case FALCON_VAL_NULL:
             string = "null";
             break;
-        case VAL_NUM:
+        case FALCON_VAL_NUM:
             string = FALCON_ALLOCATE(char, FALCON_MAX_NUM_TO_STR + 1);
             sprintf(string, FALCON_NUM_TO_STR_FORMATTER, FALCON_AS_NUM(*value));
             break;
-        case VAL_OBJ:
+        case FALCON_VAL_OBJ:
             switch (FALCON_OBJ_TYPE(*value)) {
-                case OBJ_CLOSURE: /* TODO: add toString support for the objects below */
-                case OBJ_FUNCTION:
-                case OBJ_NATIVE:
+                case FALCON_OBJ_CLOSURE: /* TODO: add toString support for the objects below */
+                case FALCON_OBJ_FUNCTION:
+                case FALCON_OBJ_NATIVE:
                 default:
                     break;
             }

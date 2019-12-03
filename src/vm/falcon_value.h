@@ -14,7 +14,13 @@ typedef struct sObj FalconObj;
 typedef struct sObjString FalconObjString;
 
 /* Types of values on Falcon */
-typedef enum { VAL_BOOL, VAL_NULL, VAL_NUM, VAL_OBJ, VAL_ERR } FalconValueType;
+typedef enum {
+    FALCON_VAL_BOOL,
+    FALCON_VAL_NULL,
+    FALCON_VAL_NUM,
+    FALCON_VAL_OBJ,
+    FALCON_VAL_ERR
+} FalconValueType;
 
 /* Value representation */
 typedef struct {
@@ -27,11 +33,11 @@ typedef struct {
 } FalconValue;
 
 /* Checks a Value type */
-#define FALCON_IS_BOOL(value) ((value).type == VAL_BOOL)
-#define FALCON_IS_NULL(value) ((value).type == VAL_NULL)
-#define FALCON_IS_NUM(value)  ((value).type == VAL_NUM)
-#define FALCON_IS_OBJ(value)  ((value).type == VAL_OBJ)
-#define FALCON_IS_ERR(value)  ((value).type == VAL_ERR)
+#define FALCON_IS_BOOL(value) ((value).type == FALCON_VAL_BOOL)
+#define FALCON_IS_NULL(value) ((value).type == FALCON_VAL_NULL)
+#define FALCON_IS_NUM(value)  ((value).type == FALCON_VAL_NUM)
+#define FALCON_IS_OBJ(value)  ((value).type == FALCON_VAL_OBJ)
+#define FALCON_IS_ERR(value)  ((value).type == FALCON_VAL_ERR)
 
 /* Gets the C value from a Falcon Value */
 #define FALCON_AS_BOOL(value) ((value).as.boolean)
@@ -39,11 +45,11 @@ typedef struct {
 #define FALCON_AS_OBJ(value)  ((value).as.obj)
 
 /* Sets a native C value to a Falcon Value */
-#define FALCON_BOOL_VAL(value) ((FalconValue) {VAL_BOOL, {.boolean = (value)}})
-#define FALCON_NUM_VAL(value)  ((FalconValue) {VAL_NUM, {.number = (value)}})
-#define FALCON_OBJ_VAL(object) ((FalconValue) {VAL_OBJ, {.obj = (FalconObj *) (object)}})
-#define FALCON_NULL_VAL        ((FalconValue) {VAL_NULL, {.number = 0}})
-#define FALCON_ERR_VAL         ((FalconValue) {VAL_ERR, {.number = 0}})
+#define FALCON_BOOL_VAL(value) ((FalconValue) {FALCON_VAL_BOOL, {.boolean = (value)}})
+#define FALCON_NUM_VAL(value)  ((FalconValue) {FALCON_VAL_NUM, {.number = (value)}})
+#define FALCON_OBJ_VAL(object) ((FalconValue) {FALCON_VAL_OBJ, {.obj = (FalconObj *) (object)}})
+#define FALCON_NULL_VAL        ((FalconValue) {FALCON_VAL_NULL, {.number = 0}})
+#define FALCON_ERR_VAL         ((FalconValue) {FALCON_VAL_ERR, {.number = 0}})
 
 /* Array of Values */
 typedef struct {

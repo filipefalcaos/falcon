@@ -52,27 +52,27 @@ FalconObj *FalconAllocateObject(VM *vm, size_t size, FalconObjType type) {
  */
 static void freeObject(FalconObj *object) {
     switch (object->type) {
-        case OBJ_STRING: {
+        case FALCON_OBJ_STRING: {
             FalconObjString *string = (FalconObjString *) object;
             FalconReallocate(object, sizeof(FalconObjString) + string->length + 1, 0);
             break;
         }
-        case OBJ_UPVALUE:
+        case FALCON_OBJ_UPVALUE:
             FALCON_FREE(FalconObjUpvalue, object);
             break;
-        case OBJ_CLOSURE: {
+        case FALCON_OBJ_CLOSURE: {
             FalconObjClosure *closure = (FalconObjClosure *) object;
             FALCON_FREE_ARRAY(FalconObjUpvalue *, closure->upvalues, closure->upvalueCount);
             FALCON_FREE(FalconObjClosure, object);
             break;
         }
-        case OBJ_FUNCTION: {
+        case FALCON_OBJ_FUNCTION: {
             FalconObjFunction *function = (FalconObjFunction *) object;
             FalconFreeBytecode(&function->bytecodeChunk);
             FALCON_FREE(FalconObjFunction, object);
             break;
         }
-        case OBJ_NATIVE:
+        case FALCON_OBJ_NATIVE:
             FALCON_FREE(FalconObjNative, object);
             break;
     }

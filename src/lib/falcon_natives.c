@@ -115,27 +115,27 @@ FALCON_NATIVE(FalconTypeNative) {
 
     /* Checks the value type */
     switch (args->type) {
-        case VAL_BOOL:
+        case FALCON_VAL_BOOL:
             typeString = "<bool>";
             typeStringLen = 6;
             break;
-        case VAL_NULL:
+        case FALCON_VAL_NULL:
             typeString = "<null>";
             typeStringLen = 6;
             break;
-        case VAL_NUM:
+        case FALCON_VAL_NUM:
             typeString = "<number>";
             typeStringLen = 8;
             break;
-        case VAL_OBJ:
+        case FALCON_VAL_OBJ:
             switch (FALCON_OBJ_TYPE(*args)) {
-                case OBJ_STRING:
+                case FALCON_OBJ_STRING:
                     typeString = "<string>";
                     typeStringLen = 8;
                     break;
-                case OBJ_CLOSURE:
-                case OBJ_FUNCTION:
-                case OBJ_NATIVE:
+                case FALCON_OBJ_CLOSURE:
+                case FALCON_OBJ_FUNCTION:
+                case FALCON_OBJ_NATIVE:
                     typeString = "<function>";
                     typeStringLen = 10;
                     break;
@@ -293,7 +293,7 @@ FALCON_NATIVE(FalconPrintNative) {
  * Allocates a new Falcon native function object.
  */
 static FalconObjNative *FalconNewNative(VM *vm, FalconNativeFn function) {
-    FalconObjNative *native = FALCON_ALLOCATE_OBJ(vm, FalconObjNative, OBJ_NATIVE);
+    FalconObjNative *native = FALCON_ALLOCATE_OBJ(vm, FalconObjNative, FALCON_OBJ_NATIVE);
     native->function = function;
     return native;
 }

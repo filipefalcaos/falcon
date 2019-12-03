@@ -1025,12 +1025,12 @@ static void switchStatement(FalconCompiler *compiler) {
 
     /* Possible switch states */
     typedef enum {
-        BEF_CASES, /* Before all cases */
-        BEF_ELSE,  /* Before else case */
-        AFT_ELSE   /* After else case */
+        FALCON_BEF_CASES, /* Before all cases */
+        FALCON_BEF_ELSE,  /* Before else case */
+        FALCON_AFT_ELSE   /* After else case */
     } SwitchState;
 
-    SwitchState switchState = BEF_CASES;
+    SwitchState switchState = FALCON_BEF_CASES;
     int caseEnds[FALCON_MAX_BYTE];
     int caseCount = 0;
     int previousCaseSkip = -1;
@@ -1042,9 +1042,9 @@ static void switchStatement(FalconCompiler *compiler) {
         if (match(compiler, FALCON_TK_WHEN) || match(compiler, FALCON_TK_ELSE)) {
             FalconTokenType caseType = parser->previous.type;
 
-            if (switchState == AFT_ELSE) { /* Already compiled the else case? */
+            if (switchState == FALCON_AFT_ELSE) { /* Already compiled the else case? */
                 compilerError(compiler, &parser->previous, FALCON_ELSE_END_ERR);
-            } else if (switchState == BEF_ELSE) { /* Else case not compiled yet? */
+            } else if (switchState == FALCON_BEF_ELSE) { /* Else case not compiled yet? */
                 caseEnds[caseCount++] =
                     emitJump(compiler, FALCON_OP_JUMP); /* Jumps the other cases */
                 patchJump(compiler, previousCaseSkip);  /* Patches the jump */
@@ -1052,7 +1052,7 @@ static void switchStatement(FalconCompiler *compiler) {
             }
 
             if (caseType == FALCON_TK_WHEN) {
-                switchState = BEF_ELSE;
+                switchState = FALCON_BEF_ELSE;
 
                 /* Checks if the case is equal to the switch value */
                 emitByte(compiler, FALCON_OP_DUP); /* "==" pops its operand, so duplicate before */
@@ -1063,19 +1063,19 @@ static void switchStatement(FalconCompiler *compiler) {
 
                 emitByte(compiler, FALCON_OP_POP); /* Pops the comparison result */
             } else {
-                switchState = AFT_ELSE;
+                switchState = FALCON_AFT_ELSE;
                 consume(compiler, FALCON_TK_ARROW, FALCON_ARR_ELSE_ERR);
                 previousCaseSkip = -1;
             }
         } else {
-            if (switchState == BEF_CASES) /* Statement outside a case? */
+            if (switchState == FALCON_BEF_CASES) /* Statement outside a case? */
                 compilerError(compiler, &parser->previous, FALCON_STMT_SWITCH_ERR);
             statement(compiler); /* Statement is inside a case */
         }
     }
 
     /* If no else case, patch its condition jump */
-    if (switchState == BEF_ELSE) {
+    if (switchState == FALCON_BEF_ELSE) {
         patchJump(compiler, previousCaseSkip);
         emitByte(compiler, FALCON_OP_POP);
     }

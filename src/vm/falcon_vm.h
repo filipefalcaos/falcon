@@ -12,7 +12,13 @@
 #include "falcon_bytecode.h"
 
 /* Types of objects on Falcon */
-typedef enum { OBJ_STRING, OBJ_UPVALUE, OBJ_CLOSURE, OBJ_FUNCTION, OBJ_NATIVE } FalconObjType;
+typedef enum {
+    FALCON_OBJ_STRING,
+    FALCON_OBJ_UPVALUE,
+    FALCON_OBJ_CLOSURE,
+    FALCON_OBJ_FUNCTION,
+    FALCON_OBJ_NATIVE
+} FalconObjType;
 
 /* Object representation */
 struct sObj {
@@ -64,7 +70,7 @@ static inline bool isObjType(FalconValue value, FalconObjType type) {
 #define FALCON_OBJ_TYPE(value) (FALCON_AS_OBJ(value)->type)
 
 /* Checks if a Value is an FalconObj type */
-#define FALCON_IS_STRING(value)   isObjType(value, OBJ_STRING)
+#define FALCON_IS_STRING(value)   isObjType(value, FALCON_OBJ_STRING)
 
 /* Gets the object value from a Falcon Value */
 #define FALCON_AS_CLOSURE(value)  ((FalconObjClosure *) FALCON_AS_OBJ(value))

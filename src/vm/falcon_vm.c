@@ -73,7 +73,7 @@ void FalconFreeVM(VM *vm) {
  * Allocates a new Falcon upvalue object.
  */
 FalconObjUpvalue *FalconNewUpvalue(VM *vm, FalconValue *slot) {
-    FalconObjUpvalue *upvalue = FALCON_ALLOCATE_OBJ(vm, FalconObjUpvalue, OBJ_UPVALUE);
+    FalconObjUpvalue *upvalue = FALCON_ALLOCATE_OBJ(vm, FalconObjUpvalue, FALCON_OBJ_UPVALUE);
     upvalue->slot = slot;
     upvalue->next = NULL;
     upvalue->closed = FALCON_NULL_VAL;
@@ -91,7 +91,7 @@ FalconObjClosure *FalconNewClosure(VM *vm, FalconObjFunction *function) {
         upvalues[i] = NULL; /* Initialize current upvalue */
     }
 
-    FalconObjClosure *closure = FALCON_ALLOCATE_OBJ(vm, FalconObjClosure, OBJ_CLOSURE);
+    FalconObjClosure *closure = FALCON_ALLOCATE_OBJ(vm, FalconObjClosure, FALCON_OBJ_CLOSURE);
     closure->function = function;
     closure->upvalues = upvalues;
     closure->upvalueCount = function->upvalueCount;
@@ -102,7 +102,7 @@ FalconObjClosure *FalconNewClosure(VM *vm, FalconObjFunction *function) {
  * Allocates a new Falcon function object.
  */
 FalconObjFunction *FalconNewFunction(VM *vm) {
-    FalconObjFunction *function = FALCON_ALLOCATE_OBJ(vm, FalconObjFunction, OBJ_FUNCTION);
+    FalconObjFunction *function = FALCON_ALLOCATE_OBJ(vm, FalconObjFunction, FALCON_OBJ_FUNCTION);
     function->arity = 0;
     function->upvalueCount = 0;
     function->name = NULL;
@@ -180,9 +180,9 @@ static bool call(VM *vm, FalconObjClosure *closure, int argCount) {
 static bool callValue(VM *vm, FalconValue callee, int argCount) {
     if (FALCON_IS_OBJ(callee)) {
         switch (FALCON_OBJ_TYPE(callee)) {
-            case OBJ_CLOSURE:
+            case FALCON_OBJ_CLOSURE:
                 return call(vm, FALCON_AS_CLOSURE(callee), argCount);
-            case OBJ_NATIVE: {
+            case FALCON_OBJ_NATIVE: {
                 FalconNativeFn native = FALCON_AS_NATIVE(callee);
                 FalconValue out =
                     native(vm, argCount, vm->stackTop - argCount); /* Runs native func */

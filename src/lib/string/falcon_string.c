@@ -28,7 +28,7 @@ uint32_t FalconHashString(const unsigned char *key, int length) {
  */
 FalconObjString *FalconMakeString(VM *vm, int length) {
     FalconObjString *str = (FalconObjString *) FalconAllocateObject(
-        vm, sizeof(FalconObjString) + length + 1, OBJ_STRING);
+        vm, sizeof(FalconObjString) + length + 1, FALCON_OBJ_STRING);
     str->length = length;
     return str;
 }
