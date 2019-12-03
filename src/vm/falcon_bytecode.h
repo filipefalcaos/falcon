@@ -34,6 +34,6 @@ void FalconFreeBytecode(FalconBytecodeChunk *bytecodeChunk);
 void FalconWriteBytecode(FalconBytecodeChunk *bytecodeChunk, uint8_t byte, int line);
 int FalconGetLine(FalconBytecodeChunk *bytecodeChunk, int instruction);
 int FalconAddConstant(FalconBytecodeChunk *bytecodeChunk, FalconValue value);
-void FalconWriteConstant(FalconBytecodeChunk *bytecodeChunk, int index, int line);
+void FalconWriteConstant(FalconBytecodeChunk *bytecodeChunk, uint16_t index, int line);
 
 #endif // FALCON_BYTECODE_H

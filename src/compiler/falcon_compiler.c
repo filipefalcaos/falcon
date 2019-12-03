@@ -201,11 +201,13 @@ static void emitBytes(FalconCompiler *compiler, uint8_t byte_1, uint8_t byte_2) 
  */
 static void emitLoop(FalconCompiler *compiler, int loopStart) {
     emitByte(compiler, FALCON_OP_LOOP);
-    int offset = currentBytecode(compiler->fCompiler)->count - loopStart + 2;
-    if (offset > UINT16_MAX)
+    uint16_t offset = currentBytecode(compiler->fCompiler)->count - loopStart + 2;
+
+    if (offset > UINT16_MAX) /* Loop is too long? */
         compilerError(compiler, &compiler->parser->previous, FALCON_LOOP_LIMIT_ERR);
-    emitByte(compiler, (uint8_t)((offset >> 8) & 0xff));
-    emitByte(compiler, (uint8_t)(offset & 0xff));
+
+    emitByte(compiler, (uint8_t) ((uint16_t) (offset >> 8u) & (uint16_t) 0xff));
+    emitByte(compiler, (uint8_t) (offset & (uint16_t) 0xff));
 }
 
 /**
@@ -258,12 +260,15 @@ static void emitConstant(FalconCompiler *compiler, FalconValue value) {
  * land on.
  */
 static void patchJump(FalconCompiler *compiler, int offset) {
-    int jump =
+    uint16_t jump =
         currentBytecode(compiler->fCompiler)->count - offset - 2; /* -2 to adjust by offset */
-    if (jump > UINT16_MAX)
+
+    if (jump > UINT16_MAX) /* Jump is too long? */
         compilerError(compiler, &compiler->parser->previous, FALCON_JUMP_LIMIT_ERR);
-    currentBytecode(compiler->fCompiler)->code[offset] = (uint8_t)((jump >> 8) & 0xff);
-    currentBytecode(compiler->fCompiler)->code[offset + 1] = (uint8_t)(jump & 0xff);
+
+    currentBytecode(compiler->fCompiler)->code[offset] =
+        (uint8_t)((uint16_t)(jump >> 8u) & (uint16_t) 0xff);
+    currentBytecode(compiler->fCompiler)->code[offset + 1] = (uint8_t)(jump & (uint16_t) 0xff);
 }
 
 /**

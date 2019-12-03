@@ -48,7 +48,7 @@ static int byteInstruction(const char *name, FalconBytecodeChunk *bytecodeChunk,
  * Displays a jump (conditional) instruction.
  */
 static int jumpInstruction(const char *name, int sign, FalconBytecodeChunk *bytecodeChunk, int offset) {
-    uint16_t jump = (uint16_t) (bytecodeChunk->code[offset + 1] << 8);
+    uint16_t jump = (uint16_t) (bytecodeChunk->code[offset + 1] << 8u);
     jump |= bytecodeChunk->code[offset + 2];
     printf("%-16s %4d -> %d\n", name, offset, offset + 3 + sign * jump);
     return offset + 3;
@@ -74,7 +74,8 @@ static int constantInstruction(const char *name, FalconBytecodeChunk *bytecodeCh
  * Displays a constant instruction (16 bits).
  */
 static int constantInstruction16(const char *name, FalconBytecodeChunk *bytecodeChunk, int offset) {
-    uint16_t constant = bytecodeChunk->code[offset + 1] | (bytecodeChunk->code[offset + 2] << 8);
+    uint16_t constant =
+        (bytecodeChunk->code[offset + 1] | (uint16_t)(bytecodeChunk->code[offset + 2] << 8u));
     FalconValue value = bytecodeChunk->constants.values[constant];
 
     /* Prints the constant */

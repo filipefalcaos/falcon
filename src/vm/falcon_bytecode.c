@@ -111,8 +111,8 @@ int FalconAddConstant(FalconBytecodeChunk *bytecodeChunk, FalconValue value) {
 /**
  * Writes a 2 bytes constant to the bytecode chunk.
  */
-void FalconWriteConstant(FalconBytecodeChunk *bytecodeChunk, int index, int line) {
+void FalconWriteConstant(FalconBytecodeChunk *bytecodeChunk, uint16_t index, int line) {
     FalconWriteBytecode(bytecodeChunk, FALCON_OP_CONSTANT, line);
-    FalconWriteBytecode(bytecodeChunk, (uint8_t)(index & 0xff), line);
-    FalconWriteBytecode(bytecodeChunk, (uint8_t)((index >> 8) & 0xff), line);
+    FalconWriteBytecode(bytecodeChunk, (uint8_t)(index & (uint16_t) 0xff), line);
+    FalconWriteBytecode(bytecodeChunk, (uint8_t)((uint16_t)(index >> 8u) & (uint16_t) 0xff), line);
 }
