@@ -1,49 +1,49 @@
 /*
- * YAPL version 0.0.1 (master, Oct 18 2019)
- * yapl_bytecode_chunk.c: YAPL's bytecode chunk
- * See YAPL's license in the LICENSE file
+ * Falcon version 0.0.2 (master, Dec 02 2019)
+ * falcon_bytecode.c: Falcon's bytecode chunk
+ * See Falcon's license in the LICENSE file
  */
 
-#include "yapl_bytecodechunk.h"
-#include "yapl_memmanager.h"
+#include "falcon_bytecode.h"
+#include "falcon_memory.h"
 
 /**
  * Initializes an empty bytecode chunk.
  */
-void initBytecodeChunk(BytecodeChunk *bytecodeChunk) {
+void FalconInitBytecode(FalconBytecodeChunk *bytecodeChunk) {
     bytecodeChunk->count = 0;
     bytecodeChunk->capacity = 0;
     bytecodeChunk->lineCount = 0;
     bytecodeChunk->lineCapacity = 0;
     bytecodeChunk->code = NULL;
     bytecodeChunk->lines = NULL;
-    initValueArray(&bytecodeChunk->constants);
+    FalconInitValues(&bytecodeChunk->constants);
 }
 
 /**
  * Frees a bytecode chunk.
  */
-void freeBytecodeChunk(BytecodeChunk *bytecodeChunk) {
-    FREE_ARRAY(uint8_t, bytecodeChunk->code, bytecodeChunk->capacity);
-    FREE_ARRAY(SourceLine, bytecodeChunk->lines, bytecodeChunk->lineCapacity);
-    freeValueArray(&bytecodeChunk->constants);
-    initBytecodeChunk(bytecodeChunk);
+void FalconFreeBytecode(FalconBytecodeChunk *bytecodeChunk) {
+    FALCON_FREE_ARRAY(uint8_t, bytecodeChunk->code, bytecodeChunk->capacity);
+    FALCON_FREE_ARRAY(SourceLine, bytecodeChunk->lines, bytecodeChunk->lineCapacity);
+    FalconFreeValues(&bytecodeChunk->constants);
+    FalconInitBytecode(bytecodeChunk);
 }
 
 /**
  * Appends a byte to the end of a bytecode chunk. If the current size is not enough, the capacity
  * of the bytecode chunk is increased to fit the new byte.
  */
-void writeToBytecodeChunk(BytecodeChunk *bytecodeChunk, uint8_t byte, int line) {
+void FalconWriteBytecode(FalconBytecodeChunk *bytecodeChunk, uint8_t byte, int line) {
     if (bytecodeChunk->capacity < bytecodeChunk->count + 1) { /* Checks if should increase */
         int oldCapacity = bytecodeChunk->capacity;
-        bytecodeChunk->capacity = INCREASE_CAPACITY(oldCapacity); /* Increase the capacity */
+        bytecodeChunk->capacity = FALCON_INCREASE_CAPACITY(oldCapacity); /* Increase the capacity */
         bytecodeChunk->code =
-            INCREASE_ARRAY(bytecodeChunk->code, uint8_t, oldCapacity,
+            FALCON_INCREASE_ARRAY(bytecodeChunk->code, uint8_t, oldCapacity,
                            bytecodeChunk->capacity); /* Increase the bytecode chunk */
 
         if (bytecodeChunk->code == NULL) { /* Checks if the allocation failed */
-            memoryError();
+            FalconMemoryError();
             return;
         }
     }
@@ -59,13 +59,14 @@ void writeToBytecodeChunk(BytecodeChunk *bytecodeChunk, uint8_t byte, int line) 
 
     if (bytecodeChunk->lineCapacity < bytecodeChunk->lineCount + 1) { /* Checks if new line */
         int oldCapacity = bytecodeChunk->lineCapacity;
-        bytecodeChunk->lineCapacity = INCREASE_CAPACITY(oldCapacity); /* Increases the capacity */
+        bytecodeChunk->lineCapacity =
+            FALCON_INCREASE_CAPACITY(oldCapacity); /* Increases the capacity */
         bytecodeChunk->lines =
-            INCREASE_ARRAY(bytecodeChunk->lines, SourceLine, oldCapacity,
-                           bytecodeChunk->lineCapacity); /* Increases the lines list */
+            FALCON_INCREASE_ARRAY(bytecodeChunk->lines, SourceLine, oldCapacity,
+                                  bytecodeChunk->lineCapacity); /* Increases the lines list */
 
         if (bytecodeChunk->lines == NULL) { /* Checks if the allocation failed */
-            memoryError();
+            FalconMemoryError();
             return;
         }
     }
@@ -77,10 +78,10 @@ void writeToBytecodeChunk(BytecodeChunk *bytecodeChunk, uint8_t byte, int line) 
 
 /**
  * Searches for the line that contains a given instruction, through a binary search. This procedure
- * is only possible because YAPL is single-pass compiled, which means instruction codes can only
+ * is only possible because Falcon is single-pass compiled, which means instruction codes can only
  * increase. Thus, the array is always sorted and a binary search is possible.
  */
-int getSourceLine(BytecodeChunk *bytecodeChunk, int instruction) {
+int FalconGetLine(FalconBytecodeChunk *bytecodeChunk, int instruction) {
     int start = 0;
     int end = bytecodeChunk->lineCount - 1;
 
@@ -102,16 +103,16 @@ int getSourceLine(BytecodeChunk *bytecodeChunk, int instruction) {
 /**
  * Adds a new constant to a bytecode chunk.
  */
-int addConstant(BytecodeChunk *bytecodeChunk, Value value) {
-    writeValueArray(&bytecodeChunk->constants, value);
+int FalconAddConstant(FalconBytecodeChunk *bytecodeChunk, FalconValue value) {
+    FalconWriteValues(&bytecodeChunk->constants, value);
     return bytecodeChunk->constants.count - 1;
 }
 
 /**
  * Writes a 2 bytes constant to the bytecode chunk.
  */
-void writeConstant(BytecodeChunk *bytecodeChunk, int index, int line) {
-    writeToBytecodeChunk(bytecodeChunk, OP_CONSTANT, line);
-    writeToBytecodeChunk(bytecodeChunk, (uint8_t) (index & 0xff), line);
-    writeToBytecodeChunk(bytecodeChunk, (uint8_t) ((index >> 8) & 0xff), line);
+void FalconWriteConstant(FalconBytecodeChunk *bytecodeChunk, int index, int line) {
+    FalconWriteBytecode(bytecodeChunk, FALCON_OP_CONSTANT, line);
+    FalconWriteBytecode(bytecodeChunk, (uint8_t)(index & 0xff), line);
+    FalconWriteBytecode(bytecodeChunk, (uint8_t)((index >> 8) & 0xff), line);
 }

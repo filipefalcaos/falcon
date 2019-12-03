@@ -1,14 +1,14 @@
-## YAPL grammar
+## Falcon grammar
 
-This document is a draft of the reference for the YAPL programming language grammar. It provides a formal definition 
-of YAPL grammar. It is also not intended to be an introduction to the language concepts or standard library. **This 
+This document is a draft of the reference for the Falcon programming language grammar. It provides a formal definition 
+of Falcon grammar. It is also not intended to be an introduction to the language concepts or standard library. **This 
 document is a work in progress.**
 
 The notation provided in this document is a dialect of the Extended Backus-Naur Form (EBNF). The postfix `*` means that 
 the previous symbol or group may be repeated zero or more times. Similarly, the postfix `+` means that the preceding 
 production should appear at least once. The postfix `?` is used for an optional production.
 
-The grammar starts with the first rule that matches an YAPL program:
+The grammar starts with the first rule that matches an Falcon program:
 
 ```
 program -> declaration* EOF ;
@@ -64,7 +64,7 @@ means that a block can be used separately from a function declaration.
 
 ### Expressions
 
-YAPL expressions produce values by using unary and binary operators with different levels of precedence. These 
+Falcon expressions produce values by using unary and binary operators with different levels of precedence. These 
 precedence levels are explicit in the grammar by setting separate rules:
 
 ```

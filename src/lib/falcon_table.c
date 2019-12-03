@@ -1,20 +1,20 @@
 /*
- * YAPL version 0.0.1 (master, Oct 18 2019)
- * yapl_table.c: Hashtable implementation, using open addressing and linear probing
- * See YAPL's license in the LICENSE file
+ * Falcon version 0.0.2 (master, Dec 02 2019)
+ * falcon_table.c: Hashtable implementation, using open addressing and linear probing
+ * See Falcon's license in the LICENSE file
  */
 
-#include "yapl_table.h"
-#include "../vm/yapl_memmanager.h"
+#include "falcon_table.h"
+#include "../vm/falcon_memory.h"
 #include <string.h>
 
 /* The hashtable max load factor */
-#define TABLE_MAX_LOAD 0.75
+#define FALCON_TABLE_MAX_LOAD 0.75
 
 /**
  * Initializes an empty hashtable.
  */
-void initTable(Table *table) {
+void FalconInitTable(FalconTable *table) {
     table->count = 0;
     table->capacity = 0;
     table->entries = NULL;
@@ -23,15 +23,15 @@ void initTable(Table *table) {
 /**
  * Frees a hashtable.
  */
-void freeTable(Table *table) {
-    FREE_ARRAY(Entry, table->entries, table->capacity);
-    initTable(table);
+void FalconFreeTable(FalconTable *table) {
+    FALCON_FREE_ARRAY(Entry, table->entries, table->capacity);
+    FalconInitTable(table);
 }
 
 /**
  * Find an entry for a given key.
  */
-static Entry *findEntry(Entry *entries, int capacity, ObjString *key) {
+static Entry *findEntry(Entry *entries, int capacity, FalconObjString *key) {
     uint32_t index = key->hash % capacity;
     Entry *tombstone = NULL;
 
@@ -39,7 +39,7 @@ static Entry *findEntry(Entry *entries, int capacity, ObjString *key) {
         Entry *entry = &entries[index];
 
         if (entry->key == NULL) { /* Checks if the entry is empty */
-            if (IS_NULL(entry->value))
+            if (FALCON_IS_NULL(entry->value))
                 return tombstone != NULL ? tombstone : entry;
             else if (tombstone == NULL)
                 tombstone = entry;      /* Tombstone found */
@@ -54,7 +54,7 @@ static Entry *findEntry(Entry *entries, int capacity, ObjString *key) {
 /**
  * Gets the value corresponding to a given key in a hashtable.
  */
-bool tableGet(Table *table, ObjString *key, Value *value) {
+bool FalconTableGet(FalconTable *table, FalconObjString *key, FalconValue *value) {
     if (table->count == 0) return false;
     Entry *entry = findEntry(table->entries, table->capacity, key);
     if (entry->key == NULL) return false;
@@ -66,16 +66,17 @@ bool tableGet(Table *table, ObjString *key, Value *value) {
  * Adjusts the capacity of a hashtable by initializing the added empty items and updating entries
  * of the original hashtable.
  */
-static void adjustCapacity(Table *table, int capacity) {
-    Entry *entries = ALLOCATE(Entry, capacity); /* Allocates a new set of HashTable entries */
-    if (entries == NULL) { /* Checks if the allocation failed */
-        memoryError();
+static void adjustCapacity(FalconTable *table, int capacity) {
+    Entry *entries =
+        FALCON_ALLOCATE(Entry, capacity); /* Allocates a new set of HashTable entries */
+    if (entries == NULL) {                /* Checks if the allocation failed */
+        FalconMemoryError();
         return;
     }
 
     for (int i = 0; i < capacity; i++) { /* Allocates the new entries */
         entries[i].key = NULL;
-        entries[i].value = NULL_VAL;
+        entries[i].value = FALCON_NULL_VAL;
     }
 
     table->count = 0;
@@ -88,7 +89,7 @@ static void adjustCapacity(Table *table, int capacity) {
         table->count++;
     }
 
-    FREE_ARRAY(Entry, table->entries, table->capacity); /* Frees the old hashtable */
+    FALCON_FREE_ARRAY(Entry, table->entries, table->capacity); /* Frees the old hashtable */
     table->entries = entries;
     table->capacity = capacity;
 }
@@ -97,15 +98,15 @@ static void adjustCapacity(Table *table, int capacity) {
  * Adds the given key/value pair into the given hashtable. If an entry for that key is already
  * present, the new value overwrites the old.
  */
-bool tableSet(Table *table, ObjString *key, Value value) {
-    if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) { /* Checks if nax load was reached */
-        int capacity = INCREASE_CAPACITY(table->capacity);
+bool FalconTableSet(FalconTable *table, FalconObjString *key, FalconValue value) {
+    if (table->count + 1 > table->capacity * FALCON_TABLE_MAX_LOAD) { /* Checks if nax load was reached */
+        int capacity = FALCON_INCREASE_CAPACITY(table->capacity);
         adjustCapacity(table, capacity); /* Adjust the hashtable capacity */
     }
 
     Entry *entry = findEntry(table->entries, table->capacity, key);
     bool isNewKey = entry->key == NULL;
-    if (isNewKey && IS_NULL(entry->value)) table->count++;
+    if (isNewKey && FALCON_IS_NULL(entry->value)) table->count++;
     entry->key = key;
     entry->value = value;
     return isNewKey;
@@ -114,19 +115,19 @@ bool tableSet(Table *table, ObjString *key, Value value) {
 /**
  * Deletes a key/value pair from a given hashtable.
  */
-bool tableDelete(Table *table, ObjString *key) {
+bool FalconTableDelete(FalconTable *table, FalconObjString *key) {
     if (table->count == 0) return false;
     Entry *entry = findEntry(table->entries, table->capacity, key);
     if (entry->key == NULL) return false;
     entry->key = NULL;
-    entry->value = BOOL_VAL(true);
+    entry->value = FALCON_BOOL_VAL(true);
     return true;
 }
 
 /**
  * Finds whether a string is set in a hashtable or not.
  */
-ObjString *tableFindStr(Table *table, const char *chars, int length, uint32_t hash) {
+FalconObjString *FalconTableFindStr(FalconTable *table, const char *chars, int length, uint32_t hash) {
     if (table->count == 0) return NULL;
     uint32_t index = hash % table->capacity;
 
@@ -134,7 +135,7 @@ ObjString *tableFindStr(Table *table, const char *chars, int length, uint32_t ha
         Entry *entry = &table->entries[index];
 
         if (entry->key == NULL) {
-            if (IS_NULL(entry->value)) return NULL;
+            if (FALCON_IS_NULL(entry->value)) return NULL;
         } else if (entry->key->length == length && entry->key->hash == hash &&
                    memcmp(entry->key->chars, chars, (size_t) length) ==
                        0) { /* Checks if length, hash, and content match */
