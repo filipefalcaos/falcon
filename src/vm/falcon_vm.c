@@ -241,8 +241,16 @@ static void closeUpvalues(VM *vm, FalconValue *last) {
 }
 
 /**
- * Concatenates the two values on the top of the virtual machine stack. Then, pushes the new string
- * to the stack.
+ * Compares the two string values on the top of the virtual machine stack.
+ */
+static int compareStrings(VM *vm) {
+    FalconObjString *str2 = FALCON_AS_STRING(FalconPop(vm));
+    return FalconCompareStrings(FALCON_AS_STRING(vm->stackTop[-1]), str2);
+}
+
+/**
+ * Concatenates the two string values on the top of the virtual machine stack. Then, pushes the new
+ * string to the stack.
  */
 static void concatenateStrings(VM *vm) {
     FalconObjString *b = FALCON_AS_STRING(FalconPop(vm));
@@ -259,15 +267,17 @@ static void concatenateStrings(VM *vm) {
 static FalconResultCode run(VM *vm) {
     FalconCallFrame *frame = &vm->frames[vm->frameCount - 1]; /* Current call frame */
 
+/* Constants of the current running bytecode */
+#define FALCON_CURR_CONSTANTS() frame->closure->function->bytecodeChunk.constants
+
 /* Reads the next 8 bits (byte) or 16 bits (2 bytes) */
 #define FALCON_READ_BYTE()  (*frame->pc++)
-#define FALCON_READ_SHORT() (frame->pc += 2, (uint16_t) ((frame->pc[-2] << 8) | frame->pc[-1]))
+#define FALCON_READ_SHORT() (frame->pc += 2, ((uint16_t) (frame->pc[-2] << 8u) | frame->pc[-1]))
 
 /* Reads the next byte from the bytecode, treats the resulting number as an index, and looks up the
  * corresponding location in the chunk’s constant table */
-#define FALCON_READ_CONSTANT() \
-    (frame->closure->function->bytecodeChunk.constants.values[FALCON_READ_BYTE()])
-#define FALCON_READ_STRING() FALCON_AS_STRING(FALCON_READ_CONSTANT())
+#define FALCON_READ_CONSTANT() FALCON_CURR_CONSTANTS().values[FALCON_READ_BYTE()]
+#define FALCON_READ_STRING()   FALCON_AS_STRING(FALCON_READ_CONSTANT())
 
 /* Checks if the two elements at the top of the Falcon VM's stack are numerical Values. If not, a
  * runtime error is returned */
@@ -320,6 +330,22 @@ static FalconResultCode run(VM *vm) {
         vm->stackTop[-1] = FALCON_NUM_VAL(a op b); \
     } while (false)
 
+/* Performs a greater/less (GL) comparison operation of the 'op' operator on the two elements on the
+ * top of the Falcon VM's stack. Then, sets the result on the top of the stack */
+#define FALCON_GL_COMPARE(vm, op)                                                                  \
+    do {                                                                                           \
+        if (FALCON_IS_STRING(peek(vm, 0)) && FALCON_IS_STRING(peek(vm, 1))) {                      \
+            int comparison = compareStrings(vm);                                                   \
+            vm->stackTop[-1] = (comparison op 0) ? FALCON_BOOL_VAL(true) : FALCON_BOOL_VAL(false); \
+        } else if (FALCON_IS_NUM(peek(vm, 0)) && FALCON_IS_NUM(peek(vm, 1))) {                     \
+            double a = FALCON_AS_NUM(FalconPop(vm));                                               \
+            vm->stackTop[-1] = FALCON_BOOL_VAL(FALCON_AS_NUM(vm->stackTop[-1]) op a);              \
+        } else {                                                                                   \
+            FalconVMError(vm, FALCON_OPR_NOT_NUM_STR_ERR);                                         \
+            return FALCON_RUNTIME_ERROR;                                                           \
+        }                                                                                          \
+    } while (false)
+
 #ifdef FALCON_DEBUG_TRACE_EXECUTION
     FalconExecutionHeader();
 #endif
@@ -336,9 +362,8 @@ static FalconResultCode run(VM *vm) {
 
             /* Constants and literals */
             case FALCON_OP_CONSTANT: {
-                uint16_t index = FALCON_READ_BYTE() | FALCON_READ_BYTE() << 8;
-                if (!FalconPush(vm,
-                                frame->closure->function->bytecodeChunk.constants.values[index]))
+                uint16_t index = FALCON_READ_BYTE() | (uint16_t) (FALCON_READ_BYTE() << 8u);
+                if (!FalconPush(vm, FALCON_CURR_CONSTANTS().values[index]))
                     return FALCON_RUNTIME_ERROR;
                 break;
             }
@@ -378,10 +403,10 @@ static FalconResultCode run(VM *vm) {
                 break;
             }
             case FALCON_OP_GREATER:
-                FALCON_BINARY_OP(vm, >, FALCON_BOOL_VAL);
+                FALCON_GL_COMPARE(vm, >);
                 break;
             case FALCON_OP_LESS:
-                FALCON_BINARY_OP(vm, <, FALCON_BOOL_VAL);
+                FALCON_GL_COMPARE(vm, <);
                 break;
 
             /* Arithmetic operations */
@@ -431,16 +456,14 @@ static FalconResultCode run(VM *vm) {
             case FALCON_OP_GET_GLOBAL: {
                 FalconObjString *name = FALCON_READ_STRING();
                 FalconValue value;
-                if (!FalconTableGet(&vm->globals, name,
-                                    &value)) /* Checks if variable is undefined */
+                if (!FalconTableGet(&vm->globals, name, &value)) /* Checks if is undefined */
                     return undefinedVariableError(vm, name, false);
                 if (!FalconPush(vm, value)) return FALCON_RUNTIME_ERROR;
                 break;
             }
             case FALCON_OP_SET_GLOBAL: {
                 FalconObjString *name = FALCON_READ_STRING();
-                if (FalconTableSet(&vm->globals, name,
-                                   peek(vm, 0))) /* Checks if variable is undefined */
+                if (FalconTableSet(&vm->globals, name, peek(vm, 0))) /* Checks if is undefined */
                     return undefinedVariableError(vm, name, true);
                 break;
             }
@@ -567,6 +590,7 @@ static FalconResultCode run(VM *vm) {
 #undef FALCON_ASSERT_TOP_NOT_0
 #undef FALCON_BINARY_OP
 #undef FALCON_DIVISION_OP
+#undef FALCON_GL_COMPARE
 }
 
 /**

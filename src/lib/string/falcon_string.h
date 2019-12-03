@@ -12,9 +12,10 @@
 #include "../../vm/falcon_vm.h"
 
 /* String operations */
-uint32_t FalconHashString(const char *key, int length);
+uint32_t FalconHashString(const unsigned char *key, int length);
 FalconObjString *FalconMakeString(VM *vm, int length);
 FalconObjString *FalconCopyString(VM *vm, const char *chars, int length);
-FalconObjString *FalconConcatStrings(VM *vm, FalconObjString *str1, FalconObjString *str2);
+int FalconCompareStrings(const FalconObjString *str1, const FalconObjString *str2);
+FalconObjString *FalconConcatStrings(VM *vm, const FalconObjString *s1, const FalconObjString *s2);
 
 #endif // FALCON_STRING_H

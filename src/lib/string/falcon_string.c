@@ -11,7 +11,7 @@
 /**
  * Hashes an input string using FNV-1a hash function.
  */
-uint32_t FalconHashString(const char *key, int length) {
+uint32_t FalconHashString(const unsigned char *key, int length) {
     uint32_t hash = 2166136261u;
 
     for (uint64_t i = 0; i < length; i++) {
@@ -38,7 +38,7 @@ FalconObjString *FalconMakeString(VM *vm, int length) {
  * its character array and can free it.
  */
 FalconObjString *FalconCopyString(VM *vm, const char *chars, int length) {
-    uint32_t hash = FalconHashString(chars, length);
+    uint32_t hash = FalconHashString((const unsigned char *) chars, length);
     FalconObjString *interned =
         FalconTableFindStr(&vm->strings, chars, length, hash); /* Checks if interned */
     if (interned != NULL) return interned;
@@ -53,14 +53,27 @@ FalconObjString *FalconCopyString(VM *vm, const char *chars, int length) {
 }
 
 /**
+ * Compares two given Falcon strings. If the two strings are equal, returns 0. If the first string
+ * is lexicographically smaller, returns a negative integer. Otherwise, returns a positive one.
+ */
+int FalconCompareStrings(const FalconObjString *str1, const FalconObjString *str2) {
+    const unsigned char *s1 = (const unsigned char *) str1->chars;
+    const unsigned char *s2 = (const unsigned char *) str2->chars;
+    while ((*s1 && *s2) && (*s1 == *s2)) {
+        s1++; s2++;
+    }
+    return *s1 - *s2;
+}
+
+/**
  * Concatenates two given Falcon strings.
  */
-FalconObjString *FalconConcatStrings(VM *vm, FalconObjString *str1, FalconObjString *str2) {
-    int length = str2->length + str1->length;
+FalconObjString *FalconConcatStrings(VM *vm, const FalconObjString *s1, const FalconObjString *s2) {
+    int length = s2->length + s1->length;
     FalconObjString *result = FalconMakeString(vm, length);
-    memcpy(result->chars, str2->chars, str2->length);
-    memcpy(result->chars + str2->length, str1->chars, str1->length);
+    memcpy(result->chars, s2->chars, s2->length);
+    memcpy(result->chars + s2->length, s1->chars, s1->length);
     result->chars[length] = '\0';
-    result->hash = FalconHashString(result->chars, length);
+    result->hash = FalconHashString((const unsigned char *) result->chars, length);
     return result;
 }
