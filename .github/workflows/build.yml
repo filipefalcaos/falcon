@@ -1,0 +1,15 @@
+name: C/C++ CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: [ubuntu-latest, macOS-latest]
+    
+    steps:
+    - uses: actions/checkout@v1
+    - name: CMake
+      run: cmake -DCMAKE_BUILD_TYPE=Debug CMakeLists.txt
+    - name: make
+      run: make
