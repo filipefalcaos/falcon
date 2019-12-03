@@ -265,21 +265,19 @@ FALCON_NATIVE(FalconInputNative) {
 }
 
 /**
- * Native Falcon function to print an Falcon value.
+ * Native Falcon function to print (with a new line) a given Falcon value.
  */
 FALCON_NATIVE(FalconPrintNative) {
-    FALCON_CHECK_ARGS(vm, !=, argCount, 1);
-    FalconPrintValue(*args);
-    return FALCON_NULL_VAL;
-}
+    if (argCount > 1) {
+        for (int i = 0; i < argCount; i++) {
+            FalconPrintValue(args[i]);
+            if (i < argCount - 1) printf(" "); /* Separator */
+        }
+    } else {
+        FalconPrintValue(*args);
+    }
 
-/**
- * Native Falcon function to print (with a new line) an Falcon value.
- */
-FALCON_NATIVE(FalconPrintlnNative) {
-    FALCON_CHECK_ARGS(vm, !=, argCount, 1);
-    FalconPrintValue(*args);
-    printf("\n");
+    printf("\n"); /* End */
     return FALCON_NULL_VAL;
 }
 
@@ -330,8 +328,7 @@ void FalconDefineNatives(VM *vm) {
         { "sqrt", FalconSqrtNative },
         { "pow", FalconPowNative },
         { "input", FalconInputNative },
-        { "print", FalconPrintNative },
-        { "println", FalconPrintlnNative }
+        { "print", FalconPrintNative }
     };
 
     /* Define listed native functions */
