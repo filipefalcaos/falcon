@@ -65,6 +65,7 @@ typedef FalconValue (*FalconNativeFn)(FalconVM *vm, int argCount, FalconValue *a
 typedef struct {
     FalconObj obj;
     FalconNativeFn function;
+    const char *functionName;
 } FalconObjNative;
 
 /* Gets a object type from an Falcon Value */
@@ -76,7 +77,7 @@ typedef struct {
 /* Gets the object value from a Falcon Value */
 #define FALCON_AS_CLOSURE(value)  ((FalconObjClosure *) FALCON_AS_OBJ(value))
 #define FALCON_AS_FUNCTION(value) ((FalconObjFunction *) FALCON_AS_OBJ(value))
-#define FALCON_AS_NATIVE(value)   (((FalconObjNative *) FALCON_AS_OBJ(value))->function)
+#define FALCON_AS_NATIVE(value)   ((FalconObjNative *) FALCON_AS_OBJ(value))
 #define FALCON_AS_STRING(value)   ((FalconObjString *) FALCON_AS_OBJ(value))
 #define FALCON_AS_CSTRING(value)  (((FalconObjString *) FALCON_AS_OBJ(value))->chars)
 
@@ -84,7 +85,7 @@ typedef struct {
 FalconObjUpvalue *FalconNewUpvalue(FalconVM *vm, FalconValue *slot);
 FalconObjClosure *FalconNewClosure(FalconVM *vm, FalconObjFunction *function);
 FalconObjFunction *FalconNewFunction(FalconVM *vm);
-FalconObjNative *FalconNewNative(FalconVM *vm, FalconNativeFn function);
+FalconObjNative *FalconNewNative(FalconVM *vm, FalconNativeFn function, const char *name);
 void FalconPrintObject(FalconValue value);
 
 /**

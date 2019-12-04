@@ -294,7 +294,7 @@ FALCON_NATIVE(FalconPrintNative) {
  */
 static void defineNative(FalconVM *vm, const char *name, FalconNativeFn function) {
     FalconPush(vm, FALCON_OBJ_VAL(FalconCopyString(vm, name, (int) strlen(name))));
-    FalconPush(vm, FALCON_OBJ_VAL(FalconNewNative(vm, function)));
+    FalconPush(vm, FALCON_OBJ_VAL(FalconNewNative(vm, function, name)));
     FalconTableSet(&vm->globals, FALCON_AS_STRING(vm->stack[0]), vm->stack[1]);
     FalconPop(vm);
     FalconPop(vm);

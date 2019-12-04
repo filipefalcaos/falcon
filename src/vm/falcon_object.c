@@ -52,9 +52,10 @@ FalconObjFunction *FalconNewFunction(FalconVM *vm) {
 /**
  * Allocates a new Falcon native function object.
  */
-FalconObjNative *FalconNewNative(FalconVM *vm, FalconNativeFn function) {
+FalconObjNative *FalconNewNative(FalconVM *vm, FalconNativeFn function, const char *name) {
     FalconObjNative *native = FALCON_ALLOCATE_OBJ(vm, FalconObjNative, FALCON_OBJ_NATIVE);
     native->function = function;
+    native->functionName = name;
     return native;
 }
 

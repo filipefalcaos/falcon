@@ -142,7 +142,7 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
             case FALCON_OBJ_CLOSURE:
                 return call(vm, FALCON_AS_CLOSURE(callee), argCount);
             case FALCON_OBJ_NATIVE: {
-                FalconNativeFn native = FALCON_AS_NATIVE(callee);
+                FalconNativeFn native = FALCON_AS_NATIVE(callee)->function;
                 FalconValue out =
                     native(vm, argCount, vm->stackTop - argCount); /* Runs native func */
                 if (FALCON_IS_ERR(out)) return false; /* Checks if a runtime error occurred */

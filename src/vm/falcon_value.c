@@ -8,6 +8,7 @@
 #include "falcon_memory.h"
 #include "falcon_object.h"
 #include <stdio.h>
+#include <string.h>
 
 /**
  * Initializes an empty ValueArray.
@@ -100,7 +101,7 @@ bool FalconIsFalsey(FalconValue value) {
 }
 
 /* String conversion constants */
-#define FALCON_MAX_NUM_TO_STR       50
+#define FALCON_MAX_NUM_TO_STR       24
 #define FALCON_NUM_TO_STR_FORMATTER "%.14g"
 
 /**
@@ -117,18 +118,32 @@ char *FalconValueToString(FalconValue *value) {
             string = "null";
             break;
         case FALCON_VAL_NUM:
-            string = FALCON_ALLOCATE(char, FALCON_MAX_NUM_TO_STR + 1);
+            string = FALCON_ALLOCATE(char, FALCON_MAX_NUM_TO_STR);
             sprintf(string, FALCON_NUM_TO_STR_FORMATTER, FALCON_AS_NUM(*value));
             break;
         case FALCON_VAL_OBJ:
             switch (FALCON_OBJ_TYPE(*value)) {
-                case FALCON_OBJ_CLOSURE: /* TODO: add toString support for the objects below */
-                case FALCON_OBJ_FUNCTION:
-                case FALCON_OBJ_NATIVE:
+                case FALCON_OBJ_CLOSURE: {
+                    FalconObjClosure *closure = FALCON_AS_CLOSURE(*value);
+                    string = FALCON_ALLOCATE(char, closure->function->name->length + 6);
+                    sprintf(string, "<fn %s>", closure->function->name->chars);
+                    break;
+                }
+                case FALCON_OBJ_FUNCTION: {
+                    FalconObjFunction *function = FALCON_AS_FUNCTION(*value);
+                    string = FALCON_ALLOCATE(char, function->name->length + 6);
+                    sprintf(string, "<fn %s>", function->name->chars);
+                    break;
+                }
+                case FALCON_OBJ_NATIVE: {
+                    FalconObjNative *native = FALCON_AS_NATIVE(*value);
+                    string = FALCON_ALLOCATE(char, strlen(native->functionName) + 13);
+                    sprintf(string, "<native fn %s>", native->functionName);
+                    break;
+                }
                 default:
                     break;
             }
-            break;
         default:
             break;
     }
