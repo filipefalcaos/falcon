@@ -5,10 +5,10 @@
  */
 
 #include "falcon_natives.h"
-#include "io/falcon_io.h"
-#include "math/falcon_math.h"
-#include "string/falcon_string.h"
 #include "../vm/falcon_object.h"
+#include "falcon_io.h"
+#include "falcon_math.h"
+#include "falcon_string.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

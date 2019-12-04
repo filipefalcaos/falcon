@@ -7,9 +7,9 @@
 #ifndef FALCON_STRING_H
 #define FALCON_STRING_H
 
-#include "../../commons.h"
-#include "../../vm/falcon_value.h"
-#include "../../vm/falcon_vm.h"
+#include "../commons.h"
+#include "../vm/falcon_value.h"
+#include "../vm/falcon_vm.h"
 
 /* String operations */
 uint32_t FalconHashString(const unsigned char *key, int length);

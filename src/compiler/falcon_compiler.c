@@ -6,7 +6,7 @@
 
 #include "falcon_compiler.h"
 #include "../lib/falcon_error.h"
-#include "../lib/string/falcon_string.h"
+#include "../lib/falcon_string.h"
 #include <stdlib.h>
 #include <string.h>
 

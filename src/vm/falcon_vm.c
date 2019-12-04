@@ -7,9 +7,9 @@
 #include "falcon_vm.h"
 #include "../compiler/falcon_compiler.h"
 #include "../lib/falcon_error.h"
+#include "../lib/falcon_math.h"
 #include "../lib/falcon_natives.h"
-#include "../lib/math/falcon_math.h"
-#include "../lib/string/falcon_string.h"
+#include "../lib/falcon_string.h"
 #include "falcon_memory.h"
 #include <stdarg.h>
 #include <stdio.h>

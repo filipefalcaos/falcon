@@ -5,8 +5,8 @@
  */
 
 #include "falcon_error.h"
-#include "io/falcon_io.h"
-#include "math/falcon_math.h"
+#include "falcon_io.h"
+#include "falcon_math.h"
 
 /* Stack trace limits */
 #define FALCON_MAX_STACK_TRACE 20

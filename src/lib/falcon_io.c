@@ -5,7 +5,7 @@
  */
 
 #include "falcon_io.h"
-#include "../../vm/falcon_memory.h"
+#include "../vm/falcon_memory.h"
 #include <stdlib.h>
 
 /**

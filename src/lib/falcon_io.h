@@ -7,8 +7,8 @@
 #ifndef FALCON_IO_H
 #define FALCON_IO_H
 
+#include "../vm/falcon_vm.h"
 #include <stdio.h>
-#include "../../vm/falcon_vm.h"
 
 /* File operations */
 char *FalconReadFile(const char *path);
