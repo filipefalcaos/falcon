@@ -21,6 +21,7 @@ typedef enum {
 
 /* Object representation */
 struct sObj {
+    bool isMarked;
     FalconObjType type;
     struct sObj *next;
 };
@@ -82,6 +83,7 @@ typedef struct {
 #define FALCON_AS_CSTRING(value)  (((FalconObjString *) FALCON_AS_OBJ(value))->chars)
 
 /* Object operations */
+void FalconMarkObject(FalconObj *object);
 FalconObjUpvalue *FalconNewUpvalue(FalconVM *vm, FalconValue *slot);
 FalconObjClosure *FalconNewClosure(FalconVM *vm, FalconObjFunction *function);
 FalconObjFunction *FalconNewFunction(FalconVM *vm);

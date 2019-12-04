@@ -5,6 +5,7 @@
  */
 
 #include "falcon_memory.h"
+#include "../compiler/falcon_compiler.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -23,12 +24,41 @@ void FalconMemoryError() {
 }
 
 /**
- * Starts an immediate garbage collection procedure to free unused memory.
+ * Marks all root objects in the VM. Root objects are any object that the VM can reach directly,
+ * mostly global variables or objects on the stack.
  */
-void FalconRunGarbageCollector(FalconVM *vm) {
+static void MarkRootsGC(FalconVM *vm) {
+    for (FalconValue *slot = vm->stack; slot < vm->stackTop; slot++) {
+        FalconMarkValue(*slot); /* Marks stack objects */
+    }
+
+    for (int i = 0; i < vm->frameCount; i++) {
+        FalconMarkObject((FalconObj *) vm->frames[i].closure); /* Marks closure objects */
+    }
+
+    for (FalconObjUpvalue *upvalue = vm->openUpvalues; upvalue != NULL; upvalue = upvalue->next) {
+        FalconMarkObject((FalconObj *) upvalue); /* Marks open upvalues */
+    }
+
+    FalconMarkTable(&vm->globals); /* Marks global variables */
+    FalconMarkCompilerRoots(vm);   /* Marks compilation roots */
+}
+
+/**
+ * Starts an immediate garbage collection procedure to free unused memory. Garbage collection
+ * follows the Mark-sweep algorithm. It consists in two steps:
+ *
+ * - Marking: starting from the roots (any object that the VM can reach directly), trace all of the
+ * objects those roots refer to. Each time an object is visited, it is marked.
+ * - Sweeping: every object traced is examined: any unmarked object are unreachable, thus garbage,
+ * and is freed.
+ */
+void FalconRunGC(FalconVM *vm) {
 #ifdef FALCON_DEBUG_LOG_GC
     printf("== Gargabe Collector Start ==\n");
 #endif
+
+    MarkRootsGC(vm); /* Marks all roots */
 
 #ifdef FALCON_DEBUG_LOG_GC
     printf("== Gargabe Collector End ==\n");
@@ -64,6 +94,7 @@ FalconObj *FalconAllocateObject(FalconVM *vm, size_t size, FalconObjType type) {
         return NULL;
     }
 
+    object->isMarked = false;
     object->type = type;        /* Sets the object type */
     object->next = vm->objects; /* Adds the new object to the object list */
     vm->objects = object;

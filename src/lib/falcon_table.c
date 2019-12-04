@@ -12,6 +12,17 @@
 #define FALCON_TABLE_MAX_LOAD 0.75
 
 /**
+ * Marks every key/value pair in the hashtable for garbage collection.
+ */
+void FalconMarkTable(FalconTable *table) {
+    for (int i = 0; i < table->capacity; i++) {
+        Entry *entry = &table->entries[i];
+        FalconMarkObject((FalconObj *) entry->key);
+        FalconMarkValue(entry->value);
+    }
+}
+
+/**
  * Initializes an empty hashtable.
  */
 void FalconInitTable(FalconTable *table) {

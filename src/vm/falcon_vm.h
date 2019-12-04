@@ -11,6 +11,7 @@
 #include "../lib/falcon_table.h"
 #include "falcon_bytecode.h"
 #include "falcon_object.h"
+#include "../compiler/falcon_compiler.h"
 
 /* Call frame representation */
 typedef struct {
@@ -21,18 +22,19 @@ typedef struct {
 
 /* Falcon's virtual machine representation */
 struct FalconVM {
-    const char *fileName;                         /* The name of the running file */
-    bool isREPL;                                  /* Whether is running on REPL */
-    FalconCallFrame frames[FALCON_VM_FRAMES_MAX]; /* VM's call frames */
-    int frameCount;                               /* Call frames count */
-    FalconObjUpvalue *openUpvalues;               /* List of open upvalues */
-    FalconBytecodeChunk *bytecodeChunk;           /* Bytecode chunk to interpret */
-    uint8_t *pc;                                  /* Program counter */
-    FalconValue stack[FALCON_VM_STACK_MAX];       /* VM's stack */
-    FalconValue *stackTop;                        /* Pointer to the stack top */
-    FalconObj *objects;                           /* List of runtime objects */
-    FalconTable strings;                          /* Strings table */
-    FalconTable globals;                          /* Global variables */
+    const char *fileName;                      /* The name of the running file */
+    bool isREPL;                               /* Whether is running on REPL */
+    FalconCallFrame frames[FALCON_FRAMES_MAX]; /* VM's call frames */
+    int frameCount;                            /* Call frames count */
+    FalconObjUpvalue *openUpvalues;            /* List of open upvalues */
+    FalconBytecodeChunk *bytecodeChunk;        /* Bytecode chunk to interpret */
+    uint8_t *pc;                               /* Program counter */
+    FalconValue stack[FALCON_STACK_MAX];       /* VM's stack */
+    FalconValue *stackTop;                     /* Pointer to the stack top */
+    FalconObj *objects;                        /* List of runtime objects */
+    FalconTable strings;                       /* Strings table */
+    FalconTable globals;                       /* Global variables */
+    FalconFunctionCompiler *compiler;          /* Current function compiler */
 };
 
 /* Interpretation result codes */

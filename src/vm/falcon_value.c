@@ -49,25 +49,11 @@ void FalconWriteValues(FalconVM *vm, FalconValueArray *valueArray, FalconValue v
 }
 
 /**
- * Prints a single Falcon Value.
+ * Marks a Falcon Value for garbage collection.
  */
-void FalconPrintValue(FalconValue value) {
-    switch (value.type) {
-        case FALCON_VAL_BOOL:
-            printf(FALCON_AS_BOOL(value) ? "true" : "false");
-            break;
-        case FALCON_VAL_NULL:
-            printf("null");
-            break;
-        case FALCON_VAL_NUM:
-            printf("%g", FALCON_AS_NUM(value));
-            break;
-        case FALCON_VAL_OBJ:
-            FalconPrintObject(value);
-            break;
-        default:
-            break;
-    }
+void FalconMarkValue(FalconValue value) {
+    if (!FALCON_IS_OBJ(value)) return; /* Num, bool, and null are not dynamically allocated */
+    FalconMarkObject(FALCON_AS_OBJ(value));
 }
 
 /**
@@ -153,3 +139,25 @@ char *FalconValueToString(FalconVM *vm, FalconValue *value) {
 
 #undef FALCON_MAX_NUM_TO_STR
 #undef FALCON_NUM_TO_STR_FORMATTER
+
+/**
+ * Prints a single Falcon Value.
+ */
+void FalconPrintValue(FalconValue value) {
+    switch (value.type) {
+        case FALCON_VAL_BOOL:
+            printf(FALCON_AS_BOOL(value) ? "true" : "false");
+            break;
+        case FALCON_VAL_NULL:
+            printf("null");
+            break;
+        case FALCON_VAL_NUM:
+            printf("%g", FALCON_AS_NUM(value));
+            break;
+        case FALCON_VAL_OBJ:
+            FalconPrintObject(value);
+            break;
+        default:
+            break;
+    }
+}

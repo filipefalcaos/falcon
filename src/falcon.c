@@ -31,7 +31,7 @@
 
 /* Use fgets for input and disables history */
 #define FALCON_READLINE(input, prompt) \
-    (fputs(prompt, stdout), fflush(stdout), fgets(input, FALCON_REPL_MAX_INPUT, stdin))
+    (fputs(prompt, stdout), fflush(stdout), fgets(input, FALCON_REPL_MAX, stdin))
 #define FALCON_FREE_INPUT(input)  ((void) input)
 #define FALCON_ADD_HISTORY(input) ((void) input)
 
@@ -89,7 +89,7 @@ static void runFile(FalconVM *vm) {
 static void repl(FalconVM *vm) {
     char *input;
 #ifndef FALCON_READLINE_AVAILABLE
-    char inputLine[FALCON_REPL_MAX_INPUT];
+    char inputLine[FALCON_REPL_MAX];
     input = inputLine; /* Fixed array needed for fgets */
     (void) input;      /* Unused */
 #endif

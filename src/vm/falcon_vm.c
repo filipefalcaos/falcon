@@ -76,7 +76,7 @@ void FalconFreeVM(FalconVM *vm) {
  * Pushes a value to the Falcon's virtual machine stack.
  */
 bool FalconPush(FalconVM *vm, FalconValue value) {
-    if (FALCON_STACK_COUNT(vm) > FALCON_VM_STACK_MAX - 1) {
+    if (FALCON_STACK_COUNT(vm) > FALCON_STACK_MAX - 1) {
         FalconVMError(vm, FALCON_STACK_OVERFLOW);
         return false;
     }
@@ -121,7 +121,7 @@ static bool call(FalconVM *vm, FalconObjClosure *closure, int argCount) {
         return false;
     }
 
-    if (vm->frameCount == FALCON_VM_FRAMES_MAX) {
+    if (vm->frameCount == FALCON_FRAMES_MAX) {
         FalconVMError(vm, FALCON_STACK_OVERFLOW);
         return false;
     }

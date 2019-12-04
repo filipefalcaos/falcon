@@ -9,6 +9,21 @@
 #include <stdio.h>
 
 /**
+ * Marks a Falcon Object for garbage collection.
+ */
+void FalconMarkObject(FalconObj *object) {
+    if (object == NULL) return;
+
+#ifdef FALCON_DEBUG_LOG_GC
+    printf("%p mark ", (void *) object);
+    FalconPrintValue(FALCON_OBJ_VAL(object));
+    printf("\n");
+#endif
+
+    object->isMarked = true;
+}
+
+/**
  * Allocates a new Falcon upvalue object.
  */
 FalconObjUpvalue *FalconNewUpvalue(FalconVM *vm, FalconValue *slot) {
