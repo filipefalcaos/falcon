@@ -64,8 +64,8 @@ void FalconInitVM(FalconVM *vm) {
  * Frees the Falcon's virtual machine and its allocated objects.
  */
 void FalconFreeVM(FalconVM *vm) {
-    FalconFreeTable(&vm->strings);
-    FalconFreeTable(&vm->globals);
+    FalconFreeTable(vm, &vm->strings);
+    FalconFreeTable(vm, &vm->globals);
     FalconFreeObjects(vm);
 }
 
@@ -214,9 +214,9 @@ static int compareStrings(FalconVM *vm) {
 static void concatenateStrings(FalconVM *vm) {
     FalconObjString *b = FALCON_AS_STRING(FalconPop(vm));
     FalconObjString *a = FALCON_AS_STRING(vm->stackTop[-1]);
-    FalconObjString *result = FalconConcatStrings(vm, b, a); /* Concatenate both strings */
-    vm->stackTop[-1] = FALCON_OBJ_VAL(result);               /* Update the stack top */
-    FalconTableSet(&vm->strings, result, FALCON_NULL_VAL);   /* Intern the string */
+    FalconObjString *result = FalconConcatStrings(vm, b, a);   /* Concatenates both strings */
+    vm->stackTop[-1] = FALCON_OBJ_VAL(result);                 /* Updates the stack top */
+    FalconTableSet(vm, &vm->strings, result, FALCON_NULL_VAL); /* Interns the string */
 }
 
 /**
@@ -408,21 +408,21 @@ static FalconResultCode run(FalconVM *vm) {
             /* Variable operations */
             case FALCON_OP_DEFINE_GLOBAL: {
                 FalconObjString *name = FALCON_READ_STRING();
-                FalconTableSet(&vm->globals, name, peek(vm, 0));
+                FalconTableSet(vm, &vm->globals, name, peek(vm, 0));
                 FalconPop(vm);
                 break;
             }
             case FALCON_OP_GET_GLOBAL: {
                 FalconObjString *name = FALCON_READ_STRING();
                 FalconValue value;
-                if (!FalconTableGet(&vm->globals, name, &value)) /* Checks if is undefined */
+                if (!FalconTableGet(&vm->globals, name, &value)) /* Checks if undefined */
                     return undefinedVariableError(vm, name, false);
                 if (!FalconPush(vm, value)) return FALCON_RUNTIME_ERROR;
                 break;
             }
             case FALCON_OP_SET_GLOBAL: {
                 FalconObjString *name = FALCON_READ_STRING();
-                if (FalconTableSet(&vm->globals, name, peek(vm, 0))) /* Checks if is undefined */
+                if (FalconTableSet(vm, &vm->globals, name, peek(vm, 0))) /* Checks if undefined */
                     return undefinedVariableError(vm, name, true);
                 break;
             }

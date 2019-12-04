@@ -24,7 +24,7 @@ FalconObjUpvalue *FalconNewUpvalue(FalconVM *vm, FalconValue *slot) {
  */
 FalconObjClosure *FalconNewClosure(FalconVM *vm, FalconObjFunction *function) {
     FalconObjUpvalue **upvalues =
-        FALCON_ALLOCATE(FalconObjUpvalue *, function->upvalueCount); /* Sets upvalue list */
+        FALCON_ALLOCATE(vm, FalconObjUpvalue *, function->upvalueCount); /* Sets upvalue list */
 
     for (int i = 0; i < function->upvalueCount; i++) {
         upvalues[i] = NULL; /* Initialize current upvalue */

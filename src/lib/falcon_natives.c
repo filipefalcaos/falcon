@@ -196,7 +196,7 @@ FALCON_NATIVE(FalconNumNative) {
 FALCON_NATIVE(FalconStrNative) {
     FALCON_CHECK_ARGS(vm, !=, argCount, 1);
     if (!FALCON_IS_STRING(*args)) {
-        char *string = FalconValueToString(args); /* Converts value to a string */
+        char *string = FalconValueToString(vm, args); /* Converts value to a string */
         return FALCON_OBJ_VAL(FalconCopyString(vm, string, strlen(string)));
     }
 
@@ -260,7 +260,7 @@ FALCON_NATIVE(FalconInputNative) {
         printf("%s", FALCON_AS_CSTRING(prompt));                      /* Prints the prompt */
     }
 
-    char *inputString = FalconReadStrStdin(); /* Reads the input string */
+    char *inputString = FalconReadStrStdin(vm); /* Reads the input string */
     return FALCON_OBJ_VAL(FalconCopyString(vm, inputString, strlen(inputString)));
 }
 
@@ -295,7 +295,7 @@ FALCON_NATIVE(FalconPrintNative) {
 static void defineNative(FalconVM *vm, const char *name, FalconNativeFn function) {
     FalconPush(vm, FALCON_OBJ_VAL(FalconCopyString(vm, name, (int) strlen(name))));
     FalconPush(vm, FALCON_OBJ_VAL(FalconNewNative(vm, function, name)));
-    FalconTableSet(&vm->globals, FALCON_AS_STRING(vm->stack[0]), vm->stack[1]);
+    FalconTableSet(vm, &vm->globals, FALCON_AS_STRING(vm->stack[0]), vm->stack[1]);
     FalconPop(vm);
     FalconPop(vm);
 }

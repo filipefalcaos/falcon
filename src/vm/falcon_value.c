@@ -22,8 +22,8 @@ void FalconInitValues(FalconValueArray *valueArray) {
 /**
  * Frees a ValueArray.
  */
-void FalconFreeValues(FalconValueArray *valueArray) {
-    FALCON_FREE_ARRAY(FalconValue, valueArray->values, valueArray->capacity);
+void FalconFreeValues(FalconVM *vm, FalconValueArray *valueArray) {
+    FALCON_FREE_ARRAY(vm, FalconValue, valueArray->values, valueArray->capacity);
     FalconInitValues(valueArray);
 }
 
@@ -31,12 +31,12 @@ void FalconFreeValues(FalconValueArray *valueArray) {
  * Appends a Value to the end of a ValueArray. If the current size is not enough, the capacity of
  * the array is increased to fit the new Value.
  */
-void FalconWriteValues(FalconValueArray *valueArray, FalconValue value) {
+void FalconWriteValues(FalconVM *vm, FalconValueArray *valueArray, FalconValue value) {
     if (valueArray->capacity < valueArray->count + 1) {
         int oldCapacity = valueArray->capacity;
         valueArray->capacity = FALCON_INCREASE_CAPACITY(oldCapacity);
-        valueArray->values =
-            FALCON_INCREASE_ARRAY(valueArray->values, FalconValue, oldCapacity, valueArray->capacity);
+        valueArray->values = FALCON_INCREASE_ARRAY(vm, valueArray->values, FalconValue, oldCapacity,
+                                                   valueArray->capacity);
 
         if (valueArray->values == NULL) { /* Checks if the allocation failed */
             FalconMemoryError();
@@ -107,7 +107,7 @@ bool FalconIsFalsey(FalconValue value) {
 /**
  * Converts a given Falcon Value to a Falcon string.
  */
-char *FalconValueToString(FalconValue *value) {
+char *FalconValueToString(FalconVM *vm, FalconValue *value) {
     char *string = NULL;
 
     switch (value->type) {
@@ -118,26 +118,26 @@ char *FalconValueToString(FalconValue *value) {
             string = "null";
             break;
         case FALCON_VAL_NUM:
-            string = FALCON_ALLOCATE(char, FALCON_MAX_NUM_TO_STR);
+            string = FALCON_ALLOCATE(vm, char, FALCON_MAX_NUM_TO_STR);
             sprintf(string, FALCON_NUM_TO_STR_FORMATTER, FALCON_AS_NUM(*value));
             break;
         case FALCON_VAL_OBJ:
             switch (FALCON_OBJ_TYPE(*value)) {
                 case FALCON_OBJ_CLOSURE: {
                     FalconObjClosure *closure = FALCON_AS_CLOSURE(*value);
-                    string = FALCON_ALLOCATE(char, closure->function->name->length + 6);
+                    string = FALCON_ALLOCATE(vm, char, closure->function->name->length + 6);
                     sprintf(string, "<fn %s>", closure->function->name->chars);
                     break;
                 }
                 case FALCON_OBJ_FUNCTION: {
                     FalconObjFunction *function = FALCON_AS_FUNCTION(*value);
-                    string = FALCON_ALLOCATE(char, function->name->length + 6);
+                    string = FALCON_ALLOCATE(vm, char, function->name->length + 6);
                     sprintf(string, "<fn %s>", function->name->chars);
                     break;
                 }
                 case FALCON_OBJ_NATIVE: {
                     FalconObjNative *native = FALCON_AS_NATIVE(*value);
-                    string = FALCON_ALLOCATE(char, strlen(native->functionName) + 13);
+                    string = FALCON_ALLOCATE(vm, char, strlen(native->functionName) + 13);
                     sprintf(string, "<native fn %s>", native->functionName);
                     break;
                 }

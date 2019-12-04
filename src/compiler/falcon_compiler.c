@@ -184,7 +184,7 @@ static FalconBytecodeChunk *currentBytecode(FalconFunctionCompiler *fCompiler) {
  * Appends a single byte to the bytecode chunk.
  */
 static void emitByte(FalconCompiler *compiler, uint8_t byte) {
-    FalconWriteBytecode(currentBytecode(compiler->fCompiler), byte,
+    FalconWriteBytecode(compiler->vm, currentBytecode(compiler->fCompiler), byte,
                         compiler->parser->previous.line);
 }
 
@@ -231,7 +231,7 @@ static void emitReturn(FalconCompiler *compiler) {
  * Adds a constant to the bytecode chunk constants table.
  */
 static uint8_t makeConstant(FalconCompiler *compiler, FalconValue value) {
-    int constant = FalconAddConstant(currentBytecode(compiler->fCompiler), value);
+    int constant = FalconAddConstant(compiler->vm, currentBytecode(compiler->fCompiler), value);
     if (constant > UINT8_MAX) {
         compilerError(compiler, &compiler->parser->previous, FALCON_CONST_LIMIT_ERR);
         return FALCON_ERROR_STATE;
@@ -245,11 +245,11 @@ static uint8_t makeConstant(FalconCompiler *compiler, FalconValue value) {
  * checks if the constant limit was exceeded.
  */
 static void emitConstant(FalconCompiler *compiler, FalconValue value) {
-    int constant = FalconAddConstant(currentBytecode(compiler->fCompiler), value);
+    int constant = FalconAddConstant(compiler->vm, currentBytecode(compiler->fCompiler), value);
     if (constant > UINT16_MAX) {
         compilerError(compiler, &compiler->parser->previous, FALCON_CONST_LIMIT_ERR);
     } else {
-        FalconWriteConstant(currentBytecode(compiler->fCompiler), constant,
+        FalconWriteConstant(compiler->vm, currentBytecode(compiler->fCompiler), constant,
                             compiler->parser->previous.line);
     }
 }

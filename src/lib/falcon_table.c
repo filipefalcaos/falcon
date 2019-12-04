@@ -23,8 +23,8 @@ void FalconInitTable(FalconTable *table) {
 /**
  * Frees a hashtable.
  */
-void FalconFreeTable(FalconTable *table) {
-    FALCON_FREE_ARRAY(Entry, table->entries, table->capacity);
+void FalconFreeTable(FalconVM *vm, FalconTable *table) {
+    FALCON_FREE_ARRAY(vm, Entry, table->entries, table->capacity);
     FalconInitTable(table);
 }
 
@@ -66,10 +66,9 @@ bool FalconTableGet(FalconTable *table, FalconObjString *key, FalconValue *value
  * Adjusts the capacity of a hashtable by initializing the added empty items and updating entries
  * of the original hashtable.
  */
-static void adjustCapacity(FalconTable *table, int capacity) {
-    Entry *entries =
-        FALCON_ALLOCATE(Entry, capacity); /* Allocates a new set of HashTable entries */
-    if (entries == NULL) {                /* Checks if the allocation failed */
+static void adjustCapacity(FalconVM *vm, FalconTable *table, int capacity) {
+    Entry *entries = FALCON_ALLOCATE(vm, Entry, capacity); /* Allocates new HashTable entries */
+    if (entries == NULL) {                                 /* Checks if the allocation failed */
         FalconMemoryError();
         return;
     }
@@ -89,7 +88,7 @@ static void adjustCapacity(FalconTable *table, int capacity) {
         table->count++;
     }
 
-    FALCON_FREE_ARRAY(Entry, table->entries, table->capacity); /* Frees the old hashtable */
+    FALCON_FREE_ARRAY(vm, Entry, table->entries, table->capacity); /* Frees the old hashtable */
     table->entries = entries;
     table->capacity = capacity;
 }
@@ -98,10 +97,10 @@ static void adjustCapacity(FalconTable *table, int capacity) {
  * Adds the given key/value pair into the given hashtable. If an entry for that key is already
  * present, the new value overwrites the old.
  */
-bool FalconTableSet(FalconTable *table, FalconObjString *key, FalconValue value) {
-    if (table->count + 1 > table->capacity * FALCON_TABLE_MAX_LOAD) { /* Checks if nax load was reached */
+bool FalconTableSet(FalconVM *vm, FalconTable *table, FalconObjString *key, FalconValue value) {
+    if (table->count + 1 > table->capacity * FALCON_TABLE_MAX_LOAD) { /* Max load was reached? */
         int capacity = FALCON_INCREASE_CAPACITY(table->capacity);
-        adjustCapacity(table, capacity); /* Adjust the hashtable capacity */
+        adjustCapacity(vm, table, capacity); /* Adjust the hashtable capacity */
     }
 
     Entry *entry = findEntry(table->entries, table->capacity, key);
@@ -127,7 +126,8 @@ bool FalconTableDelete(FalconTable *table, FalconObjString *key) {
 /**
  * Finds whether a string is set in a hashtable or not.
  */
-FalconObjString *FalconTableFindStr(FalconTable *table, const char *chars, int length, uint32_t hash) {
+FalconObjString *FalconTableFindStr(FalconTable *table, const char *chars, int length,
+                                    uint32_t hash) {
     if (table->count == 0) return NULL;
     uint32_t index = hash % table->capacity;
 

@@ -48,7 +48,7 @@ FalconObjString *FalconCopyString(FalconVM *vm, const char *chars, int length) {
     str->chars[length] = '\0';
     str->hash = hash;
 
-    FalconTableSet(&vm->strings, str, FALCON_NULL_VAL); /* Intern the string */
+    FalconTableSet(vm, &vm->strings, str, FALCON_NULL_VAL); /* Intern the string */
     return str;
 }
 

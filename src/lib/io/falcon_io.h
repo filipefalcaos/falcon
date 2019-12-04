@@ -8,10 +8,11 @@
 #define FALCON_IO_H
 
 #include <stdio.h>
+#include "../../vm/falcon_vm.h"
 
 /* File operations */
 char *FalconReadFile(const char *path);
-char *FalconReadStrStdin();
+char *FalconReadStrStdin(FalconVM *vm);
 void FalconPrintUntil(FILE *file, const char *str, char delimiter);
 
 /* Allocation constants */

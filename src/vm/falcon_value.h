@@ -60,13 +60,13 @@ typedef struct {
 
 /* ValueArray operations */
 void FalconInitValues(FalconValueArray *valueArray);
-void FalconFreeValues(FalconValueArray *valueArray);
-void FalconWriteValues(FalconValueArray *valueArray, FalconValue value);
+void FalconFreeValues(FalconVM *vm, FalconValueArray *valueArray);
+void FalconWriteValues(FalconVM *vm, FalconValueArray *valueArray, FalconValue value);
 
 /* Value operations */
 void FalconPrintValue(FalconValue value);
 bool FalconValuesEqual(FalconValue a, FalconValue b);
 bool FalconIsFalsey(FalconValue value);
-char *FalconValueToString(FalconValue *value);
+char *FalconValueToString(FalconVM *vm, FalconValue *value);
 
 #endif // FALCON_VALUE_H
