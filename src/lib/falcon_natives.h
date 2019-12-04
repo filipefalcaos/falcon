@@ -9,15 +9,6 @@
 
 #include "../vm/falcon_vm.h"
 
-/* Native functions implementations */
-typedef FalconValue (*FalconNativeFn)(FalconVM *vm, int argCount, FalconValue *args);
-
-/* Falcon's native functions object */
-typedef struct {
-    FalconObj obj;
-    FalconNativeFn function;
-} FalconObjNative;
-
 /* Native function implementation */
 typedef struct {
     const char *functionName;

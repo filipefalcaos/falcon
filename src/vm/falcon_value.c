@@ -6,6 +6,7 @@
 
 #include "falcon_value.h"
 #include "falcon_memory.h"
+#include "falcon_object.h"
 #include <stdio.h>
 
 /**
@@ -47,39 +48,6 @@ void FalconWriteValues(FalconValueArray *valueArray, FalconValue value) {
 }
 
 /**
- * Prints a Falcon function name.
- */
-static void printFunction(FalconObjFunction *function) {
-    if (function->name == NULL) { /* Checks if in top level code */
-        printf(FALCON_SCRIPT);
-        return;
-    }
-    printf("<fn %s>", function->name->chars);
-}
-
-/**
- * Prints a single Falcon object.
- */
-static void printObject(FalconValue value) {
-    switch (FALCON_OBJ_TYPE(value)) {
-        case FALCON_OBJ_STRING:
-            printf("%s", FALCON_AS_CSTRING(value));
-            break;
-        case FALCON_OBJ_UPVALUE:
-            break; /* Upvalues cannot be printed */
-        case FALCON_OBJ_CLOSURE:
-            printFunction(FALCON_AS_CLOSURE(value)->function);
-            break;
-        case FALCON_OBJ_FUNCTION:
-            printFunction(FALCON_AS_FUNCTION(value));
-            break;
-        case FALCON_OBJ_NATIVE:
-            printf("<native fn>");
-            break;
-    }
-}
-
-/**
  * Prints a single Falcon Value.
  */
 void FalconPrintValue(FalconValue value) {
@@ -94,7 +62,7 @@ void FalconPrintValue(FalconValue value) {
             printf("%g", FALCON_AS_NUM(value));
             break;
         case FALCON_VAL_OBJ:
-            printObject(value);
+            FalconPrintObject(value);
             break;
         default:
             break;

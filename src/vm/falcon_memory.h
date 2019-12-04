@@ -8,6 +8,7 @@
 #define FALCON_MEMORY_H
 
 #include "falcon_vm.h"
+#include "falcon_object.h"
 
 /* Allocates an array with a given element type and count */
 #define FALCON_ALLOCATE(type, count) (type *) FalconReallocate(NULL, 0, sizeof(type) * (count))

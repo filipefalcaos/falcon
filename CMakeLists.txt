@@ -3,7 +3,7 @@
 # Release build: cmake -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
 
 # Project basic config
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.12)
 project(falcon C)
 set(CMAKE_C_STANDARD 99)
 
@@ -67,12 +67,17 @@ add_executable(
         src/vm/falcon_bytecode.c
         src/vm/falcon_memory.h
         src/vm/falcon_memory.c
+        src/vm/falcon_object.h
+        src/vm/falcon_object.c
         src/vm/falcon_opcodes.h
         src/vm/falcon_value.h
         src/vm/falcon_value.c
         src/vm/falcon_vm.h
         src/vm/falcon_vm.c
 )
+
+# Link the <math.h> library
+target_link_libraries(falcon m)
 
 # Link the readline library
 find_package(Readline)

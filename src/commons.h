@@ -11,4 +11,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* Forward declaration of the Falcon Virtual Machine */
+typedef struct FalconVM FalconVM;
+
 #endif // FALCON_COMMONS_H

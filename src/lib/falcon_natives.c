@@ -5,10 +5,10 @@
  */
 
 #include "falcon_natives.h"
-#include "../vm/falcon_memory.h"
 #include "io/falcon_io.h"
 #include "math/falcon_math.h"
 #include "string/falcon_string.h"
+#include "../vm/falcon_object.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -288,15 +288,6 @@ FALCON_NATIVE(FalconPrintNative) {
  * ==================================== Native functions setup ====================================
  * ================================================================================================
  */
-
-/**
- * Allocates a new Falcon native function object.
- */
-static FalconObjNative *FalconNewNative(FalconVM *vm, FalconNativeFn function) {
-    FalconObjNative *native = FALCON_ALLOCATE_OBJ(vm, FalconObjNative, FALCON_OBJ_NATIVE);
-    native->function = function;
-    return native;
-}
 
 /**
  * Defines a new native function for Falcon.

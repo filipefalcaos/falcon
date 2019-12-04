@@ -10,24 +10,7 @@
 #include "../falcon.h"
 #include "../lib/falcon_table.h"
 #include "falcon_bytecode.h"
-#include "falcon_value.h"
-
-/* Falcon's function object */
-typedef struct {
-    FalconObj obj;
-    int arity;
-    int upvalueCount;
-    FalconBytecodeChunk bytecodeChunk;
-    FalconObjString *name;
-} FalconObjFunction;
-
-/* Falcon's closure object */
-typedef struct {
-    FalconObj obj;
-    FalconObjFunction *function;
-    FalconObjUpvalue **upvalues;
-    int upvalueCount;
-} FalconObjClosure;
+#include "falcon_object.h"
 
 /* Call frame representation */
 typedef struct {
@@ -37,7 +20,7 @@ typedef struct {
 } FalconCallFrame;
 
 /* Falcon's virtual machine representation */
-typedef struct {
+struct FalconVM {
     const char *fileName;                         /* The name of the running file */
     bool isREPL;                                  /* Whether is running on REPL */
     FalconCallFrame frames[FALCON_VM_FRAMES_MAX]; /* VM's call frames */
@@ -50,7 +33,7 @@ typedef struct {
     FalconObj *objects;                           /* List of runtime objects */
     FalconTable strings;                          /* Strings table */
     FalconTable globals;                          /* Global variables */
-} FalconVM;
+};
 
 /* Interpretation result codes */
 typedef enum { FALCON_OK, FALCON_COMPILE_ERROR, FALCON_RUNTIME_ERROR } FalconResultCode;
@@ -62,11 +45,6 @@ void FalconFreeVM(FalconVM *vm);
 bool FalconPush(FalconVM *vm, FalconValue value);
 FalconValue FalconPop(FalconVM *vm);
 FalconResultCode FalconInterpret(FalconVM *vm, const char *source);
-
-/* Function/closure objects operations */
-FalconObjUpvalue *FalconNewUpvalue(FalconVM *vm, FalconValue *slot);
-FalconObjClosure *FalconNewClosure(FalconVM *vm, FalconObjFunction *function);
-FalconObjFunction *FalconNewFunction(FalconVM *vm);
 
 /* Runtime error messages */
 #define FALCON_BUG \

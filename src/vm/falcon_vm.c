@@ -69,47 +69,6 @@ void FalconFreeVM(FalconVM *vm) {
     FalconFreeObjects(vm);
 }
 
-/**
- * Allocates a new Falcon upvalue object.
- */
-FalconObjUpvalue *FalconNewUpvalue(FalconVM *vm, FalconValue *slot) {
-    FalconObjUpvalue *upvalue = FALCON_ALLOCATE_OBJ(vm, FalconObjUpvalue, FALCON_OBJ_UPVALUE);
-    upvalue->slot = slot;
-    upvalue->next = NULL;
-    upvalue->closed = FALCON_NULL_VAL;
-    return upvalue;
-}
-
-/**
- * Allocates a new Falcon closure object.
- */
-FalconObjClosure *FalconNewClosure(FalconVM *vm, FalconObjFunction *function) {
-    FalconObjUpvalue **upvalues =
-        FALCON_ALLOCATE(FalconObjUpvalue *, function->upvalueCount); /* Sets upvalue list */
-
-    for (int i = 0; i < function->upvalueCount; i++) {
-        upvalues[i] = NULL; /* Initialize current upvalue */
-    }
-
-    FalconObjClosure *closure = FALCON_ALLOCATE_OBJ(vm, FalconObjClosure, FALCON_OBJ_CLOSURE);
-    closure->function = function;
-    closure->upvalues = upvalues;
-    closure->upvalueCount = function->upvalueCount;
-    return closure;
-}
-
-/**
- * Allocates a new Falcon function object.
- */
-FalconObjFunction *FalconNewFunction(FalconVM *vm) {
-    FalconObjFunction *function = FALCON_ALLOCATE_OBJ(vm, FalconObjFunction, FALCON_OBJ_FUNCTION);
-    function->arity = 0;
-    function->upvalueCount = 0;
-    function->name = NULL;
-    FalconInitBytecode(&function->bytecodeChunk);
-    return function;
-}
-
 /* Returns the count of elements in the VM stack */
 #define FALCON_STACK_COUNT(vm) (vm->stackTop - &vm->stack[0])
 
