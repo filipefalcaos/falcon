@@ -5,9 +5,13 @@
  */
 
 #include "falcon_memory.h"
-#include "../lib/falcon_natives.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifdef FALCON_DEBUG_LOG_GC
+#include <stdio.h>
+#include "../lib/falcon_debug.h"
+#endif
 
 /**
  * Presents a message indicating that a memory allocation error occurred.
@@ -19,16 +23,35 @@ void FalconMemoryError() {
 }
 
 /**
+ * Starts an immediate garbage collection procedure to free unused memory.
+ */
+void FalconRunGarbageCollector() {
+#ifdef FALCON_DEBUG_LOG_GC
+    printf("== Gargabe Collector Start ==\n");
+#endif
+
+#ifdef FALCON_DEBUG_LOG_GC
+    printf("== Gargabe Collector End ==\n");
+#endif
+}
+
+/**
  * Handles all dynamic memory management — allocating memory, freeing it, and changing the size of
  * an existing allocation.
  */
 void *FalconReallocate(void *previous, size_t oldSize, size_t newSize) {
-    if (newSize == 0) {
+    if (newSize > oldSize) { /* More memory allocation? */
+#ifdef FALCON_DEBUG_STRESS_GC
+        FalconRunGarbageCollector();
+#endif
+    }
+
+    if (newSize == 0) { /* Deallocate memory? */
         free(previous);
         return NULL;
     }
 
-    return realloc(previous, newSize);
+    return realloc(previous, newSize); /* Reallocate memory */
 }
 
 /**
@@ -44,6 +67,11 @@ FalconObj *FalconAllocateObject(FalconVM *vm, size_t size, FalconObjType type) {
     object->type = type;        /* Sets the object type */
     object->next = vm->objects; /* Adds the new object to the object list */
     vm->objects = object;
+
+#ifdef FALCON_DEBUG_LOG_GC
+    printf("%p allocate %ld for type %d\n", (void *) object, size, type);
+#endif
+
     return object;
 }
 
@@ -51,6 +79,10 @@ FalconObj *FalconAllocateObject(FalconVM *vm, size_t size, FalconObjType type) {
  * Frees a given allocated object.
  */
 static void freeObject(FalconObj *object) {
+#ifdef FALCON_DEBUG_LOG_GC
+    printf("%p free type %d\n", (void *) object, object->type);
+#endif
+
     switch (object->type) {
         case FALCON_OBJ_STRING: {
             FalconObjString *string = (FalconObjString *) object;
