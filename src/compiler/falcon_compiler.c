@@ -87,7 +87,7 @@ typedef struct sCompiler {
 
 /* Program compiler representation */
 typedef struct {
-    VM *vm;                            /* Falcon's virtual machine instance */
+    FalconVM *vm;                      /* Falcon's virtual machine instance */
     FalconParser *parser;              /* Falcon's parser instance */
     FalconScanner *scanner;            /* Falcon's scanner instance */
     FalconFunctionCompiler *fCompiler; /* The compiler for the currently compiling function */
@@ -274,7 +274,7 @@ static void patchJump(FalconCompiler *compiler, int offset) {
 /**
  * Starts a new program compiler.
  */
-static void initCompiler(FalconCompiler *compiler, VM *vm, FalconParser *parser,
+static void initCompiler(FalconCompiler *compiler, FalconVM *vm, FalconParser *parser,
                          FalconScanner *scanner) {
     compiler->vm = vm;
     compiler->parser = parser;
@@ -1406,7 +1406,7 @@ static void declaration(FalconCompiler *compiler) {
  * Compiles a given source code string. The parsing technique used is a Pratt parser, an improved
  * recursive descent parser that associates semantics with tokens instead of grammar rules.
  */
-FalconObjFunction *FalconCompile(VM *vm, const char *source) {
+FalconObjFunction *FalconCompile(FalconVM *vm, const char *source) {
     FalconParser parser;
     FalconScanner scanner;
     FalconCompiler programCompiler;

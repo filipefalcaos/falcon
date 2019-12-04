@@ -47,28 +47,6 @@ void FalconWriteValues(FalconValueArray *valueArray, FalconValue value) {
 }
 
 /**
- * Prints a single Falcon Value.
- */
-void FalconPrintValue(FalconValue value) {
-    switch (value.type) {
-        case FALCON_VAL_BOOL:
-            printf(FALCON_AS_BOOL(value) ? "true" : "false");
-            break;
-        case FALCON_VAL_NULL:
-            printf("null");
-            break;
-        case FALCON_VAL_NUM:
-            printf("%g", FALCON_AS_NUM(value));
-            break;
-        case FALCON_VAL_OBJ:
-            FalconPrintObject(value);
-            break;
-        default:
-            break;
-    }
-}
-
-/**
  * Prints a Falcon function name.
  */
 static void printFunction(FalconObjFunction *function) {
@@ -82,7 +60,7 @@ static void printFunction(FalconObjFunction *function) {
 /**
  * Prints a single Falcon object.
  */
-void FalconPrintObject(FalconValue value) {
+static void printObject(FalconValue value) {
     switch (FALCON_OBJ_TYPE(value)) {
         case FALCON_OBJ_STRING:
             printf("%s", FALCON_AS_CSTRING(value));
@@ -97,6 +75,28 @@ void FalconPrintObject(FalconValue value) {
             break;
         case FALCON_OBJ_NATIVE:
             printf("<native fn>");
+            break;
+    }
+}
+
+/**
+ * Prints a single Falcon Value.
+ */
+void FalconPrintValue(FalconValue value) {
+    switch (value.type) {
+        case FALCON_VAL_BOOL:
+            printf(FALCON_AS_BOOL(value) ? "true" : "false");
+            break;
+        case FALCON_VAL_NULL:
+            printf("null");
+            break;
+        case FALCON_VAL_NUM:
+            printf("%g", FALCON_AS_NUM(value));
+            break;
+        case FALCON_VAL_OBJ:
+            printObject(value);
+            break;
+        default:
             break;
     }
 }

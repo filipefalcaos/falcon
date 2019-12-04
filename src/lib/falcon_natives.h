@@ -10,7 +10,7 @@
 #include "../vm/falcon_vm.h"
 
 /* Native functions implementations */
-typedef FalconValue (*FalconNativeFn)(VM *vm, int argCount, FalconValue *args);
+typedef FalconValue (*FalconNativeFn)(FalconVM *vm, int argCount, FalconValue *args);
 
 /* Falcon's native functions object */
 typedef struct {
@@ -25,7 +25,7 @@ typedef struct {
 } FalconNativeFnImp;
 
 /* Native functions operations */
-void FalconDefineNatives(VM *vm);
+void FalconDefineNatives(FalconVM *vm);
 
 /* Native functions errors */
 #define FALCON_CONV_STR_NUM_ERR "Could not convert string to number."

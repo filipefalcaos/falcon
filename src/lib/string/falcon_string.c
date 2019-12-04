@@ -26,7 +26,7 @@ uint32_t FalconHashString(const unsigned char *key, int length) {
  * Creates a new FalconObjString by claiming ownership of the given string. In this case, the
  * characters of a FalconObjString can be freed when no longer needed.
  */
-FalconObjString *FalconMakeString(VM *vm, int length) {
+FalconObjString *FalconMakeString(FalconVM *vm, int length) {
     FalconObjString *str = (FalconObjString *) FalconAllocateObject(
         vm, sizeof(FalconObjString) + length + 1, FALCON_OBJ_STRING);
     str->length = length;
@@ -37,7 +37,7 @@ FalconObjString *FalconMakeString(VM *vm, int length) {
  * Copies and allocates a given string to the heap. This way, every FalconObjString reliably owns
  * its character array and can free it.
  */
-FalconObjString *FalconCopyString(VM *vm, const char *chars, int length) {
+FalconObjString *FalconCopyString(FalconVM *vm, const char *chars, int length) {
     uint32_t hash = FalconHashString((const unsigned char *) chars, length);
     FalconObjString *interned =
         FalconTableFindStr(&vm->strings, chars, length, hash); /* Checks if interned */
@@ -68,7 +68,7 @@ int FalconCompareStrings(const FalconObjString *str1, const FalconObjString *str
 /**
  * Concatenates two given Falcon strings.
  */
-FalconObjString *FalconConcatStrings(VM *vm, const FalconObjString *s1, const FalconObjString *s2) {
+FalconObjString *FalconConcatStrings(FalconVM *vm, const FalconObjString *s1, const FalconObjString *s2) {
     int length = s2->length + s1->length;
     FalconObjString *result = FalconMakeString(vm, length);
     memcpy(result->chars, s2->chars, s2->length);

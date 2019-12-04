@@ -34,7 +34,7 @@
     } while (false)
 
 /* Defines a common interface to all Falcon native functions */
-#define FALCON_NATIVE(name) static FalconValue name(VM *vm, int argCount, FalconValue *args)
+#define FALCON_NATIVE(name) static FalconValue name(FalconVM *vm, int argCount, FalconValue *args)
 
 /*
  * ================================================================================================
@@ -292,7 +292,7 @@ FALCON_NATIVE(FalconPrintNative) {
 /**
  * Allocates a new Falcon native function object.
  */
-static FalconObjNative *FalconNewNative(VM *vm, FalconNativeFn function) {
+static FalconObjNative *FalconNewNative(FalconVM *vm, FalconNativeFn function) {
     FalconObjNative *native = FALCON_ALLOCATE_OBJ(vm, FalconObjNative, FALCON_OBJ_NATIVE);
     native->function = function;
     return native;
@@ -301,7 +301,7 @@ static FalconObjNative *FalconNewNative(VM *vm, FalconNativeFn function) {
 /**
  * Defines a new native function for Falcon.
  */
-static void defineNative(VM *vm, const char *name, FalconNativeFn function) {
+static void defineNative(FalconVM *vm, const char *name, FalconNativeFn function) {
     FalconPush(vm, FALCON_OBJ_VAL(FalconCopyString(vm, name, (int) strlen(name))));
     FalconPush(vm, FALCON_OBJ_VAL(FalconNewNative(vm, function)));
     FalconTableSet(&vm->globals, FALCON_AS_STRING(vm->stack[0]), vm->stack[1]);
@@ -312,7 +312,7 @@ static void defineNative(VM *vm, const char *name, FalconNativeFn function) {
 /**
  * Defines the complete set of native function for Falcon.
  */
-void FalconDefineNatives(VM *vm) {
+void FalconDefineNatives(FalconVM *vm) {
     const FalconNativeFnImp nativeFunctions[] = { /* Native functions implementations */
         { "authors", FalconAuthorsNative },
         { "license", FalconLicenseNative },

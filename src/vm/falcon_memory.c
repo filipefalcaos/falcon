@@ -34,7 +34,7 @@ void *FalconReallocate(void *previous, size_t oldSize, size_t newSize) {
 /**
  * Allocates a new Falcon object.
  */
-FalconObj *FalconAllocateObject(VM *vm, size_t size, FalconObjType type) {
+FalconObj *FalconAllocateObject(FalconVM *vm, size_t size, FalconObjType type) {
     FalconObj *object = (FalconObj *) FalconReallocate(NULL, 0, size); /* Creates a new object */
     if (object == NULL) { /* Checks if the allocation failed */
         FalconMemoryError();
@@ -81,7 +81,7 @@ static void freeObject(FalconObj *object) {
 /**
  * Frees all the objects allocated in the virtual machine.
  */
-void FalconFreeObjects(VM *vm) {
+void FalconFreeObjects(FalconVM *vm) {
     FalconObj *object = vm->objects;
     while (object != NULL) {
         FalconObj *next = object->next;

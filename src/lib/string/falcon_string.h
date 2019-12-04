@@ -13,9 +13,9 @@
 
 /* String operations */
 uint32_t FalconHashString(const unsigned char *key, int length);
-FalconObjString *FalconMakeString(VM *vm, int length);
-FalconObjString *FalconCopyString(VM *vm, const char *chars, int length);
+FalconObjString *FalconMakeString(FalconVM *vm, int length);
+FalconObjString *FalconCopyString(FalconVM *vm, const char *chars, int length);
 int FalconCompareStrings(const FalconObjString *str1, const FalconObjString *str2);
-FalconObjString *FalconConcatStrings(VM *vm, const FalconObjString *s1, const FalconObjString *s2);
+FalconObjString *FalconConcatStrings(FalconVM *vm, const FalconObjString *s1, const FalconObjString *s2);
 
 #endif // FALCON_STRING_H

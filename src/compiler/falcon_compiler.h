@@ -11,7 +11,7 @@
 #include "falcon_scanner.h"
 
 /* Compiler operations */
-FalconObjFunction *FalconCompile(VM *vm, const char *source);
+FalconObjFunction *FalconCompile(FalconVM *vm, const char *source);
 
 /* Compilation error messages */
 /* Expressions */

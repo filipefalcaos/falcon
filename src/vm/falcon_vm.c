@@ -21,7 +21,7 @@
 /**
  * Resets the virtual machine stack.
  */
-static void resetVMStack(VM *vm) {
+static void resetVMStack(FalconVM *vm) {
     vm->stackTop = vm->stack;
     vm->openUpvalues = NULL;
     vm->frameCount = 0;
@@ -30,7 +30,7 @@ static void resetVMStack(VM *vm) {
 /**
  * Presents a runtime error to the programmer and resets the VM stack.
  */
-void FalconVMError(VM *vm, const char *format, ...) {
+void FalconVMError(FalconVM *vm, const char *format, ...) {
     va_list args;
     va_start(args, format);
     FalconRuntimeError(vm, format, args); /* Presents the error */
@@ -41,7 +41,7 @@ void FalconVMError(VM *vm, const char *format, ...) {
 /**
  * Presents a runtime error when a global variable is undefined.
  */
-static FalconResultCode undefinedVariableError(VM *vm, FalconObjString *name, bool delete) {
+static FalconResultCode undefinedVariableError(FalconVM *vm, FalconObjString *name, bool delete) {
     if (delete) FalconTableDelete(&vm->globals, name);
     FalconVMError(vm, FALCON_UNDEF_VAR_ERR, name->chars);
     return FALCON_RUNTIME_ERROR;
@@ -50,7 +50,7 @@ static FalconResultCode undefinedVariableError(VM *vm, FalconObjString *name, bo
 /**
  * Initializes the Falcon's virtual machine.
  */
-void FalconInitVM(VM *vm) {
+void FalconInitVM(FalconVM *vm) {
     resetVMStack(vm);
     FalconInitTable(&vm->strings);
     FalconInitTable(&vm->globals);
@@ -63,7 +63,7 @@ void FalconInitVM(VM *vm) {
 /**
  * Frees the Falcon's virtual machine and its allocated objects.
  */
-void FalconFreeVM(VM *vm) {
+void FalconFreeVM(FalconVM *vm) {
     FalconFreeTable(&vm->strings);
     FalconFreeTable(&vm->globals);
     FalconFreeObjects(vm);
@@ -72,7 +72,7 @@ void FalconFreeVM(VM *vm) {
 /**
  * Allocates a new Falcon upvalue object.
  */
-FalconObjUpvalue *FalconNewUpvalue(VM *vm, FalconValue *slot) {
+FalconObjUpvalue *FalconNewUpvalue(FalconVM *vm, FalconValue *slot) {
     FalconObjUpvalue *upvalue = FALCON_ALLOCATE_OBJ(vm, FalconObjUpvalue, FALCON_OBJ_UPVALUE);
     upvalue->slot = slot;
     upvalue->next = NULL;
@@ -83,7 +83,7 @@ FalconObjUpvalue *FalconNewUpvalue(VM *vm, FalconValue *slot) {
 /**
  * Allocates a new Falcon closure object.
  */
-FalconObjClosure *FalconNewClosure(VM *vm, FalconObjFunction *function) {
+FalconObjClosure *FalconNewClosure(FalconVM *vm, FalconObjFunction *function) {
     FalconObjUpvalue **upvalues =
         FALCON_ALLOCATE(FalconObjUpvalue *, function->upvalueCount); /* Sets upvalue list */
 
@@ -101,7 +101,7 @@ FalconObjClosure *FalconNewClosure(VM *vm, FalconObjFunction *function) {
 /**
  * Allocates a new Falcon function object.
  */
-FalconObjFunction *FalconNewFunction(VM *vm) {
+FalconObjFunction *FalconNewFunction(FalconVM *vm) {
     FalconObjFunction *function = FALCON_ALLOCATE_OBJ(vm, FalconObjFunction, FALCON_OBJ_FUNCTION);
     function->arity = 0;
     function->upvalueCount = 0;
@@ -116,7 +116,7 @@ FalconObjFunction *FalconNewFunction(VM *vm) {
 /**
  * Pushes a value to the Falcon's virtual machine stack.
  */
-bool FalconPush(VM *vm, FalconValue value) {
+bool FalconPush(FalconVM *vm, FalconValue value) {
     if (FALCON_STACK_COUNT(vm) > FALCON_VM_STACK_MAX - 1) {
         FalconVMError(vm, FALCON_STACK_OVERFLOW);
         return false;
@@ -130,7 +130,7 @@ bool FalconPush(VM *vm, FalconValue value) {
 /**
  * Pops a value from the Falcon's virtual machine stack.
  */
-FalconValue FalconPop(VM *vm) {
+FalconValue FalconPop(FalconVM *vm) {
     vm->stackTop--;
     return *vm->stackTop;
 }
@@ -138,12 +138,12 @@ FalconValue FalconPop(VM *vm) {
 /**
  * Peeks a element on the Falcon's virtual machine stack.
  */
-static FalconValue peek(VM *vm, int distance) { return vm->stackTop[-1 - distance]; }
+static FalconValue peek(FalconVM *vm, int distance) { return vm->stackTop[-1 - distance]; }
 
 /**
  * Prints the Falcon's virtual machine stack.
  */
-void printStack(VM *vm) {
+void printStack(FalconVM *vm) {
     printf("Stack: ");
     for (FalconValue *slot = vm->stack; slot < vm->stackTop; slot++) {
         printf("[ ");
@@ -156,7 +156,7 @@ void printStack(VM *vm) {
 /**
  * Executes a call on the given Falcon function by setting its call frame to be run.
  */
-static bool call(VM *vm, FalconObjClosure *closure, int argCount) {
+static bool call(FalconVM *vm, FalconObjClosure *closure, int argCount) {
     if (argCount != closure->function->arity) {
         FalconVMError(vm, FALCON_ARGS_COUNT_ERR, closure->function->arity, argCount);
         return false;
@@ -177,7 +177,7 @@ static bool call(VM *vm, FalconObjClosure *closure, int argCount) {
 /**
  * Tries to execute a function call on a given Falcon value.
  */
-static bool callValue(VM *vm, FalconValue callee, int argCount) {
+static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
     if (FALCON_IS_OBJ(callee)) {
         switch (FALCON_OBJ_TYPE(callee)) {
             case FALCON_OBJ_CLOSURE:
@@ -203,7 +203,7 @@ static bool callValue(VM *vm, FalconValue callee, int argCount) {
 /**
  * Captures a given local upvalue.
  */
-static FalconObjUpvalue *captureUpvalue(VM *vm, FalconValue *local) {
+static FalconObjUpvalue *captureUpvalue(FalconVM *vm, FalconValue *local) {
     FalconObjUpvalue *prevUpvalue = NULL;
     FalconObjUpvalue *upvalue = vm->openUpvalues;
 
@@ -231,7 +231,7 @@ static FalconObjUpvalue *captureUpvalue(VM *vm, FalconValue *local) {
 /**
  * Closes the upvalues for a given stack slot.
  */
-static void closeUpvalues(VM *vm, FalconValue *last) {
+static void closeUpvalues(FalconVM *vm, FalconValue *last) {
     while (vm->openUpvalues != NULL && vm->openUpvalues->slot >= last) {
         FalconObjUpvalue *upvalue = vm->openUpvalues;
         upvalue->closed = *upvalue->slot;
@@ -243,7 +243,7 @@ static void closeUpvalues(VM *vm, FalconValue *last) {
 /**
  * Compares the two string values on the top of the virtual machine stack.
  */
-static int compareStrings(VM *vm) {
+static int compareStrings(FalconVM *vm) {
     FalconObjString *str2 = FALCON_AS_STRING(FalconPop(vm));
     return FalconCompareStrings(FALCON_AS_STRING(vm->stackTop[-1]), str2);
 }
@@ -252,7 +252,7 @@ static int compareStrings(VM *vm) {
  * Concatenates the two string values on the top of the virtual machine stack. Then, pushes the new
  * string to the stack.
  */
-static void concatenateStrings(VM *vm) {
+static void concatenateStrings(FalconVM *vm) {
     FalconObjString *b = FALCON_AS_STRING(FalconPop(vm));
     FalconObjString *a = FALCON_AS_STRING(vm->stackTop[-1]);
     FalconObjString *result = FalconConcatStrings(vm, b, a); /* Concatenate both strings */
@@ -264,7 +264,7 @@ static void concatenateStrings(VM *vm) {
  * Loops through all the instructions in a bytecode chunk. Each turn through the loop, it reads and
  * executes the current bytecode instruction.
  */
-static FalconResultCode run(VM *vm) {
+static FalconResultCode run(FalconVM *vm) {
     FalconCallFrame *frame = &vm->frames[vm->frameCount - 1]; /* Current call frame */
 
 /* Constants of the current running bytecode */
@@ -597,7 +597,7 @@ static FalconResultCode run(VM *vm) {
  * Interprets a Falcon's source code string. If the source is compiled successfully, the bytecode
  * chunk is set for the Falcon's virtual machine to execute.
  */
-FalconResultCode FalconInterpret(VM *vm, const char *source) {
+FalconResultCode FalconInterpret(FalconVM *vm, const char *source) {
     FalconObjFunction *function = FalconCompile(vm, source); /* Compiles the source code */
     if (function == NULL) return FALCON_COMPILE_ERROR;
 

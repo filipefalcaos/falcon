@@ -14,7 +14,7 @@
 /**
  * Presents a compiler time error to the programmer.
  */
-void FalconCompileTimeError(VM *vm, FalconScanner *scanner, FalconToken *token,
+void FalconCompileTimeError(FalconVM *vm, FalconScanner *scanner, FalconToken *token,
                             const char *message) {
     int tkLine = token->line;
     int tkColumn = token->column;
@@ -32,7 +32,7 @@ void FalconCompileTimeError(VM *vm, FalconScanner *scanner, FalconToken *token,
 /**
  * Prints a stack trace of call frames from a given initial one to a given final one.
  */
-static void FalconPrintCallFrames(VM *vm, int initial, int final) {
+static void FalconPrintCallFrames(FalconVM *vm, int initial, int final) {
     for (int i = initial; i >= final; i--) {
         FalconCallFrame *currentFrame = &vm->frames[i];
         FalconObjFunction *currentFunction = currentFrame->closure->function;
@@ -53,7 +53,7 @@ static void FalconPrintCallFrames(VM *vm, int initial, int final) {
 /**
  * Presents a runtime error to the programmer.
  */
-void FalconRuntimeError(VM *vm, const char *format, va_list args) {
+void FalconRuntimeError(FalconVM *vm, const char *format, va_list args) {
     fprintf(stderr, "RuntimeError: ");
     vfprintf(stderr, format, args); /* Prints the error */
     fprintf(stderr, "\n");

@@ -75,7 +75,7 @@ void FalconPrintUsage() {
 /**
  * Interprets a Falcon source file.
  */
-static void runFile(VM *vm) {
+static void runFile(FalconVM *vm) {
     char *source = FalconReadFile(vm->fileName);               /* Gets the source content */
     FalconResultCode resultCode = FalconInterpret(vm, source); /* Interprets the source code */
     free(source);
@@ -86,7 +86,7 @@ static void runFile(VM *vm) {
 /**
  * Starts Falcon REPL.
  */
-static void repl(VM *vm) {
+static void repl(FalconVM *vm) {
     char *input;
 #ifndef FALCON_READLINE_AVAILABLE
     char inputLine[FALCON_REPL_MAX_INPUT];
@@ -146,7 +146,7 @@ static void repl(VM *vm) {
  * or a script path is provided, the help "-h" and version "-v" options will be ignored. If both
  * "-h" and "-v" options are provided, only the help option will be executed.
  */
-static void processArgs(VM *vm, int argc, char **argv) {
+static void processArgs(FalconVM *vm, int argc, char **argv) {
     char *fileName, *inputCommand;
     bool hasHelp, hasVersion, hasScript;
     fileName = inputCommand = NULL;
@@ -213,7 +213,7 @@ static void processArgs(VM *vm, int argc, char **argv) {
 #undef FALCON_CHECK_NO_ARG
 
 int main(int argc, char **argv) {
-    VM vm;
+    FalconVM vm;
     FalconInitVM(&vm);
     processArgs(&vm, argc, argv);
     FalconFreeVM(&vm);

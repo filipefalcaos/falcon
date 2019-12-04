@@ -37,7 +37,7 @@
 /* Memory management operations */
 void FalconMemoryError();
 void *FalconReallocate(void *previous, size_t oldSize, size_t newSize);
-FalconObj *FalconAllocateObject(VM *vm, size_t size, FalconObjType type);
-void FalconFreeObjects(VM *vm);
+FalconObj *FalconAllocateObject(FalconVM *vm, size_t size, FalconObjType type);
+void FalconFreeObjects(FalconVM *vm);
 
 #endif // FALCON_MEMORY_H
