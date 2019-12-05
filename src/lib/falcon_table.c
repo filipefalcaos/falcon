@@ -14,11 +14,11 @@
 /**
  * Marks every key/value pair in the hashtable for garbage collection.
  */
-void FalconMarkTable(FalconTable *table) {
+void FalconMarkTable(FalconVM *vm, FalconTable *table) {
     for (int i = 0; i < table->capacity; i++) {
         Entry *entry = &table->entries[i];
-        FalconMarkObject((FalconObj *) entry->key);
-        FalconMarkValue(entry->value);
+        FalconMarkObject(vm, (FalconObj *) entry->key);
+        FalconMarkValue(vm, entry->value);
     }
 }
 

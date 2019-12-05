@@ -297,7 +297,7 @@ static FalconObjFunction *endFunctionCompiler(FalconCompiler *compiler) {
 void FalconMarkCompilerRoots(FalconVM *vm) {
     FalconFunctionCompiler *compiler = vm->compiler;
     while (compiler != NULL) {
-        FalconMarkObject((FalconObj *) compiler->function);
+        FalconMarkObject(vm, (FalconObj *) compiler->function);
         compiler = compiler->enclosing;
     }
 }

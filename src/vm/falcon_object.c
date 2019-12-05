@@ -7,12 +7,18 @@
 #include "falcon_object.h"
 #include "falcon_memory.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 /**
  * Marks a Falcon Object for garbage collection.
  */
-void FalconMarkObject(FalconObj *object) {
+void FalconMarkObject(FalconVM *vm, FalconObj *object) {
     if (object == NULL) return;
+    if (object->isMarked) return;
+
+    object->isMarked = true;
+    if (object->type == FALCON_OBJ_NATIVE || object->type == FALCON_OBJ_STRING)
+        return; /* Strings and native functions contain no references to trace */
 
 #ifdef FALCON_DEBUG_LOG_GC
     printf("%p mark ", (void *) object);
@@ -20,7 +26,55 @@ void FalconMarkObject(FalconObj *object) {
     printf("\n");
 #endif
 
-    object->isMarked = true;
+    if (vm->grayCapacity < vm->grayCount + 1) {
+        vm->grayCapacity = FALCON_INCREASE_CAPACITY(vm->grayCapacity); /* Increase the capacity */
+        vm->grayStack = realloc(vm->grayStack, sizeof(FalconObj *) * vm->grayCapacity);
+    }
+
+    vm->grayStack[vm->grayCount++] = object; /* Adds to the GC worklist */
+}
+
+/**
+ * Marks all the captured upvalues of a closure for garbage collection.
+ */
+static void markUpvalues(FalconVM *vm, FalconObjClosure *closure) {
+    for (int i = 0; i < closure->upvalueCount; i++) {
+        FalconMarkObject(vm, (FalconObj *) closure->upvalues[i]);
+    }
+}
+
+/**
+ * Traces all the references of a Falcon Object, marking the "grey", and turns the object "black"
+ * for the garbage collection. "Black" objects are the ones with "isMarked" set to true and that
+ * are not in the "grey" stack.
+ */
+void FalconBlackenObject(FalconVM *vm, FalconObj *object) {
+#ifdef FALCON_DEBUG_LOG_GC
+    printf("%p blacken ", (void *) object);
+    FalconPrintValue(FALCON_OBJ_VAL(object));
+    printf("\n");
+#endif
+
+    switch (object->type) {
+        case FALCON_OBJ_CLOSURE: {
+            FalconObjClosure *closure = (FalconObjClosure *) object;
+            FalconMarkObject(vm, (FalconObj *)closure->function);
+            markUpvalues(vm, closure);
+            break;
+        }
+        case FALCON_OBJ_FUNCTION: {
+            FalconObjFunction *function = (FalconObjFunction *) object;
+            FalconMarkObject(vm, (FalconObj *) function->name);
+            FalconMarkArray(vm, &function->bytecodeChunk.constants);
+            break;
+        }
+        case FALCON_OBJ_UPVALUE:
+            FalconMarkValue(vm, ((FalconObjUpvalue *) object)->closed);
+            break;
+        case FALCON_OBJ_NATIVE:
+        case FALCON_OBJ_STRING:
+            break;
+    }
 }
 
 /**

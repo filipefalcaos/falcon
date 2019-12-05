@@ -39,16 +39,29 @@ typedef struct sLoop {
 
 /* Function compiler representation */
 typedef struct sCompiler {
-    struct sCompiler *enclosing; /* The compiler for the enclosing function or NULL (when the
-                                    compiling code is at the top-level) */
-    FalconObjFunction *function; /* The function being compiled */
-    FalconFunctionType type; /* Whether scope is global (TYPE_SCRIPT) or local (TYPE_FUNCTION) */
-    FalconLocal locals[FALCON_MAX_BYTE];     /* List of locals declared in the compiling function */
-    FalconUpvalue upvalues[FALCON_MAX_BYTE]; /* List of upvalues captured from outer scope by
-                                          the compiling function */
-    FalconLoop *loop; /* The innermost loop being compiled or NULL if not in a loop */
-    int localCount;   /* Number of local variables in the compiling function */
-    int scopeDepth;   /* The current depth of block scope nesting */
+
+    /* The compiler for the enclosing function or NULL (when the compiling code is at the top-level
+     * (i.e., global scope) */
+    struct sCompiler *enclosing;
+
+    /* The function being compiled */
+    FalconObjFunction *function;
+
+    /* Whether the current scope is global (TYPE_SCRIPT) or local (TYPE_FUNCTION), and the current
+     * depth of block scope nesting */
+    FalconFunctionType type;
+    int scopeDepth;
+
+    /* List of locals declared in the compiling function */
+    FalconLocal locals[FALCON_MAX_BYTE];
+    int localCount;
+
+    /* List of upvalues captured from outer scope by the compiling function */
+    FalconUpvalue upvalues[FALCON_MAX_BYTE];
+
+    /* The innermost loop being compiled or NULL if not in a loop */
+    FalconLoop *loop;
+
 } FalconFunctionCompiler;
 
 /* Compiler operations */

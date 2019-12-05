@@ -51,13 +51,19 @@ static FalconResultCode undefinedVariableError(FalconVM *vm, FalconObjString *na
  * Initializes the Falcon's virtual machine.
  */
 void FalconInitVM(FalconVM *vm) {
-    resetVMStack(vm);
-    FalconInitTable(&vm->strings);
-    FalconInitTable(&vm->globals);
+    resetVMStack(vm); /* Inits the VM stack */
+
+    /* Inits the VM fields */
     vm->fileName = NULL;
     vm->isREPL = false;
     vm->objects = NULL;
-    FalconDefineNatives(vm); /* Set native functions */
+    vm->grayCount = 0;
+    vm->grayCapacity = 0;
+    vm->grayStack = NULL;
+    FalconInitTable(&vm->strings);
+    FalconInitTable(&vm->globals);
+
+    FalconDefineNatives(vm); /* Sets native functions */
 }
 
 /**

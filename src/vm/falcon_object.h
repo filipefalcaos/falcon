@@ -66,7 +66,7 @@ typedef FalconValue (*FalconNativeFn)(FalconVM *vm, int argCount, FalconValue *a
 typedef struct {
     FalconObj obj;
     FalconNativeFn function;
-    const char *functionName;
+    const char *functionName; /* TODO: Change to a FalconObjString */
 } FalconObjNative;
 
 /* Gets a object type from an Falcon Value */
@@ -83,7 +83,8 @@ typedef struct {
 #define FALCON_AS_CSTRING(value)  (((FalconObjString *) FALCON_AS_OBJ(value))->chars)
 
 /* Object operations */
-void FalconMarkObject(FalconObj *object);
+void FalconMarkObject(FalconVM *vm, FalconObj *object);
+void FalconBlackenObject(FalconVM *vm, FalconObj *object);
 FalconObjUpvalue *FalconNewUpvalue(FalconVM *vm, FalconValue *slot);
 FalconObjClosure *FalconNewClosure(FalconVM *vm, FalconObjFunction *function);
 FalconObjFunction *FalconNewFunction(FalconVM *vm);

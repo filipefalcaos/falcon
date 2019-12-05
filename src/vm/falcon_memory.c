@@ -27,21 +27,32 @@ void FalconMemoryError() {
  * Marks all root objects in the VM. Root objects are any object that the VM can reach directly,
  * mostly global variables or objects on the stack.
  */
-static void MarkRootsGC(FalconVM *vm) {
+static void markRootsGC(FalconVM *vm) {
     for (FalconValue *slot = vm->stack; slot < vm->stackTop; slot++) {
-        FalconMarkValue(*slot); /* Marks stack objects */
+        FalconMarkValue(vm, *slot); /* Marks stack objects */
     }
 
     for (int i = 0; i < vm->frameCount; i++) {
-        FalconMarkObject((FalconObj *) vm->frames[i].closure); /* Marks closure objects */
+        FalconMarkObject(vm, (FalconObj *) vm->frames[i].closure); /* Marks closure objects */
     }
 
     for (FalconObjUpvalue *upvalue = vm->openUpvalues; upvalue != NULL; upvalue = upvalue->next) {
-        FalconMarkObject((FalconObj *) upvalue); /* Marks open upvalues */
+        FalconMarkObject(vm, (FalconObj *) upvalue); /* Marks open upvalues */
     }
 
-    FalconMarkTable(&vm->globals); /* Marks global variables */
-    FalconMarkCompilerRoots(vm);   /* Marks compilation roots */
+    FalconMarkTable(vm, &vm->globals); /* Marks global variables */
+    FalconMarkCompilerRoots(vm);       /* Marks compilation roots */
+}
+
+/**
+ * Traces the references of the "grey" objects while there are still "grey" objects to trace. After
+ * being traced, a "grey" object is turned "black".
+ */
+static void traceReferencesGC(FalconVM *vm) {
+    while (vm->grayCount > 0) {
+        FalconObj *object = vm->grayStack[--vm->grayCount];
+        FalconBlackenObject(vm, object);
+    }
 }
 
 /**
@@ -58,7 +69,8 @@ void FalconRunGC(FalconVM *vm) {
     printf("== Gargabe Collector Start ==\n");
 #endif
 
-    MarkRootsGC(vm); /* Marks all roots */
+    markRootsGC(vm);       /* Marks all roots */
+    traceReferencesGC(vm); /* Traces the references of the "grey" objects */
 
 #ifdef FALCON_DEBUG_LOG_GC
     printf("== Gargabe Collector End ==\n");
@@ -151,4 +163,6 @@ void FalconFreeObjects(FalconVM *vm) {
         freeObject(vm, object);
         object = next;
     }
+
+    free(vm->grayStack); /* Frees the GC's grey stack */
 }

@@ -22,19 +22,45 @@ typedef struct {
 
 /* Falcon's virtual machine representation */
 struct FalconVM {
-    const char *fileName;                      /* The name of the running file */
-    bool isREPL;                               /* Whether is running on REPL */
-    FalconCallFrame frames[FALCON_FRAMES_MAX]; /* VM's call frames */
-    int frameCount;                            /* Call frames count */
-    FalconObjUpvalue *openUpvalues;            /* List of open upvalues */
-    FalconBytecodeChunk *bytecodeChunk;        /* Bytecode chunk to interpret */
-    uint8_t *pc;                               /* Program counter */
-    FalconValue stack[FALCON_STACK_MAX];       /* VM's stack */
-    FalconValue *stackTop;                     /* Pointer to the stack top */
-    FalconObj *objects;                        /* List of runtime objects */
-    FalconTable strings;                       /* Strings table */
-    FalconTable globals;                       /* Global variables */
-    FalconFunctionCompiler *compiler;          /* Current function compiler */
+
+    /* Basic info on the running program: the name of the running file and whether it is running on
+     * REPL or not */
+    const char *fileName;
+    bool isREPL;
+
+    /* Bytecode chunk to interpret and the program counter */
+    FalconBytecodeChunk *bytecodeChunk;
+    uint8_t *pc;
+
+    /* VM's call frames */
+    FalconCallFrame frames[FALCON_FRAMES_MAX];
+    int frameCount;
+
+    /* VM's stack and it's pointer to the stack top */
+    FalconValue stack[FALCON_STACK_MAX];
+    FalconValue *stackTop;
+
+    /* List of open upvalues */
+    FalconObjUpvalue *openUpvalues;
+
+    /* List of runtime objects */
+    FalconObj *objects;
+
+    /* Table for the interned strings */
+    FalconTable strings;
+
+    /* Table for all global variables */
+    FalconTable globals;
+
+    /* Current function compiler. This is necessary when the garbage collector is triggered during
+     * the compilation stage */
+    FalconFunctionCompiler *compiler;
+
+    /* The stack of unprocessed objects (i.e., "greys") while garbage collection is in process */
+    int grayCount;
+    int grayCapacity;
+    FalconObj **grayStack;
+
 };
 
 /* Interpretation result codes */

@@ -6,7 +6,6 @@
 
 #include "falcon_value.h"
 #include "falcon_memory.h"
-#include "falcon_object.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -51,9 +50,18 @@ void FalconWriteValues(FalconVM *vm, FalconValueArray *valueArray, FalconValue v
 /**
  * Marks a Falcon Value for garbage collection.
  */
-void FalconMarkValue(FalconValue value) {
+void FalconMarkValue(FalconVM *vm, FalconValue value) {
     if (!FALCON_IS_OBJ(value)) return; /* Num, bool, and null are not dynamically allocated */
-    FalconMarkObject(FALCON_AS_OBJ(value));
+    FalconMarkObject(vm, FALCON_AS_OBJ(value));
+}
+
+/**
+ * Marks all Falcon Values in a value array for garbage collection.
+ */
+void FalconMarkArray(FalconVM *vm, FalconValueArray *array) {
+    for (int i = 0; i < array->count; i++) {
+        FalconMarkValue(vm, array->values[i]);
+    }
 }
 
 /**
