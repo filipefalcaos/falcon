@@ -97,7 +97,7 @@ static FalconToken errorToken(const char *message, FalconScanner *scanner) {
     token.start = message;
     token.length = (uint32_t) strlen(message);
     token.line = scanner->line;
-    token.column = (uint32_t) scanner->start;
+    token.column = scanner->column;
     return token;
 }
 
