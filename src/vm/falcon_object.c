@@ -10,6 +10,17 @@
 #include <stdlib.h>
 
 /**
+ * Gets the name (string) of a given Falcon Object type.
+ */
+const char *getObjectName(FalconObjType type) {
+    const char *objectTypeNames[] = {
+        "FALCON_OBJ_STRING", "FALCON_OBJ_UPVALUE", "FALCON_OBJ_CLOSURE", "FALCON_OBJ_FUNCTION",
+        "FALCON_OBJ_NATIVE"
+    };
+    return objectTypeNames[type];
+}
+
+/**
  * Marks a Falcon Object for garbage collection.
  */
 void FalconMarkObject(FalconVM *vm, FalconObj *object) {
@@ -21,7 +32,7 @@ void FalconMarkObject(FalconVM *vm, FalconObj *object) {
         return; /* Strings and native functions contain no references to trace */
 
 #ifdef FALCON_DEBUG_LOG_GC
-    printf("%p mark ", (void *) object);
+    printf("%p marked ", (void *) object);
     FalconPrintValue(FALCON_OBJ_VAL(object));
     printf("\n");
 #endif
@@ -50,7 +61,7 @@ static void markUpvalues(FalconVM *vm, FalconObjClosure *closure) {
  */
 void FalconBlackenObject(FalconVM *vm, FalconObj *object) {
 #ifdef FALCON_DEBUG_LOG_GC
-    printf("%p blacken ", (void *) object);
+    printf("%p blackened ", (void *) object);
     FalconPrintValue(FALCON_OBJ_VAL(object));
     printf("\n");
 #endif

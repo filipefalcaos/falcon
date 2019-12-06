@@ -23,6 +23,17 @@ void FalconMarkTable(FalconVM *vm, FalconTable *table) {
 }
 
 /**
+ * Removes every key/value pair of "white" objects in the hashtable for garbage collection.
+ */
+void FalconRemoveWhitesTable(FalconTable *table) {
+    for (int i = 0; i < table->capacity; i++) {
+        Entry *current = &table->entries[i];
+        if (current->key != NULL && !current->key->obj.isMarked) /* Is a "white" object? */
+            FalconTableDelete(table, current->key); /* Removes key/value pair from the table */
+    }
+}
+
+/**
  * Initializes an empty hashtable.
  */
 void FalconInitTable(FalconTable *table) {

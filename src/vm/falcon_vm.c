@@ -218,10 +218,12 @@ static int compareStrings(FalconVM *vm) {
  * string to the stack.
  */
 static void concatenateStrings(FalconVM *vm) {
-    FalconObjString *b = FALCON_AS_STRING(FalconPop(vm));
-    FalconObjString *a = FALCON_AS_STRING(vm->stackTop[-1]);
+    FalconObjString *b = FALCON_AS_STRING(peek(vm, 0));
+    FalconObjString *a = FALCON_AS_STRING(peek(vm, 1));
     FalconObjString *result = FalconConcatStrings(vm, b, a);   /* Concatenates both strings */
-    vm->stackTop[-1] = FALCON_OBJ_VAL(result);                 /* Updates the stack top */
+    FalconPop(vm);                                             /* Pops string "b" */
+    FalconPop(vm);                                             /* Pops string "a" */
+    FalconPush(vm, FALCON_OBJ_VAL(result));                    /* Pushes string "result" */
     FalconTableSet(vm, &vm->strings, result, FALCON_NULL_VAL); /* Interns the string */
 }
 

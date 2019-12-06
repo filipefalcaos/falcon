@@ -83,6 +83,7 @@ typedef struct {
 #define FALCON_AS_CSTRING(value)  (((FalconObjString *) FALCON_AS_OBJ(value))->chars)
 
 /* Object operations */
+const char *getObjectName(FalconObjType type);
 void FalconMarkObject(FalconVM *vm, FalconObj *object);
 void FalconBlackenObject(FalconVM *vm, FalconObj *object);
 FalconObjUpvalue *FalconNewUpvalue(FalconVM *vm, FalconValue *slot);

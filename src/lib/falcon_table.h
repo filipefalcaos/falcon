@@ -25,6 +25,7 @@ typedef struct {
 
 /* Hashtable operations */
 void FalconMarkTable(FalconVM *vm, FalconTable *table);
+void FalconRemoveWhitesTable(FalconTable *table);
 void FalconInitTable(FalconTable *table);
 void FalconFreeTable(FalconVM *vm, FalconTable *table);
 bool FalconTableGet(FalconTable *table, FalconObjString *key, FalconValue *value);
