@@ -35,6 +35,6 @@ FalconToken FalconScanToken(FalconScanner *scanner);
 
 /* Scanning error messages */
 #define FALCON_UNTERMINATED_STR_ERR "Unterminated string."
-#define FALCON_UNEXPECTED_TK_ERR    "Unexpected token."
+#define FALCON_UNEXPECTED_TK_ERR "Unexpected token."
 
 #endif // FALCON_SCANNER_H

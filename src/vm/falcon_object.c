@@ -12,10 +12,9 @@
  * Gets the name (string) of a given Falcon Object type.
  */
 const char *getObjectName(FalconObjType type) {
-    const char *objectTypeNames[] = {
-        "FALCON_OBJ_STRING", "FALCON_OBJ_UPVALUE", "FALCON_OBJ_CLOSURE", "FALCON_OBJ_FUNCTION",
-        "FALCON_OBJ_NATIVE"
-    };
+    const char *objectTypeNames[] = {"FALCON_OBJ_STRING", "FALCON_OBJ_UPVALUE",
+                                     "FALCON_OBJ_CLOSURE", "FALCON_OBJ_FUNCTION",
+                                     "FALCON_OBJ_NATIVE"};
     return objectTypeNames[type];
 }
 

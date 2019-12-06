@@ -26,7 +26,8 @@ void FalconCompileTimeError(FalconVM *vm, FalconScanner *scanner, FalconToken *t
     fprintf(stderr, "%d | ", tkLine);
     FalconPrintUntil(stderr, sourceLine, '\n'); /* Prints source line */
     fprintf(stderr, "\n");
-    fprintf(stderr, "%*c^\n", tkColumn + FalconGetDigits(tkLine) + 2, ' '); /* Prints error indicator */
+    fprintf(stderr, "%*c^\n", tkColumn + FalconGetDigits(tkLine) + 2,
+            ' '); /* Prints error indicator */
 }
 
 /**
@@ -37,8 +38,8 @@ static void FalconPrintCallFrames(FalconVM *vm, int initial, int final) {
         FalconCallFrame *currentFrame = &vm->frames[i];
         FalconObjFunction *currentFunction = currentFrame->closure->function;
         size_t currentInstruction = currentFrame->pc - currentFunction->bytecode.code - 1;
-        int currentLine = FalconGetLine(&currentFrame->closure->function->bytecode,
-                                        (int) currentInstruction);
+        int currentLine =
+            FalconGetLine(&currentFrame->closure->function->bytecode, (int) currentInstruction);
 
         /* Prints line and function name */
         fprintf(stderr, "    [Line %d] in ", currentLine);
@@ -61,7 +62,8 @@ void FalconRuntimeError(FalconVM *vm, const char *format, va_list args) {
     /* Prints a stack trace */
     fprintf(stderr, "Stack trace (last call first):\n");
     if (vm->frameCount > FALCON_MAX_STACK_TRACE) {
-        FalconPrintCallFrames(vm, vm->frameCount - 1, vm->frameCount - (FALCON_MAX_STACK_TRACE / 2));
+        FalconPrintCallFrames(vm, vm->frameCount - 1,
+                              vm->frameCount - (FALCON_MAX_STACK_TRACE / 2));
         fprintf(stderr, "    ...\n");
         FalconPrintCallFrames(vm, (FALCON_MAX_STACK_TRACE / 2) - 1, 0);
         fprintf(stderr, "%d call frames not listed. Run with option \"--debug\" to see all.\n",

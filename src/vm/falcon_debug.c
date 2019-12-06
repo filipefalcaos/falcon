@@ -48,7 +48,7 @@ static int byteInstruction(const char *name, FalconBytecodeChunk *bytecode, int 
  * Displays a jump (conditional) instruction.
  */
 static int jumpInstruction(const char *name, int sign, FalconBytecodeChunk *bytecode, int offset) {
-    uint16_t jump = (uint16_t) (bytecode->code[offset + 1] << 8u);
+    uint16_t jump = (uint16_t)(bytecode->code[offset + 1] << 8u);
     jump |= bytecode->code[offset + 2];
     printf("%-16s %4d -> %d\n", name, offset, offset + 3 + sign * jump);
     return offset + 3;
@@ -204,7 +204,7 @@ int FalconDumpInstruction(FalconBytecodeChunk *bytecode, int offset) {
  */
 void FalconDumpBytecode(FalconBytecodeChunk *bytecode, const char *name) {
     printf("== %s ==\n", name);
-    for (int offset = 0; offset < bytecode->count;) { /* Loop through the instructions */
+    for (int offset = 0; offset < bytecode->count;) {     /* Loop through the instructions */
         offset = FalconDumpInstruction(bytecode, offset); /* Disassemble instruction */
     }
 }
@@ -239,9 +239,7 @@ void FalconDumpFree(FalconObj *object) {
 /**
  * Displays the current status of the garbage collector.
  */
-void FalconGCStatus(const char *status) {
-    printf("== Garbage Collector %s ==\n", status);
-}
+void FalconGCStatus(const char *status) { printf("== Garbage Collector %s ==\n", status); }
 
 /**
  * Displays debug information on the "marking" of a Falcon Object for garbage collection.

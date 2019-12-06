@@ -11,8 +11,8 @@
 #include <string.h>
 
 #ifdef FALCON_DEBUG_PRINT_CODE
-#include <stdio.h>
 #include "../vm/falcon_debug.h"
+#include <stdio.h>
 #endif
 
 /* Compilation flags */
@@ -226,7 +226,7 @@ static void patchJump(FalconCompiler *compiler, int offset) {
     if (jump > UINT16_MAX) /* Jump is too long? */
         compilerError(compiler, &compiler->parser->previous, FALCON_JUMP_LIMIT_ERR);
 
-    currentBytecode(compiler->fCompiler)->code[offset] = (uint8_t)((uint16_t) (jump >> 8u) & 0xffu);
+    currentBytecode(compiler->fCompiler)->code[offset] = (uint8_t)((uint16_t)(jump >> 8u) & 0xffu);
     currentBytecode(compiler->fCompiler)->code[offset + 1] = (uint8_t)(jump & 0xffu);
 }
 
@@ -542,7 +542,7 @@ static void namedVariable(FalconCompiler *compiler, FalconToken name, bool canAs
         compoundAssignment(compiler, getOpcode, setOpcode, arg, FALCON_OP_MULTIPLY);
     } else if (canAssign && match(compiler, FALCON_TK_POW_EQUAL)) { /* a ^= ... */
         compoundAssignment(compiler, getOpcode, setOpcode, arg, FALCON_OP_POW);
-    } else {  /* Access variable */
+    } else { /* Access variable */
         emitBytes(compiler, getOpcode, (uint8_t) arg);
     }
 }
@@ -691,9 +691,7 @@ FALCON_PARSE_RULE(string) {
 /**
  * Handles a variable access.
  */
-FALCON_PARSE_RULE(variable) {
-    namedVariable(compiler, compiler->parser->previous, canAssign);
-}
+FALCON_PARSE_RULE(variable) { namedVariable(compiler, compiler->parser->previous, canAssign); }
 
 /**
  * Handles the ternary "?:" conditional operator expression.
@@ -854,7 +852,8 @@ static void expression(FalconCompiler *compiler) { parsePrecedence(compiler, FAL
  * block) is found.
  */
 static void block(FalconCompiler *compiler) {
-    while (!check(compiler->parser, FALCON_TK_RIGHT_BRACE) && !check(compiler->parser, FALCON_TK_EOF)) {
+    while (!check(compiler->parser, FALCON_TK_RIGHT_BRACE) &&
+           !check(compiler->parser, FALCON_TK_EOF)) {
         declaration(compiler);
     }
 
@@ -944,7 +943,7 @@ static void funDeclaration(FalconCompiler *compiler) {
 static void expressionStatement(FalconCompiler *compiler) {
     expression(compiler);
     consume(compiler, FALCON_TK_SEMICOLON, FALCON_EXPR_STMT_ERR);
-//    emitByte(compiler->parser, (compiler->vm->isREPL) ? FALCON_OP_POP_EXPR : FALCON_OP_POP);
+    //    emitByte(compiler->parser, (compiler->vm->isREPL) ? FALCON_OP_POP_EXPR : FALCON_OP_POP);
     emitByte(compiler, FALCON_OP_POP);
 }
 
@@ -1064,7 +1063,7 @@ static void switchStatement(FalconCompiler *compiler) {
     (fCompiler)->loop = &loop
 
 /* Compiles the body of a loop and sets its index */
-#define FALCON_LOOP_BODY(compiler)                                                          \
+#define FALCON_LOOP_BODY(compiler)                                                     \
     compiler->fCompiler->loop->body = (compiler)->fCompiler->function->bytecode.count; \
     block(compiler)
 
@@ -1293,7 +1292,7 @@ static void returnStatement(FalconCompiler *compiler) {
 static void statement(FalconCompiler *compiler) {
     if (match(compiler, FALCON_TK_IF)) {
         ifStatement(compiler);
-    } else if(match(compiler, FALCON_TK_SWITCH)) {
+    } else if (match(compiler, FALCON_TK_SWITCH)) {
         switchStatement(compiler);
     } else if (match(compiler, FALCON_TK_WHILE)) {
         whileStatement(compiler);
@@ -1325,8 +1324,7 @@ static void synchronize(FalconCompiler *compiler) {
     parser->panicMode = false;
 
     while (parser->current.type != FALCON_TK_EOF) {
-        if (parser->previous.type == FALCON_TK_SEMICOLON)
-            return; /* Sync point (expression end) */
+        if (parser->previous.type == FALCON_TK_SEMICOLON) return; /* Sync point (expression end) */
 
         switch (parser->current.type) { /* Sync point (statement/declaration begin) */
             case FALCON_TK_CLASS:

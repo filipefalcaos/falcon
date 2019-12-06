@@ -82,7 +82,7 @@ static FalconToken makeToken(FalconTokenType type, FalconScanner *scanner) {
     FalconToken token;
     token.type = type;
     token.start = scanner->start;
-    token.length = (uint32_t) (scanner->current - scanner->start);
+    token.length = (uint32_t)(scanner->current - scanner->start);
     token.line = scanner->line;
     token.column = scanner->column;
     return token;

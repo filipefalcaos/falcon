@@ -18,8 +18,8 @@
 #ifdef FALCON_READLINE_AVAILABLE
 
 /* Use "readline" lib for input and history */
-#include <readline/readline.h>
 #include <readline/history.h>
+#include <readline/readline.h>
 #include <string.h>
 
 #define FALCON_READLINE(input, prompt) input = readline(prompt)

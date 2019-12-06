@@ -7,11 +7,11 @@
 #ifndef FALCON_VM_H
 #define FALCON_VM_H
 
+#include "../compiler/falcon_compiler.h"
 #include "../falcon.h"
 #include "../lib/falcon_table.h"
 #include "falcon_bytecode.h"
 #include "falcon_object.h"
-#include "../compiler/falcon_compiler.h"
 
 /* Call frame representation */
 typedef struct {

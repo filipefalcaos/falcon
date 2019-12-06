@@ -7,8 +7,8 @@
 #ifndef FALCON_OBJECT_H
 #define FALCON_OBJECT_H
 
-#include "falcon_value.h"
 #include "falcon_bytecode.h"
+#include "falcon_value.h"
 
 /* Types of objects on Falcon */
 typedef enum {

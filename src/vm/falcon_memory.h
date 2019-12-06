@@ -7,8 +7,8 @@
 #ifndef FALCON_MEMORY_H
 #define FALCON_MEMORY_H
 
-#include "falcon_vm.h"
 #include "falcon_object.h"
+#include "falcon_vm.h"
 
 /* Allocates an array with a given element type and count */
 #define FALCON_ALLOCATE(vm, type, count) \
@@ -22,7 +22,7 @@
 #define FALCON_FREE(vm, type, pointer) FalconReallocate(vm, pointer, sizeof(type), 0)
 
 /* Doubles the capacity of a given dynamic array based on its current one */
-#define FALCON_INCREASE_CAPACITY(capacity) ((capacity) < 8 ? 8 : (capacity) * 2)
+#define FALCON_INCREASE_CAPACITY(capacity) ((capacity) < 8 ? 8 : (capacity) * (2))
 
 /* Increases the allocation of a given dynamic array */
 #define FALCON_INCREASE_ARRAY(vm, previous, type, oldCount, count) \

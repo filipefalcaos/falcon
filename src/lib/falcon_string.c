@@ -62,7 +62,8 @@ int FalconCompareStrings(const FalconObjString *str1, const FalconObjString *str
     const unsigned char *s1 = (const unsigned char *) str1->chars;
     const unsigned char *s2 = (const unsigned char *) str2->chars;
     while ((*s1 && *s2) && (*s1 == *s2)) {
-        s1++; s2++;
+        s1++;
+        s2++;
     }
     return *s1 - *s2;
 }

@@ -321,7 +321,7 @@ static FalconResultCode run(FalconVM *vm) {
 
             /* Constants and literals */
             case FALCON_OP_CONSTANT: {
-                uint16_t index = FALCON_READ_BYTE() | (uint16_t) (FALCON_READ_BYTE() << 8u);
+                uint16_t index = FALCON_READ_BYTE() | (uint16_t)(FALCON_READ_BYTE() << 8u);
                 if (!FalconPush(vm, FALCON_CURR_CONSTANTS().values[index]))
                     return FALCON_RUNTIME_ERROR;
                 break;
@@ -562,7 +562,7 @@ FalconResultCode FalconInterpret(FalconVM *vm, const char *source) {
 
     /* Set the script to run */
     FalconPush(vm, FALCON_OBJ_VAL(function));
-    FalconObjClosure * closure = FalconNewClosure(vm, function);
+    FalconObjClosure *closure = FalconNewClosure(vm, function);
     FalconPop(vm);
     FalconPush(vm, FALCON_OBJ_VAL(closure));
     callValue(vm, FALCON_OBJ_VAL(closure), 0);

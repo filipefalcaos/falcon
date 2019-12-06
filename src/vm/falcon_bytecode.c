@@ -58,8 +58,7 @@ void FalconWriteBytecode(FalconVM *vm, FalconBytecodeChunk *bytecode, uint8_t by
 
     if (bytecode->lineCapacity < bytecode->lineCount + 1) { /* Checks if new line */
         int oldCapacity = bytecode->lineCapacity;
-        bytecode->lineCapacity =
-            FALCON_INCREASE_CAPACITY(oldCapacity); /* Increases the capacity */
+        bytecode->lineCapacity = FALCON_INCREASE_CAPACITY(oldCapacity); /* Increases the capacity */
         bytecode->lines =
             FALCON_INCREASE_ARRAY(vm, bytecode->lines, SourceLine, oldCapacity,
                                   bytecode->lineCapacity); /* Increases the lines list */
