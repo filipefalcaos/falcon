@@ -9,6 +9,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef FALCON_DEBUG_LOG_MEMORY
+#include "falcon_debug.h"
+#endif
+
 /**
  * Presents a message indicating that a memory allocation error occurred.
  */
@@ -58,8 +62,7 @@ FalconObj *FalconAllocateObject(FalconVM *vm, size_t size, FalconObjType type) {
     vm->objects = object;
 
 #ifdef FALCON_DEBUG_LOG_MEMORY
-    printf("%p allocated %ld bytes for type \"%s\"\n", (void *) object, size,
-           getObjectName(type));
+    FalconDumpAllocation(object, size, type);
 #endif
 
     return object;
@@ -70,7 +73,7 @@ FalconObj *FalconAllocateObject(FalconVM *vm, size_t size, FalconObjType type) {
  */
 void freeObject(FalconVM *vm, FalconObj *object) {
 #ifdef FALCON_DEBUG_LOG_MEMORY
-    printf("%p freed object from type \"%s\"\n", (void *) object, getObjectName(object->type));
+    FalconDumpFree(object);
 #endif
 
     switch (object->type) {

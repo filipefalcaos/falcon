@@ -12,7 +12,7 @@
 
 #ifdef FALCON_DEBUG_PRINT_CODE
 #include <stdio.h>
-#include "../lib/falcon_debug.h"
+#include "../vm/falcon_debug.h"
 #endif
 
 /* Compilation flags */
@@ -278,8 +278,8 @@ static FalconObjFunction *endFunctionCompiler(FalconCompiler *compiler) {
 #ifdef FALCON_DEBUG_PRINT_CODE
     if (!compiler->parser->hadError) {
         FalconOpcodesHeader();
-        FalconDisassembleBytecode(currentBytecode(compiler->fCompiler),
-                                  function->name != NULL ? function->name->chars : FALCON_SCRIPT);
+        FalconDumpBytecode(currentBytecode(compiler->fCompiler),
+                           function->name != NULL ? function->name->chars : FALCON_SCRIPT);
 #ifdef FALCON_DEBUG_TRACE_EXECUTION
         printf("\n");
 #endif

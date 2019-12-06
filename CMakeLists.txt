@@ -62,8 +62,6 @@ add_executable(
         src/compiler/falcon_tokens.h
 
         # Standard Lib
-        src/lib/falcon_debug.h
-        src/lib/falcon_debug.c
         src/lib/falcon_error.h
         src/lib/falcon_error.c
         src/lib/falcon_natives.h
@@ -80,6 +78,8 @@ add_executable(
         # Virtual Machine
         src/vm/falcon_bytecode.h
         src/vm/falcon_bytecode.c
+        src/vm/falcon_debug.h
+        src/vm/falcon_debug.c
         src/vm/falcon_gc.h
         src/vm/falcon_gc.c
         src/vm/falcon_memory.h

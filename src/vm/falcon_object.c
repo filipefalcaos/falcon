@@ -7,7 +7,6 @@
 #include "falcon_object.h"
 #include "falcon_memory.h"
 #include <stdio.h>
-#include <stdlib.h>
 
 /**
  * Gets the name (string) of a given Falcon Object type.

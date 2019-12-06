@@ -15,7 +15,7 @@
 #include <stdio.h>
 
 #ifdef FALCON_DEBUG_TRACE_EXECUTION
-#include "../lib/falcon_debug.h"
+#include "falcon_debug.h"
 #endif
 
 /* The initial allocation size for the heap, in bytes */
@@ -82,14 +82,11 @@ void FalconFreeVM(FalconVM *vm) {
     FalconFreeObjects(vm);
 }
 
-/* Returns the count of elements in the VM stack */
-#define FALCON_STACK_COUNT(vm) (vm->stackTop - &vm->stack[0])
-
 /**
  * Pushes a value to the Falcon's virtual machine stack.
  */
 bool FalconPush(FalconVM *vm, FalconValue value) {
-    if (FALCON_STACK_COUNT(vm) > FALCON_STACK_MAX - 1) {
+    if ((vm->stackTop - &vm->stack[0]) > FALCON_STACK_MAX - 1) {
         FalconVMError(vm, FALCON_STACK_OVERFLOW);
         return false;
     }
@@ -111,19 +108,6 @@ FalconValue FalconPop(FalconVM *vm) {
  * Peeks a element on the Falcon's virtual machine stack.
  */
 static FalconValue peek(FalconVM *vm, int distance) { return vm->stackTop[-1 - distance]; }
-
-/**
- * Prints the Falcon's virtual machine stack.
- */
-void printStack(FalconVM *vm) {
-    printf("Stack: ");
-    for (FalconValue *slot = vm->stack; slot < vm->stackTop; slot++) {
-        printf("[ ");
-        FalconPrintValue(*slot);
-        printf(" ] ");
-    }
-    printf("\nStack count: %ld\n", FALCON_STACK_COUNT(vm));
-}
 
 /**
  * Executes a call on the given Falcon function by setting its call frame to be run.
@@ -326,8 +310,8 @@ static FalconResultCode run(FalconVM *vm) {
 
     while (true) {
 #ifdef FALCON_DEBUG_TRACE_EXECUTION
-        if (vm->stack != vm->stackTop) printStack(vm);
-        FalconDisassembleInst(&frame->closure->function->bytecodeChunk,
+        if (vm->stack != vm->stackTop) FalconDumpStack(vm);
+        FalconDumpInstruction(&frame->closure->function->bytecodeChunk,
                               (int) (frame->pc - frame->closure->function->bytecodeChunk.code));
 #endif
 

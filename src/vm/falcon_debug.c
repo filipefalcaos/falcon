@@ -5,12 +5,12 @@
  */
 
 #include "falcon_debug.h"
-#include "../vm/falcon_value.h"
-#include "../vm/falcon_vm.h"
+#include "falcon_value.h"
+#include "falcon_vm.h"
 #include <stdio.h>
 
 /**
- * Print debugging (opcodes) header.
+ * Displays the debugging (opcodes) header.
  */
 void FalconOpcodesHeader() {
     printf("=============================================================\n");
@@ -19,7 +19,7 @@ void FalconOpcodesHeader() {
 }
 
 /**
- * Print debugging (trace execution) header.
+ * Displays the debugging (trace execution) header.
  */
 void FalconExecutionHeader() {
     printf("=============================================================\n");
@@ -109,9 +109,9 @@ static int closureInstruction(const char *name, FalconBytecodeChunk *bytecodeChu
 }
 
 /**
- * Disassembles a single instruction in a bytecode chunk.
+ * Displays a single instruction in a bytecode chunk.
  */
-int FalconDisassembleInst(FalconBytecodeChunk *bytecodeChunk, int offset) {
+int FalconDumpInstruction(FalconBytecodeChunk *bytecodeChunk, int offset) {
     printf("%04d ", offset); /* Prints offset info */
     int sourceLine = FalconGetLine(bytecodeChunk, offset);
 
@@ -150,12 +150,14 @@ int FalconDisassembleInst(FalconBytecodeChunk *bytecodeChunk, int offset) {
             return simpleInstruction("OP_SUBTRACT", offset);
         case FALCON_OP_NEGATE:
             return simpleInstruction("OP_NEGATE", offset);
-        case FALCON_OP_MULTIPLY:
-            return simpleInstruction("OP_MULTIPLY", offset);
-        case FALCON_OP_MOD:
-            return simpleInstruction("OP_MOD", offset);
         case FALCON_OP_DIVIDE:
             return simpleInstruction("OP_DIVIDE", offset);
+        case FALCON_OP_MOD:
+            return simpleInstruction("OP_MOD", offset);
+        case FALCON_OP_MULTIPLY:
+            return simpleInstruction("OP_MULTIPLY", offset);
+        case FALCON_OP_POW:
+            return simpleInstruction("FALCON_OP_POW", offset);
         case FALCON_OP_DEFINE_GLOBAL:
             return constantInstruction("OP_DEFINE_GLOBAL", bytecodeChunk, offset);
         case FALCON_OP_GET_GLOBAL:
@@ -188,6 +190,10 @@ int FalconDisassembleInst(FalconBytecodeChunk *bytecodeChunk, int offset) {
             return simpleInstruction("OP_DUP", offset);
         case FALCON_OP_POP:
             return simpleInstruction("OP_POP", offset);
+        case FALCON_OP_POP_EXPR:
+            return simpleInstruction("FALCON_OP_POP_EXPR", offset);
+        case FALCON_OP_TEMP:
+            return simpleInstruction("FALCON_OP_TEMP", offset); /* Should not be reachable */
         default:
             printf("Unknown opcode %d\n", instruction);
             return offset + 1;
@@ -195,12 +201,74 @@ int FalconDisassembleInst(FalconBytecodeChunk *bytecodeChunk, int offset) {
 }
 
 /**
- * Disassembles a complete bytecode chunk.
+ * Displays a complete bytecode chunk.
  */
-void FalconDisassembleBytecode(FalconBytecodeChunk *bytecodeChunk, const char *name) {
+void FalconDumpBytecode(FalconBytecodeChunk *bytecodeChunk, const char *name) {
     printf("== %s ==\n", name);
 
     for (int offset = 0; offset < bytecodeChunk->count;) { /* Loop through the instructions */
-        offset = FalconDisassembleInst(bytecodeChunk, offset); /* Disassemble instruction */
+        offset = FalconDumpInstruction(bytecodeChunk, offset); /* Disassemble instruction */
     }
+}
+
+/**
+ * Displays the Falcon's virtual machine stack.
+ */
+void FalconDumpStack(FalconVM *vm) {
+    printf("Stack: ");
+    for (FalconValue *slot = vm->stack; slot < vm->stackTop; slot++) {
+        printf("[ ");
+        FalconPrintValue(*slot);
+        printf(" ] ");
+    }
+    printf("\nStack count: %ld\n", vm->stackTop - &vm->stack[0]);
+}
+
+/**
+ * Displays debug information on the allocation of a Falcon Object on the heap.
+ */
+void FalconDumpAllocation(FalconObj *object, size_t size, FalconObjType type) {
+    printf("%p allocated %ld bytes for type \"%s\"\n", (void *) object, size, getObjectName(type));
+}
+
+/**
+ * Displays debug information on the free of a Falcon Object on the heap.
+ */
+void FalconDumpFree(FalconObj *object) {
+    printf("%p freed object from type \"%s\"\n", (void *) object, getObjectName(object->type));
+}
+
+/**
+ * Displays the current status of the garbage collector.
+ */
+void FalconGCStatus(const char *status) {
+    printf("== Garbage Collector %s ==\n", status);
+}
+
+/**
+ * Displays debug information on the "marking" of a Falcon Object for garbage collection.
+ */
+void FalconDumpMark(FalconObj *object) {
+    printf("%p marked ", (void *) object);
+    FalconPrintValue(FALCON_OBJ_VAL(object));
+    printf("\n");
+}
+
+/**
+ * Displays debug information on the "blacken" of a Falcon Object for garbage collection.
+ */
+void FalconDumpBlacken(FalconObj *object) {
+    printf("%p blackened ", (void *) object);
+    FalconPrintValue(FALCON_OBJ_VAL(object));
+    printf("\n");
+}
+
+/**
+ * Display the number of collected bytes after a garbage collection process, and the number of
+ * bytes required for the next garbage collector activation.
+ */
+void FalconDumpGC(FalconVM *vm, size_t bytesAllocated) {
+    printf("Collected %ld bytes (from %ld to %ld)\n", bytesAllocated - vm->bytesAllocated,
+           bytesAllocated, vm->bytesAllocated);
+    printf("Next GC at %ld bytes\n", vm->nextGC);
 }

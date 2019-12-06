@@ -9,7 +9,7 @@
 #include <stdlib.h>
 
 #ifdef FALCON_DEBUG_LOG_GC
-#include <stdio.h>
+#include "falcon_debug.h"
 #endif
 
 /* The grow factor for the heap allocation. It follows the logic:
@@ -32,9 +32,7 @@ static void markObject(FalconVM *vm, FalconObj *object) {
         return; /* Strings and native functions contain no references to trace */
 
 #ifdef FALCON_DEBUG_LOG_GC
-    printf("%p marked ", (void *) object);
-    FalconPrintValue(FALCON_OBJ_VAL(object));
-    printf("\n");
+    FalconDumpMark(object);
 #endif
 
     if (vm->grayCapacity < vm->grayCount + 1) {
@@ -101,9 +99,7 @@ static void markUpvalues(FalconVM *vm, FalconObjClosure *closure) {
  */
 static void blackenObject(FalconVM *vm, FalconObj *object) {
 #ifdef FALCON_DEBUG_LOG_GC
-    printf("%p blackened ", (void *) object);
-    FalconPrintValue(FALCON_OBJ_VAL(object));
-    printf("\n");
+    FalconDumpBlacken(object);
 #endif
 
     switch (object->type) {
@@ -211,7 +207,7 @@ static void sweepGC(FalconVM *vm) {
  */
 void FalconRunGC(FalconVM *vm) {
 #ifdef FALCON_DEBUG_LOG_GC
-    printf("== Garbage Collector Start ==\n");
+    FalconGCStatus("Start");
     size_t bytesAllocated = vm->bytesAllocated;
 #endif
 
@@ -222,9 +218,7 @@ void FalconRunGC(FalconVM *vm) {
     vm->nextGC = vm->bytesAllocated * FALCON_HEAP_GROW_FACTOR; /* Adjust the next GC threshold */
 
 #ifdef FALCON_DEBUG_LOG_GC
-    printf("Collected %ld bytes (from %ld to %ld)\n", bytesAllocated - vm->bytesAllocated,
-           bytesAllocated, vm->bytesAllocated);
-    printf("Next GC at %ld bytes\n", vm->nextGC);
-    printf("== Garbage Collector End ==\n");
+    FalconDumpGC(vm, bytesAllocated);
+    FalconGCStatus("End");
 #endif
 }
