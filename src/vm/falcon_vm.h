@@ -61,6 +61,11 @@ struct FalconVM {
     int grayCapacity;
     FalconObj **grayStack;
 
+    /* The total number of bytes of managed memory the VM has allocated and the memory threshold
+     * that triggers the next garbage collection */
+    size_t bytesAllocated;
+    size_t nextGC;
+
 };
 
 /* Interpretation result codes */

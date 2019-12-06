@@ -12,8 +12,8 @@
 #include "falcon_scanner.h"
 
 /* Function types:
- * FALCON_TYPE_FUNCTION represents an user-defined function
- * FALCON_TYPE_SCRIPT represents the top-level (global scope) code */
+ * - FALCON_TYPE_FUNCTION represents an user-defined function
+ * - FALCON_TYPE_SCRIPT represents the top-level (global scope) code */
 typedef enum { FALCON_TYPE_FUNCTION, FALCON_TYPE_SCRIPT } FalconFunctionType;
 
 /* Local variable representation */

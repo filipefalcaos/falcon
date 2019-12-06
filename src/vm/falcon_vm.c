@@ -18,6 +18,9 @@
 #include "../lib/falcon_debug.h"
 #endif
 
+/* The initial allocation size for the heap, in bytes */
+#define FALCON_BASE_HEAP_SIZE 1000000 /* 1Mb */
+
 /**
  * Resets the virtual machine stack.
  */
@@ -57,13 +60,17 @@ void FalconInitVM(FalconVM *vm) {
     vm->fileName = NULL;
     vm->isREPL = false;
     vm->objects = NULL;
+
+    /* Inits the garbage collection fields */
     vm->grayCount = 0;
     vm->grayCapacity = 0;
     vm->grayStack = NULL;
-    FalconInitTable(&vm->strings);
-    FalconInitTable(&vm->globals);
+    vm->bytesAllocated = 0;
+    vm->nextGC = FALCON_BASE_HEAP_SIZE;
 
-    FalconDefineNatives(vm); /* Sets native functions */
+    FalconInitTable(&vm->strings); /* Inits the table of interned strings */
+    FalconInitTable(&vm->globals); /* Inits the table of globals */
+    FalconDefineNatives(vm);       /* Sets native functions */
 }
 
 /**

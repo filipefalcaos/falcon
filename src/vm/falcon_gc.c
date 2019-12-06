@@ -12,6 +12,14 @@
 #include <stdio.h>
 #endif
 
+/* The grow factor for the heap allocation. It follows the logic:
+ * - If factor > 1, then the number of bytes required for the next garbage collector will be higher
+ * than the current number of allocated bytes
+ * - If factor < 1, then the number of bytes required for the next garbage collector will be lower
+ * - If factor = 1, then the number of bytes required for the next garbage collector will be the
+ * current number of allocated bytes */
+#define FALCON_HEAP_GROW_FACTOR 2
+
 /**
  * Marks a Falcon Object for garbage collection.
  */
@@ -204,14 +212,19 @@ static void sweepGC(FalconVM *vm) {
 void FalconRunGC(FalconVM *vm) {
 #ifdef FALCON_DEBUG_LOG_GC
     printf("== Garbage Collector Start ==\n");
+    size_t bytesAllocated = vm->bytesAllocated;
 #endif
 
     markRootsGC(vm);                 /* Marks all roots */
     traceReferencesGC(vm);           /* Traces the references of the "grey" objects */
     removeWhitesTable(&vm->strings); /* Removes the "white" strings from the table */
     sweepGC(vm);                     /* Reclaim the "white" objects - garbage */
+    vm->nextGC = vm->bytesAllocated * FALCON_HEAP_GROW_FACTOR; /* Adjust the next GC threshold */
 
 #ifdef FALCON_DEBUG_LOG_GC
+    printf("Collected %ld bytes (from %ld to %ld)\n", bytesAllocated - vm->bytesAllocated,
+           bytesAllocated, vm->bytesAllocated);
+    printf("Next GC at %ld bytes\n", vm->nextGC);
     printf("== Garbage Collector End ==\n");
 #endif
 }

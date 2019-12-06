@@ -23,9 +23,14 @@ void FalconMemoryError() {
  * an existing allocation.
  */
 void *FalconReallocate(FalconVM *vm, void *previous, size_t oldSize, size_t newSize) {
+    vm->bytesAllocated += newSize - oldSize;
+
     if (newSize > oldSize) { /* More memory allocation? */
 #ifdef FALCON_DEBUG_STRESS_GC
-        FalconRunGC(vm);
+        FalconRunGC(vm); /* Runs the garbage collector always */
+#else
+        if (vm->bytesAllocated > vm->nextGC)
+            FalconRunGC(vm); /* Runs the garbage collector, if needed */
 #endif
     }
 
@@ -53,7 +58,7 @@ FalconObj *FalconAllocateObject(FalconVM *vm, size_t size, FalconObjType type) {
     vm->objects = object;
 
 #ifdef FALCON_DEBUG_LOG_GC
-    printf("%p allocated %ld bytes for the type \"%s\"\n", (void *) object, size,
+    printf("%p allocated %ld bytes for type \"%s\"\n", (void *) object, size,
            getObjectName(type));
 #endif
 
