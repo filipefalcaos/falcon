@@ -9,12 +9,6 @@
 
 #include "../vm/falcon_vm.h"
 
-/* Native function implementation */
-typedef struct {
-    const char *functionName;
-    FalconNativeFn nativeFn;
-} FalconNativeFnImp;
-
 /* Native functions operations */
 void FalconDefineNatives(FalconVM *vm);
 

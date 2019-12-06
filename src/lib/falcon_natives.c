@@ -5,7 +5,6 @@
  */
 
 #include "falcon_natives.h"
-#include "../vm/falcon_object.h"
 #include "falcon_io.h"
 #include "falcon_math.h"
 #include "falcon_string.h"
@@ -304,25 +303,25 @@ static void defineNative(FalconVM *vm, const char *name, FalconNativeFn function
  * Defines the complete set of native function for Falcon.
  */
 void FalconDefineNatives(FalconVM *vm) {
-    const FalconNativeFnImp nativeFunctions[] = { /* Native functions implementations */
-        { "authors", FalconAuthorsNative },
-        { "license", FalconLicenseNative },
-        { "help", FalconHelpNative },
-        { "exit", FalconExitNative },
-        { "clock", FalconClockNative },
-        { "time", FalconTimeNative },
-        { "type", FalconTypeNative },
-        { "bool", FalconBoolNative },
-        { "num", FalconNumNative },
-        { "str", FalconStrNative },
-        { "abs", FalconAbsNative },
-        { "sqrt", FalconSqrtNative },
-        { "pow", FalconPowNative },
-        { "input", FalconInputNative },
-        { "print", FalconPrintNative }
+    const FalconObjNative nativeFunctions[] = { /* Native functions implementations */
+        { .obj = (FalconObj *) NULL, .function = FalconAuthorsNative, .functionName = "authors" },
+        { .obj = (FalconObj *) NULL, .function = FalconLicenseNative, .functionName = "license" },
+        { .obj = (FalconObj *) NULL, .function = FalconHelpNative, .functionName = "help" },
+        { .obj = (FalconObj *) NULL, .function = FalconExitNative, .functionName = "exit" },
+        { .obj = (FalconObj *) NULL, .function = FalconClockNative, .functionName = "clock" },
+        { .obj = (FalconObj *) NULL, .function = FalconTimeNative, .functionName = "time" },
+        { .obj = (FalconObj *) NULL, .function = FalconTypeNative, .functionName = "type" },
+        { .obj = (FalconObj *) NULL, .function = FalconBoolNative, .functionName = "bool" },
+        { .obj = (FalconObj *) NULL, .function = FalconNumNative, .functionName = "num" },
+        { .obj = (FalconObj *) NULL, .function = FalconStrNative, .functionName = "str" },
+        { .obj = (FalconObj *) NULL, .function = FalconAbsNative, .functionName = "abs" },
+        { .obj = (FalconObj *) NULL, .function = FalconSqrtNative, .functionName = "sqrt" },
+        { .obj = (FalconObj *) NULL, .function = FalconPowNative, .functionName = "pow" },
+        { .obj = (FalconObj *) NULL, .function = FalconInputNative, .functionName = "input" },
+        { .obj = (FalconObj *) NULL, .function = FalconPrintNative, .functionName = "print" }
     };
 
     /* Define listed native functions */
     for (unsigned long i = 0; i < sizeof(nativeFunctions) / sizeof(nativeFunctions[0]); i++)
-        defineNative(vm, nativeFunctions[i].functionName, nativeFunctions[i].nativeFn);
+        defineNative(vm, nativeFunctions[i].functionName, nativeFunctions[i].function);
 }
