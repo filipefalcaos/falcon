@@ -13,8 +13,8 @@
 /* Compiler/VM debugging operations */
 void FalconOpcodesHeader();
 void FalconExecutionHeader();
-int FalconDumpInstruction(FalconBytecodeChunk *bytecodeChunk, int offset);
-void FalconDumpBytecode(FalconBytecodeChunk *bytecodeChunk, const char *name);
+int FalconDumpInstruction(FalconBytecodeChunk *bytecode, int offset);
+void FalconDumpBytecode(FalconBytecodeChunk *bytecode, const char *name);
 void FalconDumpStack(FalconVM *vm);
 
 /* Memory allocation debugging operations */

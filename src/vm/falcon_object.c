@@ -56,7 +56,7 @@ FalconObjFunction *FalconNewFunction(FalconVM *vm) {
     function->arity = 0;
     function->upvalueCount = 0;
     function->name = NULL;
-    FalconInitBytecode(&function->bytecodeChunk);
+    FalconInitBytecode(&function->bytecode);
     return function;
 }
 
@@ -66,7 +66,7 @@ FalconObjFunction *FalconNewFunction(FalconVM *vm) {
 FalconObjNative *FalconNewNative(FalconVM *vm, FalconNativeFn function, const char *name) {
     FalconObjNative *native = FALCON_ALLOCATE_OBJ(vm, FalconObjNative, FALCON_OBJ_NATIVE);
     native->function = function;
-    native->functionName = name;
+    native->name = name;
     return native;
 }
 

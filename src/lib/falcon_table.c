@@ -126,7 +126,7 @@ bool FalconTableDelete(FalconTable *table, FalconObjString *key) {
 /**
  * Finds whether a string is set in a hashtable or not.
  */
-FalconObjString *FalconTableFindStr(FalconTable *table, const char *chars, int length,
+FalconObjString *FalconTableFindStr(FalconTable *table, const char *chars, size_t length,
                                     uint32_t hash) {
     if (table->count == 0) return NULL;
     uint32_t index = hash % table->capacity;

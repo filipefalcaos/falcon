@@ -125,7 +125,7 @@ static bool call(FalconVM *vm, FalconObjClosure *closure, int argCount) {
 
     FalconCallFrame *frame = &vm->frames[vm->frameCount++];
     frame->closure = closure;
-    frame->pc = closure->function->bytecodeChunk.code;
+    frame->pc = closure->function->bytecode.code;
     frame->slots = vm->stackTop - argCount - 1;
     return true;
 }
@@ -226,7 +226,7 @@ static FalconResultCode run(FalconVM *vm) {
     FalconCallFrame *frame = &vm->frames[vm->frameCount - 1]; /* Current call frame */
 
 /* Constants of the current running bytecode */
-#define FALCON_CURR_CONSTANTS() frame->closure->function->bytecodeChunk.constants
+#define FALCON_CURR_CONSTANTS() frame->closure->function->bytecode.constants
 
 /* Reads the next 8 bits (byte) or 16 bits (2 bytes) */
 #define FALCON_READ_BYTE()  (*frame->pc++)
@@ -269,39 +269,40 @@ static FalconResultCode run(FalconVM *vm) {
 
 /* Performs a binary operation of the 'op' operator on the two elements on the top of the Falcon
  * VM's stack. Then, sets the result on the top of the stack */
-#define FALCON_BINARY_OP(vm, op, valueType)         \
-    do {                                            \
-        FALCON_ASSERT_TOP2_NUM(vm);                 \
-        double b = FALCON_AS_NUM(FalconPop(vm));    \
-        double a = FALCON_AS_NUM(vm->stackTop[-1]); \
-        vm->stackTop[-1] = valueType(a op b);       \
+#define FALCON_BINARY_OP(vm, op, valueType)           \
+    do {                                              \
+        FALCON_ASSERT_TOP2_NUM(vm);                   \
+        double b = FALCON_AS_NUM(FalconPop(vm));      \
+        double a = FALCON_AS_NUM((vm)->stackTop[-1]); \
+        (vm)->stackTop[-1] = valueType(a op b);       \
     } while (false)
 
 /* Performs a division operation (integer mod or double division) on the two elements on the top of
  * the Falcon VM's stack. Then, sets the result on the top of the stack */
-#define FALCON_DIVISION_OP(vm, op, type)           \
-    do {                                           \
-        FALCON_ASSERT_TOP2_NUM(vm);                \
-        FALCON_ASSERT_TOP_NOT_0(vm);               \
-        type b = FALCON_AS_NUM(FalconPop(vm));     \
-        type a = FALCON_AS_NUM(vm->stackTop[-1]);  \
-        vm->stackTop[-1] = FALCON_NUM_VAL(a op b); \
+#define FALCON_DIVISION_OP(vm, op, type)             \
+    do {                                             \
+        FALCON_ASSERT_TOP2_NUM(vm);                  \
+        FALCON_ASSERT_TOP_NOT_0(vm);                 \
+        type b = FALCON_AS_NUM(FalconPop(vm));       \
+        type a = FALCON_AS_NUM((vm)->stackTop[-1]);  \
+        (vm)->stackTop[-1] = FALCON_NUM_VAL(a op b); \
     } while (false)
 
 /* Performs a greater/less (GL) comparison operation of the 'op' operator on the two elements on the
  * top of the Falcon VM's stack. Then, sets the result on the top of the stack */
-#define FALCON_GL_COMPARE(vm, op)                                                                  \
-    do {                                                                                           \
-        if (FALCON_IS_STRING(peek(vm, 0)) && FALCON_IS_STRING(peek(vm, 1))) {                      \
-            int comparison = compareStrings(vm);                                                   \
-            vm->stackTop[-1] = (comparison op 0) ? FALCON_BOOL_VAL(true) : FALCON_BOOL_VAL(false); \
-        } else if (FALCON_IS_NUM(peek(vm, 0)) && FALCON_IS_NUM(peek(vm, 1))) {                     \
-            double a = FALCON_AS_NUM(FalconPop(vm));                                               \
-            vm->stackTop[-1] = FALCON_BOOL_VAL(FALCON_AS_NUM(vm->stackTop[-1]) op a);              \
-        } else {                                                                                   \
-            FalconVMError(vm, FALCON_OPR_NOT_NUM_STR_ERR);                                         \
-            return FALCON_RUNTIME_ERROR;                                                           \
-        }                                                                                          \
+#define FALCON_GL_COMPARE(vm, op)                                                         \
+    do {                                                                                  \
+        if (FALCON_IS_STRING(peek(vm, 0)) && FALCON_IS_STRING(peek(vm, 1))) {             \
+            int comparison = compareStrings(vm);                                          \
+            (vm)->stackTop[-1] =                                                          \
+                (comparison op 0) ? FALCON_BOOL_VAL(true) : FALCON_BOOL_VAL(false);       \
+        } else if (FALCON_IS_NUM(peek(vm, 0)) && FALCON_IS_NUM(peek(vm, 1))) {            \
+            double a = FALCON_AS_NUM(FalconPop(vm));                                      \
+            (vm)->stackTop[-1] = FALCON_BOOL_VAL(FALCON_AS_NUM((vm)->stackTop[-1]) op a); \
+        } else {                                                                          \
+            FalconVMError(vm, FALCON_OPR_NOT_NUM_STR_ERR);                                \
+            return FALCON_RUNTIME_ERROR;                                                  \
+        }                                                                                 \
     } while (false)
 
 #ifdef FALCON_DEBUG_TRACE_EXECUTION
@@ -311,8 +312,8 @@ static FalconResultCode run(FalconVM *vm) {
     while (true) {
 #ifdef FALCON_DEBUG_TRACE_EXECUTION
         if (vm->stack != vm->stackTop) FalconDumpStack(vm);
-        FalconDumpInstruction(&frame->closure->function->bytecodeChunk,
-                              (int) (frame->pc - frame->closure->function->bytecodeChunk.code));
+        FalconDumpInstruction(&frame->closure->function->bytecode,
+                              (int) (frame->pc - frame->closure->function->bytecode.code));
 #endif
 
         uint8_t instruction = FALCON_READ_BYTE();

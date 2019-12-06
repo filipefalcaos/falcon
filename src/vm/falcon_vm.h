@@ -29,7 +29,7 @@ struct FalconVM {
     bool isREPL;
 
     /* Bytecode chunk to interpret and the program counter */
-    FalconBytecodeChunk *bytecodeChunk;
+    FalconBytecodeChunk *bytecode;
     uint8_t *pc;
 
     /* VM's call frames */

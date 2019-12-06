@@ -14,9 +14,9 @@
 typedef struct {
     FalconTokenType type;
     const char *start;
-    uint64_t length;
-    uint64_t line;
-    uint64_t column;
+    uint32_t length;
+    uint32_t line;
+    uint32_t column;
 } FalconToken;
 
 /* Scanner representation (lexical analysis) */
@@ -24,8 +24,8 @@ typedef struct {
     const char *start;
     const char *current;
     const char *lineContent;
-    uint64_t line;
-    uint64_t column;
+    uint32_t line;
+    uint32_t column;
 } FalconScanner;
 
 /* Scanning operations */

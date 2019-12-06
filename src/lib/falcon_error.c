@@ -16,8 +16,8 @@
  */
 void FalconCompileTimeError(FalconVM *vm, FalconScanner *scanner, FalconToken *token,
                             const char *message) {
-    int tkLine = token->line;
-    int tkColumn = token->column;
+    uint32_t tkLine = token->line;
+    uint32_t tkColumn = token->column;
     const char *fileName = vm->fileName;
     const char *sourceLine = FalconGetSourceFromLine(scanner);
 
@@ -36,8 +36,8 @@ static void FalconPrintCallFrames(FalconVM *vm, int initial, int final) {
     for (int i = initial; i >= final; i--) {
         FalconCallFrame *currentFrame = &vm->frames[i];
         FalconObjFunction *currentFunction = currentFrame->closure->function;
-        size_t currentInstruction = currentFrame->pc - currentFunction->bytecodeChunk.code - 1;
-        int currentLine = FalconGetLine(&currentFrame->closure->function->bytecodeChunk,
+        size_t currentInstruction = currentFrame->pc - currentFunction->bytecode.code - 1;
+        int currentLine = FalconGetLine(&currentFrame->closure->function->bytecode,
                                         (int) currentInstruction);
 
         /* Prints line and function name */

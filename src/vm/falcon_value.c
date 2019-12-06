@@ -114,8 +114,8 @@ char *FalconValueToString(FalconVM *vm, FalconValue *value) {
                 }
                 case FALCON_OBJ_NATIVE: {
                     FalconObjNative *native = FALCON_AS_NATIVE(*value);
-                    string = FALCON_ALLOCATE(vm, char, strlen(native->functionName) + 13);
-                    sprintf(string, "<native fn %s>", native->functionName);
+                    string = FALCON_ALLOCATE(vm, char, strlen(native->name) + 13);
+                    sprintf(string, "<native fn %s>", native->name);
                     break;
                 }
                 default:

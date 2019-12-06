@@ -82,7 +82,7 @@ static FalconToken makeToken(FalconTokenType type, FalconScanner *scanner) {
     FalconToken token;
     token.type = type;
     token.start = scanner->start;
-    token.length = (uint64_t) (scanner->current - scanner->start);
+    token.length = (uint32_t) (scanner->current - scanner->start);
     token.line = scanner->line;
     token.column = scanner->column;
     return token;
@@ -95,9 +95,9 @@ static FalconToken errorToken(const char *message, FalconScanner *scanner) {
     FalconToken token;
     token.type = FALCON_TK_ERROR;
     token.start = message;
-    token.length = (uint64_t) strlen(message);
+    token.length = (uint32_t) strlen(message);
     token.line = scanner->line;
-    token.column = (uint64_t) scanner->start;
+    token.column = (uint32_t) scanner->start;
     return token;
 }
 

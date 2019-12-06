@@ -16,7 +16,7 @@
 #endif
 
 /* Compilation flags */
-#define FALCON_ERROR_STATE      -1
+#define FALCON_ERROR_STATE      (-1)
 #define FALCON_UNDEFINED_SCOPE  FALCON_ERROR_STATE
 #define FALCON_UNRESOLVED_LOCAL FALCON_ERROR_STATE
 #define FALCON_GLOBAL_SCOPE     0
@@ -137,7 +137,7 @@ static FalconObjFunction *currentFunction(FalconFunctionCompiler *fCompiler) {
  * Returns the compiling bytecode chunk.
  */
 static FalconBytecodeChunk *currentBytecode(FalconFunctionCompiler *fCompiler) {
-    return &currentFunction(fCompiler)->bytecodeChunk;
+    return &currentFunction(fCompiler)->bytecode;
 }
 
 /**
@@ -161,13 +161,13 @@ static void emitBytes(FalconCompiler *compiler, uint8_t byte_1, uint8_t byte_2) 
  */
 static void emitLoop(FalconCompiler *compiler, int loopStart) {
     emitByte(compiler, FALCON_OP_LOOP);
-    uint16_t offset = currentBytecode(compiler->fCompiler)->count - loopStart + 2;
+    uint16_t offset = (uint16_t)(currentBytecode(compiler->fCompiler)->count - loopStart + 2);
 
     if (offset > UINT16_MAX) /* Loop is too long? */
         compilerError(compiler, &compiler->parser->previous, FALCON_LOOP_LIMIT_ERR);
 
-    emitByte(compiler, (uint8_t) ((uint16_t) (offset >> 8u) & (uint16_t) 0xff));
-    emitByte(compiler, (uint8_t) (offset & (uint16_t) 0xff));
+    emitByte(compiler, (uint8_t)((uint16_t)(offset >> 8u) & 0xffu));
+    emitByte(compiler, (uint8_t)(offset & 0xffu));
 }
 
 /**
@@ -194,7 +194,7 @@ static uint8_t makeConstant(FalconCompiler *compiler, FalconValue value) {
     int constant = FalconAddConstant(compiler->vm, currentBytecode(compiler->fCompiler), value);
     if (constant > UINT8_MAX) {
         compilerError(compiler, &compiler->parser->previous, FALCON_CONST_LIMIT_ERR);
-        return FALCON_ERROR_STATE;
+        return 0;
     }
 
     return (uint8_t) constant;
@@ -209,7 +209,7 @@ static void emitConstant(FalconCompiler *compiler, FalconValue value) {
     if (constant > UINT16_MAX) {
         compilerError(compiler, &compiler->parser->previous, FALCON_CONST_LIMIT_ERR);
     } else {
-        FalconWriteConstant(compiler->vm, currentBytecode(compiler->fCompiler), constant,
+        FalconWriteConstant(compiler->vm, currentBytecode(compiler->fCompiler), (uint16_t) constant,
                             compiler->parser->previous.line);
     }
 }
@@ -220,15 +220,14 @@ static void emitConstant(FalconCompiler *compiler, FalconValue value) {
  * land on.
  */
 static void patchJump(FalconCompiler *compiler, int offset) {
-    uint16_t jump =
-        currentBytecode(compiler->fCompiler)->count - offset - 2; /* -2 to adjust by offset */
+    uint16_t jump = (uint16_t)(currentBytecode(compiler->fCompiler)->count - offset -
+                               2); /* -2 to adjust by offset */
 
     if (jump > UINT16_MAX) /* Jump is too long? */
         compilerError(compiler, &compiler->parser->previous, FALCON_JUMP_LIMIT_ERR);
 
-    currentBytecode(compiler->fCompiler)->code[offset] =
-        (uint8_t)((uint16_t)(jump >> 8u) & (uint16_t) 0xff);
-    currentBytecode(compiler->fCompiler)->code[offset + 1] = (uint8_t)(jump & (uint16_t) 0xff);
+    currentBytecode(compiler->fCompiler)->code[offset] = (uint8_t)((uint16_t) (jump >> 8u) & 0xffu);
+    currentBytecode(compiler->fCompiler)->code[offset + 1] = (uint8_t)(jump & 0xffu);
 }
 
 /**
@@ -451,7 +450,7 @@ static uint8_t parseVariable(FalconCompiler *compiler, const char *errorMessage)
     declareVariable(compiler); /* Declares the variables */
 
     if (compiler->fCompiler->scopeDepth > FALCON_GLOBAL_SCOPE)
-        return FALCON_ERROR_STATE; /* Locals are not looked up by name, exit */
+        return 0; /* Locals are not looked up by name, exit */
 
     return identifierConstant(compiler, &compiler->parser->previous);
 }
@@ -499,7 +498,7 @@ static uint8_t argumentList(FalconCompiler *compiler) {
  * assigning the result of an arithmetic operator.
  */
 static void compoundAssignment(FalconCompiler *compiler, uint8_t getOpcode, uint8_t setOpcode,
-                               uint8_t arg, uint8_t opcode) {
+                               int arg, uint8_t opcode) {
     emitBytes(compiler, getOpcode, (uint8_t) arg);
     expression(compiler);
     emitByte(compiler, opcode);
@@ -988,14 +987,12 @@ static void ifStatement(FalconCompiler *compiler) {
 static void switchStatement(FalconCompiler *compiler) {
     FalconParser *parser = compiler->parser;
 
-    /* Possible switch states */
-    typedef enum {
-        FALCON_BEF_CASES, /* Before all cases */
-        FALCON_BEF_ELSE,  /* Before else case */
-        FALCON_AFT_ELSE   /* After else case */
-    } SwitchState;
+/* Possible switch states */
+#define FALCON_BEF_CASES (0)
+#define FALCON_BEF_ELSE  (1)
+#define FALCON_AFT_ELSE  (2)
 
-    SwitchState switchState = FALCON_BEF_CASES;
+    int switchState = FALCON_BEF_CASES;
     int caseEnds[FALCON_MAX_BYTE];
     int caseCount = 0;
     int previousCaseSkip = -1;
@@ -1051,27 +1048,31 @@ static void switchStatement(FalconCompiler *compiler) {
     }
 
     emitByte(compiler, FALCON_OP_POP); /* Pops the switch value */
+
+#undef FALCON_BEF_CASES
+#undef FALCON_BEF_ELSE
+#undef FALCON_AFT_ELSE
 }
 
 /* Starts the compilation of a new loop by setting the entry point to the current bytecode chunk
  * instruction */
 #define FALCON_START_LOOP(fCompiler)                \
     FalconLoop loop;                                \
-    loop.enclosing = fCompiler->loop;               \
+    loop.enclosing = (fCompiler)->loop;             \
     loop.entry = currentBytecode(fCompiler)->count; \
-    loop.scopeDepth = fCompiler->scopeDepth;        \
-    fCompiler->loop = &loop
+    loop.scopeDepth = (fCompiler)->scopeDepth;      \
+    (fCompiler)->loop = &loop
 
 /* Compiles the body of a loop and sets its index */
-#define FALCON_LOOP_BODY(compiler)                                                        \
-    compiler->fCompiler->loop->body = compiler->fCompiler->function->bytecodeChunk.count; \
+#define FALCON_LOOP_BODY(compiler)                                                          \
+    compiler->fCompiler->loop->body = (compiler)->fCompiler->function->bytecode.count; \
     block(compiler)
 
 /**
  * Gets the number of arguments for a instruction at the given program counter.
  */
-int instructionArgs(const FalconBytecodeChunk *bytecodeChunk, int pc) {
-    switch (bytecodeChunk->code[pc]) {
+int instructionArgs(const FalconBytecodeChunk *bytecode, int pc) {
+    switch (bytecode->code[pc]) {
         case FALCON_OP_FALSE:
         case FALCON_OP_TRUE:
         case FALCON_OP_NULL:
@@ -1113,9 +1114,8 @@ int instructionArgs(const FalconBytecodeChunk *bytecodeChunk, int pc) {
             return 2; /* Instructions with 2 bytes as arguments */
 
         case FALCON_OP_CLOSURE: {
-            int index = bytecodeChunk->code[pc + 1];
-            FalconObjFunction *function =
-                FALCON_AS_FUNCTION(bytecodeChunk->constants.values[index]);
+            int index = bytecode->code[pc + 1];
+            FalconObjFunction *function = FALCON_AS_FUNCTION(bytecode->constants.values[index]);
             return 1 + function->upvalueCount * 2; /* Function: 1 byte; Upvalues: 2 bytes each */
         }
 
@@ -1131,16 +1131,16 @@ int instructionArgs(const FalconBytecodeChunk *bytecodeChunk, int pc) {
  */
 static void endLoop(FalconCompiler *compiler) {
     FalconFunctionCompiler *fCompiler = compiler->fCompiler;
-    FalconBytecodeChunk *bytecodeChunk = &fCompiler->function->bytecodeChunk;
+    FalconBytecodeChunk *bytecode = &fCompiler->function->bytecode;
     int index = fCompiler->loop->body;
 
-    while (index < bytecodeChunk->count) {
-        if (bytecodeChunk->code[index] == FALCON_OP_TEMP) { /* Is a temporary for a "break"? */
-            bytecodeChunk->code[index] = FALCON_OP_JUMP; /* Set the correct "OP_JUMP" instruction */
-            patchJump(compiler, index + 1);              /* Patch the jump to the end of the loop */
+    while (index < bytecode->count) {
+        if (bytecode->code[index] == FALCON_OP_TEMP) { /* Is a temporary for a "break"? */
+            bytecode->code[index] = FALCON_OP_JUMP;    /* Set the correct "OP_JUMP" instruction */
+            patchJump(compiler, index + 1);            /* Patch the jump to the end of the loop */
             index += 3;
         } else { /* Jumps the instruction and its arguments */
-            index += 1 + instructionArgs(bytecodeChunk, index); /* +1 byte - instruction */
+            index += 1 + instructionArgs(bytecode, index); /* +1 byte - instruction */
         }
     }
 
@@ -1221,7 +1221,7 @@ static void forStatement(FalconCompiler *compiler) {
 /* Checks if the current scope is outside of a loop body */
 #define FALCON_CHECK_LOOP_ERROR(fCompiler, error)                        \
     do {                                                                 \
-        if (fCompiler->loop == NULL) /* Is outside of a loop body? */    \
+        if ((fCompiler)->loop == NULL) /* Is outside of a loop body? */  \
             compilerError(compiler, &compiler->parser->previous, error); \
     } while (false)
 

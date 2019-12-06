@@ -29,7 +29,7 @@ void FalconFreeTable(FalconVM *vm, FalconTable *table);
 bool FalconTableGet(FalconTable *table, FalconObjString *key, FalconValue *value);
 bool FalconTableSet(FalconVM *vm, FalconTable *table, FalconObjString *key, FalconValue value);
 bool FalconTableDelete(FalconTable *table, FalconObjString *key);
-FalconObjString *FalconTableFindStr(FalconTable *table, const char *chars, int length,
+FalconObjString *FalconTableFindStr(FalconTable *table, const char *chars, size_t length,
                                     uint32_t hash);
 
 #endif // FALCON_TABLE_H

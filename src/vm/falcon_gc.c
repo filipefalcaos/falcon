@@ -112,7 +112,7 @@ static void blackenObject(FalconVM *vm, FalconObj *object) {
         case FALCON_OBJ_FUNCTION: {
             FalconObjFunction *function = (FalconObjFunction *) object;
             markObject(vm, (FalconObj *) function->name);
-            markArray(vm, &function->bytecodeChunk.constants);
+            markArray(vm, &function->bytecode.constants);
             break;
         }
         case FALCON_OBJ_UPVALUE:

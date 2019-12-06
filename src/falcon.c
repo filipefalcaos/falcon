@@ -116,22 +116,22 @@ static void repl(FalconVM *vm) {
 #define FALCON_REQUIRED_ARG_ERROR "Option '%s' requires a string argument.\n"
 
 /* Reports a given CLI error and then prints the CLI usage */
-#define FALCON_CLI_ERROR(argv, index, error) \
-    do {                                     \
-        fprintf(stderr, error, argv[index]); \
-        FalconPrintUsage();                  \
-        exit(FALCON_ERR_USAGE);              \
+#define FALCON_CLI_ERROR(argv, index, error)   \
+    do {                                       \
+        fprintf(stderr, error, (argv)[index]); \
+        FalconPrintUsage();                    \
+        exit(FALCON_ERR_USAGE);                \
     } while (false)
 
 /* Checks if there are no extra characters in the same option. If so, reports a CLI error through
  * FALCON_CLI_ERROR */
-#define FALCON_CHECK_EXTRA_CHARS(argv, index)                                            \
-    do {                                                                                 \
-        if (argv[i][2] != '\0') FALCON_CLI_ERROR(argv, index, FALCON_UNKNOWN_OPT_ERROR); \
+#define FALCON_CHECK_EXTRA_CHARS(argv, index)                                              \
+    do {                                                                                   \
+        if ((argv)[i][2] != '\0') FALCON_CLI_ERROR(argv, index, FALCON_UNKNOWN_OPT_ERROR); \
     } while (false)
 
 /* Checks if there are no arguments for the last parsed option */
-#define FALCON_CHECK_NO_ARG(argv, i) (argv[i] == NULL || argv[i][0] == '-')
+#define FALCON_CHECK_NO_ARG(argv, i) ((argv)[i] == NULL || (argv)[i][0] == '-')
 
 /**
  * Processes the given CLI arguments and proceeds with the requested action. The following options

@@ -29,7 +29,7 @@ struct sObj {
 /* Falcon's string object */
 struct sObjString {
     FalconObj obj;
-    int length;
+    size_t length;
     uint32_t hash;
     char chars[]; /* Flexible array member */
 };
@@ -47,7 +47,7 @@ typedef struct {
     FalconObj obj;
     int arity;
     int upvalueCount;
-    FalconBytecodeChunk bytecodeChunk;
+    FalconBytecodeChunk bytecode;
     FalconObjString *name;
 } FalconObjFunction;
 
@@ -66,7 +66,7 @@ typedef FalconValue (*FalconNativeFn)(FalconVM *vm, int argCount, FalconValue *a
 typedef struct {
     FalconObj obj;
     FalconNativeFn function;
-    const char *functionName; /* TODO: Change to a FalconObjString */
+    const char *name;
 } FalconObjNative;
 
 /* Gets a object type from an Falcon Value */

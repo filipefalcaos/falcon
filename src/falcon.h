@@ -41,7 +41,6 @@ void FalconPrintUsage();
     " for more information."
 
 /* Limits */
-/* TODO: make the last two work as configurable parameters */
 #define FALCON_REPL_MAX   500
 #define FALCON_MAX_BYTE   (UINT8_MAX + 1) /* 256 */
 #define FALCON_FRAMES_MAX 1000

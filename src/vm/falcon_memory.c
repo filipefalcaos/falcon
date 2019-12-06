@@ -93,7 +93,7 @@ void freeObject(FalconVM *vm, FalconObj *object) {
         }
         case FALCON_OBJ_FUNCTION: {
             FalconObjFunction *function = (FalconObjFunction *) object;
-            FalconFreeBytecode(vm, &function->bytecodeChunk);
+            FalconFreeBytecode(vm, &function->bytecode);
             FALCON_FREE(vm, FalconObjFunction, object);
             break;
         }

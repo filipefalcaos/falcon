@@ -10,69 +10,68 @@
 /**
  * Initializes an empty bytecode chunk.
  */
-void FalconInitBytecode(FalconBytecodeChunk *bytecodeChunk) {
-    bytecodeChunk->count = 0;
-    bytecodeChunk->capacity = 0;
-    bytecodeChunk->lineCount = 0;
-    bytecodeChunk->lineCapacity = 0;
-    bytecodeChunk->code = NULL;
-    bytecodeChunk->lines = NULL;
-    FalconInitValues(&bytecodeChunk->constants);
+void FalconInitBytecode(FalconBytecodeChunk *bytecode) {
+    bytecode->count = 0;
+    bytecode->capacity = 0;
+    bytecode->lineCount = 0;
+    bytecode->lineCapacity = 0;
+    bytecode->code = NULL;
+    bytecode->lines = NULL;
+    FalconInitValues(&bytecode->constants);
 }
 
 /**
  * Frees a bytecode chunk.
  */
-void FalconFreeBytecode(FalconVM *vm, FalconBytecodeChunk *bytecodeChunk) {
-    FALCON_FREE_ARRAY(vm, uint8_t, bytecodeChunk->code, bytecodeChunk->capacity);
-    FALCON_FREE_ARRAY(vm, SourceLine, bytecodeChunk->lines, bytecodeChunk->lineCapacity);
-    FalconFreeValues(vm, &bytecodeChunk->constants);
-    FalconInitBytecode(bytecodeChunk);
+void FalconFreeBytecode(FalconVM *vm, FalconBytecodeChunk *bytecode) {
+    FALCON_FREE_ARRAY(vm, uint8_t, bytecode->code, bytecode->capacity);
+    FALCON_FREE_ARRAY(vm, SourceLine, bytecode->lines, bytecode->lineCapacity);
+    FalconFreeValues(vm, &bytecode->constants);
+    FalconInitBytecode(bytecode);
 }
 
 /**
  * Appends a byte to the end of a bytecode chunk. If the current size is not enough, the capacity
  * of the bytecode chunk is increased to fit the new byte.
  */
-void FalconWriteBytecode(FalconVM *vm, FalconBytecodeChunk *bytecodeChunk, uint8_t byte, int line) {
-    if (bytecodeChunk->capacity < bytecodeChunk->count + 1) { /* Checks if should increase */
-        int oldCapacity = bytecodeChunk->capacity;
-        bytecodeChunk->capacity = FALCON_INCREASE_CAPACITY(oldCapacity); /* Increase the capacity */
-        bytecodeChunk->code =
-            FALCON_INCREASE_ARRAY(vm, bytecodeChunk->code, uint8_t, oldCapacity,
-                                  bytecodeChunk->capacity); /* Increase the bytecode chunk */
+void FalconWriteBytecode(FalconVM *vm, FalconBytecodeChunk *bytecode, uint8_t byte, int line) {
+    if (bytecode->capacity < bytecode->count + 1) { /* Checks if should increase */
+        int oldCapacity = bytecode->capacity;
+        bytecode->capacity = FALCON_INCREASE_CAPACITY(oldCapacity); /* Increase the capacity */
+        bytecode->code =
+            FALCON_INCREASE_ARRAY(vm, bytecode->code, uint8_t, oldCapacity,
+                                  bytecode->capacity); /* Increase the bytecode chunk */
 
-        if (bytecodeChunk->code == NULL) { /* Checks if the allocation failed */
+        if (bytecode->code == NULL) { /* Checks if the allocation failed */
             FalconMemoryError();
             return;
         }
     }
 
-    bytecodeChunk->code[bytecodeChunk->count] = byte; /* Set byte */
-    bytecodeChunk->count++;
+    bytecode->code[bytecode->count] = byte; /* Set byte */
+    bytecode->count++;
 
     /* Checks if still the same line */
-    if (bytecodeChunk->lineCount > 0 &&
-        bytecodeChunk->lines[bytecodeChunk->lineCount - 1].line == line) {
+    if (bytecode->lineCount > 0 && bytecode->lines[bytecode->lineCount - 1].line == line) {
         return;
     }
 
-    if (bytecodeChunk->lineCapacity < bytecodeChunk->lineCount + 1) { /* Checks if new line */
-        int oldCapacity = bytecodeChunk->lineCapacity;
-        bytecodeChunk->lineCapacity =
+    if (bytecode->lineCapacity < bytecode->lineCount + 1) { /* Checks if new line */
+        int oldCapacity = bytecode->lineCapacity;
+        bytecode->lineCapacity =
             FALCON_INCREASE_CAPACITY(oldCapacity); /* Increases the capacity */
-        bytecodeChunk->lines =
-            FALCON_INCREASE_ARRAY(vm, bytecodeChunk->lines, SourceLine, oldCapacity,
-                                  bytecodeChunk->lineCapacity); /* Increases the lines list */
+        bytecode->lines =
+            FALCON_INCREASE_ARRAY(vm, bytecode->lines, SourceLine, oldCapacity,
+                                  bytecode->lineCapacity); /* Increases the lines list */
 
-        if (bytecodeChunk->lines == NULL) { /* Checks if the allocation failed */
+        if (bytecode->lines == NULL) { /* Checks if the allocation failed */
             FalconMemoryError();
             return;
         }
     }
 
-    SourceLine *sourceLine = &bytecodeChunk->lines[bytecodeChunk->lineCount++]; /* Sets the line */
-    sourceLine->offset = bytecodeChunk->count - 1;
+    SourceLine *sourceLine = &bytecode->lines[bytecode->lineCount++]; /* Sets the line */
+    sourceLine->offset = bytecode->count - 1;
     sourceLine->line = line;
 }
 
@@ -81,18 +80,18 @@ void FalconWriteBytecode(FalconVM *vm, FalconBytecodeChunk *bytecodeChunk, uint8
  * is only possible because Falcon is single-pass compiled, which means instruction codes can only
  * increase. Thus, the array is always sorted and a binary search is possible.
  */
-int FalconGetLine(FalconBytecodeChunk *bytecodeChunk, int instruction) {
+int FalconGetLine(FalconBytecodeChunk *bytecode, int instruction) {
     int start = 0;
-    int end = bytecodeChunk->lineCount - 1;
+    int end = bytecode->lineCount - 1;
 
     while (true) {
         int middle = (start + end) / 2;
-        SourceLine *sourceLine = &bytecodeChunk->lines[middle];
+        SourceLine *sourceLine = &bytecode->lines[middle];
 
         if (instruction < sourceLine->offset) {
             end = middle - 1;
-        } else if (middle == bytecodeChunk->lineCount - 1 ||
-                   instruction < bytecodeChunk->lines[middle + 1].offset) {
+        } else if (middle == bytecode->lineCount - 1 ||
+                   instruction < bytecode->lines[middle + 1].offset) {
             return sourceLine->line;
         } else {
             start = middle + 1;
@@ -103,20 +102,18 @@ int FalconGetLine(FalconBytecodeChunk *bytecodeChunk, int instruction) {
 /**
  * Adds a new constant to a bytecode chunk.
  */
-int FalconAddConstant(FalconVM *vm, FalconBytecodeChunk *bytecodeChunk, FalconValue value) {
+int FalconAddConstant(FalconVM *vm, FalconBytecodeChunk *bytecode, FalconValue value) {
     FalconPush(vm, value); /* Adds to stack to avoid being garbage collected */
-    FalconWriteValues(vm, &bytecodeChunk->constants, value);
+    FalconWriteValues(vm, &bytecode->constants, value);
     FalconPop(vm); /* Removes from the stack */
-    return bytecodeChunk->constants.count - 1;
+    return bytecode->constants.count - 1;
 }
 
 /**
  * Writes a 2 bytes constant to the bytecode chunk.
  */
-void FalconWriteConstant(FalconVM *vm, FalconBytecodeChunk *bytecodeChunk, uint16_t index,
-                         int line) {
-    FalconWriteBytecode(vm, bytecodeChunk, FALCON_OP_CONSTANT, line);
-    FalconWriteBytecode(vm, bytecodeChunk, (uint8_t)(index & (uint16_t) 0xff), line);
-    FalconWriteBytecode(vm, bytecodeChunk, (uint8_t)((uint16_t)(index >> 8u) & (uint16_t) 0xff),
-                        line);
+void FalconWriteConstant(FalconVM *vm, FalconBytecodeChunk *bytecode, uint16_t index, int line) {
+    FalconWriteBytecode(vm, bytecode, FALCON_OP_CONSTANT, line);
+    FalconWriteBytecode(vm, bytecode, (uint8_t)(index & 0xffu), line);
+    FalconWriteBytecode(vm, bytecode, (uint8_t)((uint16_t)(index >> 8u) & 0xffu), line);
 }

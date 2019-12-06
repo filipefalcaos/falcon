@@ -38,8 +38,8 @@ static int simpleInstruction(const char *name, int offset) {
 /**
  * Displays a local variable instruction.
  */
-static int byteInstruction(const char *name, FalconBytecodeChunk *bytecodeChunk, int offset) {
-    uint8_t slot = bytecodeChunk->code[offset + 1];
+static int byteInstruction(const char *name, FalconBytecodeChunk *bytecode, int offset) {
+    uint8_t slot = bytecode->code[offset + 1];
     printf("%-16s %4d\n", name, slot);
     return offset + 2;
 }
@@ -47,9 +47,9 @@ static int byteInstruction(const char *name, FalconBytecodeChunk *bytecodeChunk,
 /**
  * Displays a jump (conditional) instruction.
  */
-static int jumpInstruction(const char *name, int sign, FalconBytecodeChunk *bytecodeChunk, int offset) {
-    uint16_t jump = (uint16_t) (bytecodeChunk->code[offset + 1] << 8u);
-    jump |= bytecodeChunk->code[offset + 2];
+static int jumpInstruction(const char *name, int sign, FalconBytecodeChunk *bytecode, int offset) {
+    uint16_t jump = (uint16_t) (bytecode->code[offset + 1] << 8u);
+    jump |= bytecode->code[offset + 2];
     printf("%-16s %4d -> %d\n", name, offset, offset + 3 + sign * jump);
     return offset + 3;
 }
@@ -57,9 +57,9 @@ static int jumpInstruction(const char *name, int sign, FalconBytecodeChunk *byte
 /**
  * Displays a constant instruction (8 bits).
  */
-static int constantInstruction(const char *name, FalconBytecodeChunk *bytecodeChunk, int offset) {
-    uint8_t constant = bytecodeChunk->code[offset + 1];
-    FalconValue value = bytecodeChunk->constants.values[constant];
+static int constantInstruction(const char *name, FalconBytecodeChunk *bytecode, int offset) {
+    uint8_t constant = bytecode->code[offset + 1];
+    FalconValue value = bytecode->constants.values[constant];
 
     /* Prints the constant */
     printf("%-16s %4d ", name, constant);
@@ -73,10 +73,9 @@ static int constantInstruction(const char *name, FalconBytecodeChunk *bytecodeCh
 /**
  * Displays a constant instruction (16 bits).
  */
-static int constantInstruction16(const char *name, FalconBytecodeChunk *bytecodeChunk, int offset) {
-    uint16_t constant =
-        (bytecodeChunk->code[offset + 1] | (uint16_t)(bytecodeChunk->code[offset + 2] << 8u));
-    FalconValue value = bytecodeChunk->constants.values[constant];
+static int constantInstruction16(const char *name, FalconBytecodeChunk *bytecode, int offset) {
+    uint16_t constant = (bytecode->code[offset + 1] | (uint16_t)(bytecode->code[offset + 2] << 8u));
+    FalconValue value = bytecode->constants.values[constant];
 
     /* Prints the constant */
     printf("%-16s %4d ", name, constant);
@@ -90,17 +89,17 @@ static int constantInstruction16(const char *name, FalconBytecodeChunk *bytecode
 /**
  * Displays a closure instruction.
  */
-static int closureInstruction(const char *name, FalconBytecodeChunk *bytecodeChunk, int offset) {
+static int closureInstruction(const char *name, FalconBytecodeChunk *bytecode, int offset) {
     offset++;
-    uint8_t constant = bytecodeChunk->code[offset++];
+    uint8_t constant = bytecode->code[offset++];
     printf("%-16s %4d ", name, constant);
-    FalconPrintValue(bytecodeChunk->constants.values[constant]);
+    FalconPrintValue(bytecode->constants.values[constant]);
     printf("\n");
 
-    FalconObjFunction *function = FALCON_AS_FUNCTION(bytecodeChunk->constants.values[constant]);
+    FalconObjFunction *function = FALCON_AS_FUNCTION(bytecode->constants.values[constant]);
     for (int i = 0; i < function->upvalueCount; i++) {
-        int isLocal = bytecodeChunk->code[offset++];
-        int index = bytecodeChunk->code[offset++];
+        int isLocal = bytecode->code[offset++];
+        int index = bytecode->code[offset++];
         printf("%04d    |                     %s %d\n", offset - 2, isLocal ? "local" : "upvalue",
                index);
     }
@@ -111,21 +110,21 @@ static int closureInstruction(const char *name, FalconBytecodeChunk *bytecodeChu
 /**
  * Displays a single instruction in a bytecode chunk.
  */
-int FalconDumpInstruction(FalconBytecodeChunk *bytecodeChunk, int offset) {
+int FalconDumpInstruction(FalconBytecodeChunk *bytecode, int offset) {
     printf("%04d ", offset); /* Prints offset info */
-    int sourceLine = FalconGetLine(bytecodeChunk, offset);
+    int sourceLine = FalconGetLine(bytecode, offset);
 
     /* Prints line info */
-    if (offset > 0 && sourceLine == FalconGetLine(bytecodeChunk, offset - 1)) {
+    if (offset > 0 && sourceLine == FalconGetLine(bytecode, offset - 1)) {
         printf("   | ");
     } else {
         printf("%4d ", sourceLine);
     }
 
-    uint8_t instruction = bytecodeChunk->code[offset]; /* Current instruction */
-    switch (instruction) {                             /* Verifies the instruction type */
+    uint8_t instruction = bytecode->code[offset]; /* Current instruction */
+    switch (instruction) {                        /* Verifies the instruction type */
         case FALCON_OP_CONSTANT:
-            return constantInstruction16("OP_CONSTANT", bytecodeChunk, offset);
+            return constantInstruction16("OP_CONSTANT", bytecode, offset);
         case FALCON_OP_FALSE:
             return simpleInstruction("OP_FALSE", offset);
         case FALCON_OP_TRUE:
@@ -159,31 +158,31 @@ int FalconDumpInstruction(FalconBytecodeChunk *bytecodeChunk, int offset) {
         case FALCON_OP_POW:
             return simpleInstruction("FALCON_OP_POW", offset);
         case FALCON_OP_DEFINE_GLOBAL:
-            return constantInstruction("OP_DEFINE_GLOBAL", bytecodeChunk, offset);
+            return constantInstruction("OP_DEFINE_GLOBAL", bytecode, offset);
         case FALCON_OP_GET_GLOBAL:
-            return constantInstruction("OP_GET_GLOBAL", bytecodeChunk, offset);
+            return constantInstruction("OP_GET_GLOBAL", bytecode, offset);
         case FALCON_OP_SET_GLOBAL:
-            return constantInstruction("OP_SET_GLOBAL", bytecodeChunk, offset);
+            return constantInstruction("OP_SET_GLOBAL", bytecode, offset);
         case FALCON_OP_GET_UPVALUE:
-            return byteInstruction("OP_GET_UPVALUE", bytecodeChunk, offset);
+            return byteInstruction("OP_GET_UPVALUE", bytecode, offset);
         case FALCON_OP_SET_UPVALUE:
-            return byteInstruction("OP_SET_UPVALUE", bytecodeChunk, offset);
+            return byteInstruction("OP_SET_UPVALUE", bytecode, offset);
         case FALCON_OP_CLOSE_UPVALUE:
             return simpleInstruction("OP_CLOSE_UPVALUE", offset);
         case FALCON_OP_GET_LOCAL:
-            return byteInstruction("OP_GET_LOCAL", bytecodeChunk, offset);
+            return byteInstruction("OP_GET_LOCAL", bytecode, offset);
         case FALCON_OP_SET_LOCAL:
-            return byteInstruction("OP_SET_LOCAL", bytecodeChunk, offset);
+            return byteInstruction("OP_SET_LOCAL", bytecode, offset);
         case FALCON_OP_JUMP:
-            return jumpInstruction("OP_JUMP", 1, bytecodeChunk, offset);
+            return jumpInstruction("OP_JUMP", 1, bytecode, offset);
         case FALCON_OP_JUMP_IF_FALSE:
-            return jumpInstruction("OP_JUMP_IF_FALSE", 1, bytecodeChunk, offset);
+            return jumpInstruction("OP_JUMP_IF_FALSE", 1, bytecode, offset);
         case FALCON_OP_LOOP:
-            return jumpInstruction("OP_LOOP", -1, bytecodeChunk, offset);
+            return jumpInstruction("OP_LOOP", -1, bytecode, offset);
         case FALCON_OP_CLOSURE:
-            return closureInstruction("OP_CLOSURE", bytecodeChunk, offset);
+            return closureInstruction("OP_CLOSURE", bytecode, offset);
         case FALCON_OP_CALL:
-            return byteInstruction("OP_CALL", bytecodeChunk, offset);
+            return byteInstruction("OP_CALL", bytecode, offset);
         case FALCON_OP_RETURN:
             return simpleInstruction("OP_RETURN", offset);
         case FALCON_OP_DUP:
@@ -203,11 +202,10 @@ int FalconDumpInstruction(FalconBytecodeChunk *bytecodeChunk, int offset) {
 /**
  * Displays a complete bytecode chunk.
  */
-void FalconDumpBytecode(FalconBytecodeChunk *bytecodeChunk, const char *name) {
+void FalconDumpBytecode(FalconBytecodeChunk *bytecode, const char *name) {
     printf("== %s ==\n", name);
-
-    for (int offset = 0; offset < bytecodeChunk->count;) { /* Loop through the instructions */
-        offset = FalconDumpInstruction(bytecodeChunk, offset); /* Disassemble instruction */
+    for (int offset = 0; offset < bytecode->count;) { /* Loop through the instructions */
+        offset = FalconDumpInstruction(bytecode, offset); /* Disassemble instruction */
     }
 }
 
