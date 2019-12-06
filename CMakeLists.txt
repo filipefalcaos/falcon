@@ -22,6 +22,9 @@ add_compile_definitions(CMAKE_SYSTEM_NAME="${CMAKE_SYSTEM_NAME}")
 # Debugging options
 option(DEBUG_PRINT_CODE "DEBUG_PRINT_CODE" OFF)
 option(DEBUG_TRACE_EXECUTION "DEBUG_TRACE_EXECUTION" OFF)
+option(DEBUG_STRESS_GC "DEBUG_STRESS_GC" OFF)
+option(DEBUG_LOG_GC "DEBUG_LOG_GC" OFF)
+option(DEBUG_LOG_MEMORY "DEBUG_LOG_MEMORY" OFF)
 
 # Adds Falcon debugging macros if requested
 if (DEBUG_PRINT_CODE)
@@ -31,6 +34,18 @@ endif (DEBUG_PRINT_CODE)
 if (DEBUG_TRACE_EXECUTION)
     add_compile_definitions(FALCON_DEBUG_TRACE_EXECUTION)
 endif (DEBUG_TRACE_EXECUTION)
+
+if (DEBUG_STRESS_GC)
+    add_compile_definitions(FALCON_DEBUG_STRESS_GC)
+endif (DEBUG_STRESS_GC)
+
+if (DEBUG_LOG_GC)
+    add_compile_definitions(FALCON_DEBUG_LOG_GC)
+endif (DEBUG_LOG_GC)
+
+if (DEBUG_LOG_MEMORY)
+    add_compile_definitions(FALCON_DEBUG_LOG_MEMORY)
+endif (DEBUG_LOG_MEMORY)
 
 # Build config
 add_executable(
@@ -55,16 +70,18 @@ add_executable(
         src/lib/falcon_natives.c
         src/lib/falcon_table.h
         src/lib/falcon_table.c
-        src/lib/math/falcon_math.h
-        src/lib/math/falcon_math.c
-        src/lib/io/falcon_io.h
-        src/lib/io/falcon_io.c
-        src/lib/string/falcon_string.h
-        src/lib/string/falcon_string.c
+        src/lib/falcon_math.h
+        src/lib/falcon_math.c
+        src/lib/falcon_io.h
+        src/lib/falcon_io.c
+        src/lib/falcon_string.h
+        src/lib/falcon_string.c
 
         # Virtual Machine
         src/vm/falcon_bytecode.h
         src/vm/falcon_bytecode.c
+        src/vm/falcon_gc.h
+        src/vm/falcon_gc.c
         src/vm/falcon_memory.h
         src/vm/falcon_memory.c
         src/vm/falcon_object.h

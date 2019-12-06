@@ -6,7 +6,7 @@
 
 #include "falcon_compiler.h"
 #include "../lib/falcon_error.h"
-#include "../lib/string/falcon_string.h"
+#include "../lib/falcon_string.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -44,46 +44,6 @@ typedef enum {
     FALCON_PREC_POW,     /* 10: "^" */
     FALCON_PREC_POSTFIX  /* 11: ".", "()", "[]" */
 } FalconPrecedence;
-
-/* Function types:
- * FALCON_TYPE_FUNCTION represents an user-defined function
- * FALCON_TYPE_SCRIPT represents the top-level (global scope) code */
-typedef enum { FALCON_TYPE_FUNCTION, FALCON_TYPE_SCRIPT } FalconFunctionType;
-
-/* Local variable representation */
-typedef struct {
-    FalconToken name; /* The identifier of the local variable */
-    int depth;        /* The depth in the scope chain where the local was declared */
-    bool isCaptured;  /* Whether the variable was captured as an upvalue */
-} FalconLocal;
-
-/* Upvalue representation */
-typedef struct {
-    uint8_t index; /* The index of the local/upvalue being captured */
-    bool isLocal;  /* Whether the captured upvalue is a local variable in the enclosing function */
-} FalconUpvalue;
-
-/* Loop representation */
-typedef struct sLoop {
-    struct sLoop *enclosing; /* The enclosing loop */
-    int entry;               /* The index of the first loop instruction */
-    int body;                /* The index of the first instruction of the loop's body */
-    int scopeDepth;          /* Depth of the loop scope */
-} FalconLoop;
-
-/* Function compiler representation */
-typedef struct sCompiler {
-    struct sCompiler *enclosing; /* The compiler for the enclosing function or NULL (when the
-                                    compiling code is at the top-level) */
-    FalconObjFunction *function; /* The function being compiled */
-    FalconFunctionType type; /* Whether scope is global (TYPE_SCRIPT) or local (TYPE_FUNCTION) */
-    FalconLocal locals[FALCON_MAX_BYTE];     /* List of locals declared in the compiling function */
-    FalconUpvalue upvalues[FALCON_MAX_BYTE]; /* List of upvalues captured from outer scope by
-                                          the compiling function */
-    FalconLoop *loop; /* The innermost loop being compiled or NULL if not in a loop */
-    int localCount;   /* Number of local variables in the compiling function */
-    int scopeDepth;   /* The current depth of block scope nesting */
-} FalconFunctionCompiler;
 
 /* Program compiler representation */
 typedef struct {
@@ -184,7 +144,7 @@ static FalconBytecodeChunk *currentBytecode(FalconFunctionCompiler *fCompiler) {
  * Appends a single byte to the bytecode chunk.
  */
 static void emitByte(FalconCompiler *compiler, uint8_t byte) {
-    FalconWriteBytecode(currentBytecode(compiler->fCompiler), byte,
+    FalconWriteBytecode(compiler->vm, currentBytecode(compiler->fCompiler), byte,
                         compiler->parser->previous.line);
 }
 
@@ -231,7 +191,7 @@ static void emitReturn(FalconCompiler *compiler) {
  * Adds a constant to the bytecode chunk constants table.
  */
 static uint8_t makeConstant(FalconCompiler *compiler, FalconValue value) {
-    int constant = FalconAddConstant(currentBytecode(compiler->fCompiler), value);
+    int constant = FalconAddConstant(compiler->vm, currentBytecode(compiler->fCompiler), value);
     if (constant > UINT8_MAX) {
         compilerError(compiler, &compiler->parser->previous, FALCON_CONST_LIMIT_ERR);
         return FALCON_ERROR_STATE;
@@ -245,11 +205,11 @@ static uint8_t makeConstant(FalconCompiler *compiler, FalconValue value) {
  * checks if the constant limit was exceeded.
  */
 static void emitConstant(FalconCompiler *compiler, FalconValue value) {
-    int constant = FalconAddConstant(currentBytecode(compiler->fCompiler), value);
+    int constant = FalconAddConstant(compiler->vm, currentBytecode(compiler->fCompiler), value);
     if (constant > UINT16_MAX) {
         compilerError(compiler, &compiler->parser->previous, FALCON_CONST_LIMIT_ERR);
     } else {
-        FalconWriteConstant(currentBytecode(compiler->fCompiler), constant,
+        FalconWriteConstant(compiler->vm, currentBytecode(compiler->fCompiler), constant,
                             compiler->parser->previous.line);
     }
 }
@@ -293,7 +253,7 @@ static void initFunctionCompiler(FalconCompiler *compiler, FalconFunctionCompile
     fCompiler->localCount = 0;
     fCompiler->scopeDepth = FALCON_GLOBAL_SCOPE;
     fCompiler->function = FalconNewFunction(compiler->vm);
-    compiler->fCompiler = fCompiler;
+    compiler->vm->compiler = compiler->fCompiler = fCompiler;
 
     FalconParser *parser = compiler->parser;
     if (type != FALCON_TYPE_SCRIPT)
@@ -326,7 +286,7 @@ static FalconObjFunction *endFunctionCompiler(FalconCompiler *compiler) {
     }
 #endif
 
-    compiler->fCompiler = compiler->fCompiler->enclosing;
+    compiler->vm->compiler = compiler->fCompiler = compiler->fCompiler->enclosing;
     return function;
 }
 

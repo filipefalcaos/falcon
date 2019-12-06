@@ -7,6 +7,18 @@
 #include "falcon_object.h"
 #include "falcon_memory.h"
 #include <stdio.h>
+#include <stdlib.h>
+
+/**
+ * Gets the name (string) of a given Falcon Object type.
+ */
+const char *getObjectName(FalconObjType type) {
+    const char *objectTypeNames[] = {
+        "FALCON_OBJ_STRING", "FALCON_OBJ_UPVALUE", "FALCON_OBJ_CLOSURE", "FALCON_OBJ_FUNCTION",
+        "FALCON_OBJ_NATIVE"
+    };
+    return objectTypeNames[type];
+}
 
 /**
  * Allocates a new Falcon upvalue object.
@@ -24,7 +36,7 @@ FalconObjUpvalue *FalconNewUpvalue(FalconVM *vm, FalconValue *slot) {
  */
 FalconObjClosure *FalconNewClosure(FalconVM *vm, FalconObjFunction *function) {
     FalconObjUpvalue **upvalues =
-        FALCON_ALLOCATE(FalconObjUpvalue *, function->upvalueCount); /* Sets upvalue list */
+        FALCON_ALLOCATE(vm, FalconObjUpvalue *, function->upvalueCount); /* Sets upvalue list */
 
     for (int i = 0; i < function->upvalueCount; i++) {
         upvalues[i] = NULL; /* Initialize current upvalue */

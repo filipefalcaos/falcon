@@ -5,7 +5,7 @@
  */
 
 #include "falcon_string.h"
-#include "../../vm/falcon_memory.h"
+#include "../vm/falcon_memory.h"
 #include <string.h>
 
 /**
@@ -48,7 +48,9 @@ FalconObjString *FalconCopyString(FalconVM *vm, const char *chars, int length) {
     str->chars[length] = '\0';
     str->hash = hash;
 
-    FalconTableSet(&vm->strings, str, FALCON_NULL_VAL); /* Intern the string */
+    FalconPush(vm, FALCON_OBJ_VAL(str)); /* Adds to stack to avoid being garbage collected */
+    FalconTableSet(vm, &vm->strings, str, FALCON_NULL_VAL); /* Interns the string */
+    FalconPop(vm);
     return str;
 }
 
@@ -68,7 +70,8 @@ int FalconCompareStrings(const FalconObjString *str1, const FalconObjString *str
 /**
  * Concatenates two given Falcon strings.
  */
-FalconObjString *FalconConcatStrings(FalconVM *vm, const FalconObjString *s1, const FalconObjString *s2) {
+FalconObjString *FalconConcatStrings(FalconVM *vm, const FalconObjString *s1,
+                                     const FalconObjString *s2) {
     int length = s2->length + s1->length;
     FalconObjString *result = FalconMakeString(vm, length);
     memcpy(result->chars, s2->chars, s2->length);

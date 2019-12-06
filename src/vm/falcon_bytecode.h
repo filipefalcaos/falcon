@@ -30,10 +30,11 @@ typedef struct {
 
 /* Bytecode chunk operations */
 void FalconInitBytecode(FalconBytecodeChunk *bytecodeChunk);
-void FalconFreeBytecode(FalconBytecodeChunk *bytecodeChunk);
-void FalconWriteBytecode(FalconBytecodeChunk *bytecodeChunk, uint8_t byte, int line);
+void FalconFreeBytecode(FalconVM *vm, FalconBytecodeChunk *bytecodeChunk);
+void FalconWriteBytecode(FalconVM *vm, FalconBytecodeChunk *bytecodeChunk, uint8_t byte, int line);
 int FalconGetLine(FalconBytecodeChunk *bytecodeChunk, int instruction);
-int FalconAddConstant(FalconBytecodeChunk *bytecodeChunk, FalconValue value);
-void FalconWriteConstant(FalconBytecodeChunk *bytecodeChunk, uint16_t index, int line);
+int FalconAddConstant(FalconVM *vm, FalconBytecodeChunk *bytecodeChunk, FalconValue value);
+void FalconWriteConstant(FalconVM *vm, FalconBytecodeChunk *bytecodeChunk, uint16_t index,
+                         int line);
 
 #endif // FALCON_BYTECODE_H

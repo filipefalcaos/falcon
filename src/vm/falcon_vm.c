@@ -7,9 +7,9 @@
 #include "falcon_vm.h"
 #include "../compiler/falcon_compiler.h"
 #include "../lib/falcon_error.h"
+#include "../lib/falcon_math.h"
 #include "../lib/falcon_natives.h"
-#include "../lib/math/falcon_math.h"
-#include "../lib/string/falcon_string.h"
+#include "../lib/falcon_string.h"
 #include "falcon_memory.h"
 #include <stdarg.h>
 #include <stdio.h>
@@ -17,6 +17,9 @@
 #ifdef FALCON_DEBUG_TRACE_EXECUTION
 #include "../lib/falcon_debug.h"
 #endif
+
+/* The initial allocation size for the heap, in bytes */
+#define FALCON_BASE_HEAP_SIZE 1000000 /* 1Mb */
 
 /**
  * Resets the virtual machine stack.
@@ -51,21 +54,31 @@ static FalconResultCode undefinedVariableError(FalconVM *vm, FalconObjString *na
  * Initializes the Falcon's virtual machine.
  */
 void FalconInitVM(FalconVM *vm) {
-    resetVMStack(vm);
-    FalconInitTable(&vm->strings);
-    FalconInitTable(&vm->globals);
+    resetVMStack(vm); /* Inits the VM stack */
+
+    /* Inits the VM fields */
     vm->fileName = NULL;
     vm->isREPL = false;
     vm->objects = NULL;
-    FalconDefineNatives(vm); /* Set native functions */
+
+    /* Inits the garbage collection fields */
+    vm->grayCount = 0;
+    vm->grayCapacity = 0;
+    vm->grayStack = NULL;
+    vm->bytesAllocated = 0;
+    vm->nextGC = FALCON_BASE_HEAP_SIZE;
+
+    FalconInitTable(&vm->strings); /* Inits the table of interned strings */
+    FalconInitTable(&vm->globals); /* Inits the table of globals */
+    FalconDefineNatives(vm);       /* Sets native functions */
 }
 
 /**
  * Frees the Falcon's virtual machine and its allocated objects.
  */
 void FalconFreeVM(FalconVM *vm) {
-    FalconFreeTable(&vm->strings);
-    FalconFreeTable(&vm->globals);
+    FalconFreeTable(vm, &vm->strings);
+    FalconFreeTable(vm, &vm->globals);
     FalconFreeObjects(vm);
 }
 
@@ -76,7 +89,7 @@ void FalconFreeVM(FalconVM *vm) {
  * Pushes a value to the Falcon's virtual machine stack.
  */
 bool FalconPush(FalconVM *vm, FalconValue value) {
-    if (FALCON_STACK_COUNT(vm) > FALCON_VM_STACK_MAX - 1) {
+    if (FALCON_STACK_COUNT(vm) > FALCON_STACK_MAX - 1) {
         FalconVMError(vm, FALCON_STACK_OVERFLOW);
         return false;
     }
@@ -121,7 +134,7 @@ static bool call(FalconVM *vm, FalconObjClosure *closure, int argCount) {
         return false;
     }
 
-    if (vm->frameCount == FALCON_VM_FRAMES_MAX) {
+    if (vm->frameCount == FALCON_FRAMES_MAX) {
         FalconVMError(vm, FALCON_STACK_OVERFLOW);
         return false;
     }
@@ -212,11 +225,13 @@ static int compareStrings(FalconVM *vm) {
  * string to the stack.
  */
 static void concatenateStrings(FalconVM *vm) {
-    FalconObjString *b = FALCON_AS_STRING(FalconPop(vm));
-    FalconObjString *a = FALCON_AS_STRING(vm->stackTop[-1]);
-    FalconObjString *result = FalconConcatStrings(vm, b, a); /* Concatenate both strings */
-    vm->stackTop[-1] = FALCON_OBJ_VAL(result);               /* Update the stack top */
-    FalconTableSet(&vm->strings, result, FALCON_NULL_VAL);   /* Intern the string */
+    FalconObjString *b = FALCON_AS_STRING(peek(vm, 0));
+    FalconObjString *a = FALCON_AS_STRING(peek(vm, 1));
+    FalconObjString *result = FalconConcatStrings(vm, b, a);   /* Concatenates both strings */
+    FalconPop(vm);                                             /* Pops string "b" */
+    FalconPop(vm);                                             /* Pops string "a" */
+    FalconPush(vm, FALCON_OBJ_VAL(result));                    /* Pushes string "result" */
+    FalconTableSet(vm, &vm->strings, result, FALCON_NULL_VAL); /* Interns the string */
 }
 
 /**
@@ -408,21 +423,21 @@ static FalconResultCode run(FalconVM *vm) {
             /* Variable operations */
             case FALCON_OP_DEFINE_GLOBAL: {
                 FalconObjString *name = FALCON_READ_STRING();
-                FalconTableSet(&vm->globals, name, peek(vm, 0));
+                FalconTableSet(vm, &vm->globals, name, peek(vm, 0));
                 FalconPop(vm);
                 break;
             }
             case FALCON_OP_GET_GLOBAL: {
                 FalconObjString *name = FALCON_READ_STRING();
                 FalconValue value;
-                if (!FalconTableGet(&vm->globals, name, &value)) /* Checks if is undefined */
+                if (!FalconTableGet(&vm->globals, name, &value)) /* Checks if undefined */
                     return undefinedVariableError(vm, name, false);
                 if (!FalconPush(vm, value)) return FALCON_RUNTIME_ERROR;
                 break;
             }
             case FALCON_OP_SET_GLOBAL: {
                 FalconObjString *name = FALCON_READ_STRING();
-                if (FalconTableSet(&vm->globals, name, peek(vm, 0))) /* Checks if is undefined */
+                if (FalconTableSet(vm, &vm->globals, name, peek(vm, 0))) /* Checks if undefined */
                     return undefinedVariableError(vm, name, true);
                 break;
             }

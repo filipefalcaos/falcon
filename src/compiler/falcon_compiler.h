@@ -7,8 +7,62 @@
 #ifndef FALCON_COMPILER_H
 #define FALCON_COMPILER_H
 
-#include "../vm/falcon_vm.h"
+#include "../falcon.h"
+#include "../vm/falcon_object.h"
 #include "falcon_scanner.h"
+
+/* Function types:
+ * - FALCON_TYPE_FUNCTION represents an user-defined function
+ * - FALCON_TYPE_SCRIPT represents the top-level (global scope) code */
+typedef enum { FALCON_TYPE_FUNCTION, FALCON_TYPE_SCRIPT } FalconFunctionType;
+
+/* Local variable representation */
+typedef struct {
+    FalconToken name; /* The identifier of the local variable */
+    int depth;        /* The depth in the scope chain where the local was declared */
+    bool isCaptured;  /* Whether the variable was captured as an upvalue */
+} FalconLocal;
+
+/* Upvalue representation */
+typedef struct {
+    uint8_t index; /* The index of the local/upvalue being captured */
+    bool isLocal;  /* Whether the captured upvalue is a local variable in the enclosing function */
+} FalconUpvalue;
+
+/* Loop representation */
+typedef struct sLoop {
+    struct sLoop *enclosing; /* The enclosing loop */
+    int entry;               /* The index of the first loop instruction */
+    int body;                /* The index of the first instruction of the loop's body */
+    int scopeDepth;          /* Depth of the loop scope */
+} FalconLoop;
+
+/* Function compiler representation */
+typedef struct sCompiler {
+
+    /* The compiler for the enclosing function or NULL (when the compiling code is at the top-level
+     * (i.e., global scope) */
+    struct sCompiler *enclosing;
+
+    /* The function being compiled */
+    FalconObjFunction *function;
+
+    /* Whether the current scope is global (TYPE_SCRIPT) or local (TYPE_FUNCTION), and the current
+     * depth of block scope nesting */
+    FalconFunctionType type;
+    int scopeDepth;
+
+    /* List of locals declared in the compiling function */
+    FalconLocal locals[FALCON_MAX_BYTE];
+    int localCount;
+
+    /* List of upvalues captured from outer scope by the compiling function */
+    FalconUpvalue upvalues[FALCON_MAX_BYTE];
+
+    /* The innermost loop being compiled or NULL if not in a loop */
+    FalconLoop *loop;
+
+} FalconFunctionCompiler;
 
 /* Compiler operations */
 FalconObjFunction *FalconCompile(FalconVM *vm, const char *source);

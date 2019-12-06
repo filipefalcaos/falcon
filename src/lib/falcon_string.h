@@ -7,15 +7,16 @@
 #ifndef FALCON_STRING_H
 #define FALCON_STRING_H
 
-#include "../../commons.h"
-#include "../../vm/falcon_value.h"
-#include "../../vm/falcon_vm.h"
+#include "../commons.h"
+#include "../vm/falcon_value.h"
+#include "../vm/falcon_vm.h"
 
 /* String operations */
 uint32_t FalconHashString(const unsigned char *key, int length);
 FalconObjString *FalconMakeString(FalconVM *vm, int length);
 FalconObjString *FalconCopyString(FalconVM *vm, const char *chars, int length);
 int FalconCompareStrings(const FalconObjString *str1, const FalconObjString *str2);
-FalconObjString *FalconConcatStrings(FalconVM *vm, const FalconObjString *s1, const FalconObjString *s2);
+FalconObjString *FalconConcatStrings(FalconVM *vm, const FalconObjString *s1,
+                                     const FalconObjString *s2);
 
 #endif // FALCON_STRING_H

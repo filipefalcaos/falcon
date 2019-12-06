@@ -5,10 +5,9 @@
  */
 
 #include "falcon_natives.h"
-#include "io/falcon_io.h"
-#include "math/falcon_math.h"
-#include "string/falcon_string.h"
-#include "../vm/falcon_object.h"
+#include "falcon_io.h"
+#include "falcon_math.h"
+#include "falcon_string.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -196,7 +195,7 @@ FALCON_NATIVE(FalconNumNative) {
 FALCON_NATIVE(FalconStrNative) {
     FALCON_CHECK_ARGS(vm, !=, argCount, 1);
     if (!FALCON_IS_STRING(*args)) {
-        char *string = FalconValueToString(args); /* Converts value to a string */
+        char *string = FalconValueToString(vm, args); /* Converts value to a string */
         return FALCON_OBJ_VAL(FalconCopyString(vm, string, strlen(string)));
     }
 
@@ -260,7 +259,7 @@ FALCON_NATIVE(FalconInputNative) {
         printf("%s", FALCON_AS_CSTRING(prompt));                      /* Prints the prompt */
     }
 
-    char *inputString = FalconReadStrStdin(); /* Reads the input string */
+    char *inputString = FalconReadStrStdin(vm); /* Reads the input string */
     return FALCON_OBJ_VAL(FalconCopyString(vm, inputString, strlen(inputString)));
 }
 
@@ -295,7 +294,7 @@ FALCON_NATIVE(FalconPrintNative) {
 static void defineNative(FalconVM *vm, const char *name, FalconNativeFn function) {
     FalconPush(vm, FALCON_OBJ_VAL(FalconCopyString(vm, name, (int) strlen(name))));
     FalconPush(vm, FALCON_OBJ_VAL(FalconNewNative(vm, function, name)));
-    FalconTableSet(&vm->globals, FALCON_AS_STRING(vm->stack[0]), vm->stack[1]);
+    FalconTableSet(vm, &vm->globals, FALCON_AS_STRING(vm->stack[0]), vm->stack[1]);
     FalconPop(vm);
     FalconPop(vm);
 }
@@ -304,25 +303,25 @@ static void defineNative(FalconVM *vm, const char *name, FalconNativeFn function
  * Defines the complete set of native function for Falcon.
  */
 void FalconDefineNatives(FalconVM *vm) {
-    const FalconNativeFnImp nativeFunctions[] = { /* Native functions implementations */
-        { "authors", FalconAuthorsNative },
-        { "license", FalconLicenseNative },
-        { "help", FalconHelpNative },
-        { "exit", FalconExitNative },
-        { "clock", FalconClockNative },
-        { "time", FalconTimeNative },
-        { "type", FalconTypeNative },
-        { "bool", FalconBoolNative },
-        { "num", FalconNumNative },
-        { "str", FalconStrNative },
-        { "abs", FalconAbsNative },
-        { "sqrt", FalconSqrtNative },
-        { "pow", FalconPowNative },
-        { "input", FalconInputNative },
-        { "print", FalconPrintNative }
+    const FalconObjNative nativeFunctions[] = { /* Native functions implementations */
+        { .obj = (FalconObj *) NULL, .function = FalconAuthorsNative, .functionName = "authors" },
+        { .obj = (FalconObj *) NULL, .function = FalconLicenseNative, .functionName = "license" },
+        { .obj = (FalconObj *) NULL, .function = FalconHelpNative, .functionName = "help" },
+        { .obj = (FalconObj *) NULL, .function = FalconExitNative, .functionName = "exit" },
+        { .obj = (FalconObj *) NULL, .function = FalconClockNative, .functionName = "clock" },
+        { .obj = (FalconObj *) NULL, .function = FalconTimeNative, .functionName = "time" },
+        { .obj = (FalconObj *) NULL, .function = FalconTypeNative, .functionName = "type" },
+        { .obj = (FalconObj *) NULL, .function = FalconBoolNative, .functionName = "bool" },
+        { .obj = (FalconObj *) NULL, .function = FalconNumNative, .functionName = "num" },
+        { .obj = (FalconObj *) NULL, .function = FalconStrNative, .functionName = "str" },
+        { .obj = (FalconObj *) NULL, .function = FalconAbsNative, .functionName = "abs" },
+        { .obj = (FalconObj *) NULL, .function = FalconSqrtNative, .functionName = "sqrt" },
+        { .obj = (FalconObj *) NULL, .function = FalconPowNative, .functionName = "pow" },
+        { .obj = (FalconObj *) NULL, .function = FalconInputNative, .functionName = "input" },
+        { .obj = (FalconObj *) NULL, .function = FalconPrintNative, .functionName = "print" }
     };
 
     /* Define listed native functions */
     for (unsigned long i = 0; i < sizeof(nativeFunctions) / sizeof(nativeFunctions[0]); i++)
-        defineNative(vm, nativeFunctions[i].functionName, nativeFunctions[i].nativeFn);
+        defineNative(vm, nativeFunctions[i].functionName, nativeFunctions[i].function);
 }

@@ -5,7 +5,7 @@
  */
 
 #include "falcon_io.h"
-#include "../../vm/falcon_memory.h"
+#include "../vm/falcon_memory.h"
 #include <stdlib.h>
 
 /**
@@ -45,11 +45,11 @@ char *FalconReadFile(const char *path) {
 /**
  * Reads an input string from the standard input dynamically allocating memory.
  */
-char *FalconReadStrStdin() {
+char *FalconReadStrStdin(FalconVM *vm) {
     uint64_t currentLength = 0;
     uint64_t initialLength = FALCON_STR_INITIAL_ALLOC; /* Initial allocation length */
     char *inputString =
-        FALCON_ALLOCATE(char, initialLength); /* Allocates space for the input string */
+        FALCON_ALLOCATE(vm, char, initialLength); /* Allocates space for the input string */
     currentLength = initialLength;
 
     if (inputString == NULL) { /* Checks if the allocation failed */
@@ -65,7 +65,7 @@ char *FalconReadStrStdin() {
         if (i == currentLength) {
             currentLength = FALCON_INCREASE_CAPACITY(i);
             inputString =
-                FalconReallocate(inputString, i, currentLength); /* Increases string size */
+                FalconReallocate(vm, inputString, i, currentLength); /* Increases string size */
         }
 
         currentChar = getchar(); /* Reads the next char */
