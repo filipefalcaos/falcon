@@ -23,8 +23,8 @@ add_compile_definitions(CMAKE_SYSTEM_NAME="${CMAKE_SYSTEM_NAME}")
 option(DEBUG_PRINT_CODE "DEBUG_PRINT_CODE" OFF)
 option(DEBUG_TRACE_EXECUTION "DEBUG_TRACE_EXECUTION" OFF)
 option(DEBUG_STRESS_GC "DEBUG_STRESS_GC" OFF)
-option(DEBUG_LOG_GC "DEBUG_LOG_MEMORY" OFF)
-option(DEBUG_LOG_GC "DEBUG_LOG_GC" ON)
+option(DEBUG_LOG_GC "DEBUG_LOG_GC" OFF)
+option(DEBUG_LOG_MEMORY "DEBUG_LOG_MEMORY" OFF)
 
 # Adds Falcon debugging macros if requested
 if (DEBUG_PRINT_CODE)
@@ -39,13 +39,13 @@ if (DEBUG_STRESS_GC)
     add_compile_definitions(FALCON_DEBUG_STRESS_GC)
 endif (DEBUG_STRESS_GC)
 
-if (DEBUG_LOG_MEMORY)
-    add_compile_definitions(FALCON_DEBUG_LOG_MEMORY)
-endif (DEBUG_LOG_MEMORY)
-
 if (DEBUG_LOG_GC)
     add_compile_definitions(FALCON_DEBUG_LOG_GC)
 endif (DEBUG_LOG_GC)
+
+if (DEBUG_LOG_MEMORY)
+    add_compile_definitions(FALCON_DEBUG_LOG_MEMORY)
+endif (DEBUG_LOG_MEMORY)
 
 # Build config
 add_executable(

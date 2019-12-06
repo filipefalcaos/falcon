@@ -57,7 +57,7 @@ FalconObj *FalconAllocateObject(FalconVM *vm, size_t size, FalconObjType type) {
     object->next = vm->objects; /* Adds the new object to the object list */
     vm->objects = object;
 
-#ifdef FALCON_DEBUG_LOG_GC
+#ifdef FALCON_DEBUG_LOG_MEMORY
     printf("%p allocated %ld bytes for type \"%s\"\n", (void *) object, size,
            getObjectName(type));
 #endif
@@ -69,8 +69,8 @@ FalconObj *FalconAllocateObject(FalconVM *vm, size_t size, FalconObjType type) {
  * Frees a given allocated object.
  */
 void freeObject(FalconVM *vm, FalconObj *object) {
-#ifdef FALCON_DEBUG_LOG_GC
-    printf("%p free object from type \"%s\"\n", (void *) object, getObjectName(object->type));
+#ifdef FALCON_DEBUG_LOG_MEMORY
+    printf("%p freed object from type \"%s\"\n", (void *) object, getObjectName(object->type));
 #endif
 
     switch (object->type) {
