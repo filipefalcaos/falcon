@@ -84,8 +84,6 @@ typedef struct {
 
 /* Object operations */
 const char *getObjectName(FalconObjType type);
-void FalconMarkObject(FalconVM *vm, FalconObj *object);
-void FalconBlackenObject(FalconVM *vm, FalconObj *object);
 FalconObjUpvalue *FalconNewUpvalue(FalconVM *vm, FalconValue *slot);
 FalconObjClosure *FalconNewClosure(FalconVM *vm, FalconObjFunction *function);
 FalconObjFunction *FalconNewFunction(FalconVM *vm);

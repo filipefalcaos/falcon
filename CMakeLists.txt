@@ -75,6 +75,8 @@ add_executable(
         # Virtual Machine
         src/vm/falcon_bytecode.h
         src/vm/falcon_bytecode.c
+        src/vm/falcon_gc.h
+        src/vm/falcon_gc.c
         src/vm/falcon_memory.h
         src/vm/falcon_memory.c
         src/vm/falcon_object.h

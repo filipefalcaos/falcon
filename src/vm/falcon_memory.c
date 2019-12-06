@@ -5,14 +5,9 @@
  */
 
 #include "falcon_memory.h"
-#include "../compiler/falcon_compiler.h"
+#include "falcon_gc.h"
 #include <stdio.h>
 #include <stdlib.h>
-
-#ifdef FALCON_DEBUG_LOG_GC
-#include <stdio.h>
-#include "../lib/falcon_debug.h"
-#endif
 
 /**
  * Presents a message indicating that a memory allocation error occurred.
@@ -21,126 +16,6 @@ void FalconMemoryError() {
     fprintf(stderr, FALCON_OUT_OF_MEM_ERR);
     fprintf(stderr, "\n");
     exit(1);
-}
-
-/**
- * Frees a given allocated object.
- */
-static void freeObject(FalconVM *vm, FalconObj *object) {
-#ifdef FALCON_DEBUG_LOG_GC
-    printf("%p free object from type \"%s\"\n", (void *) object, getObjectName(object->type));
-#endif
-
-    switch (object->type) {
-        case FALCON_OBJ_STRING: {
-            FalconObjString *string = (FalconObjString *) object;
-            FalconReallocate(vm, object, sizeof(FalconObjString) + string->length + 1, 0);
-            break;
-        }
-        case FALCON_OBJ_UPVALUE:
-            FALCON_FREE(vm, FalconObjUpvalue, object);
-            break;
-        case FALCON_OBJ_CLOSURE: {
-            FalconObjClosure *closure = (FalconObjClosure *) object;
-            FALCON_FREE_ARRAY(vm, FalconObjUpvalue *, closure->upvalues, closure->upvalueCount);
-            FALCON_FREE(vm, FalconObjClosure, object);
-            break;
-        }
-        case FALCON_OBJ_FUNCTION: {
-            FalconObjFunction *function = (FalconObjFunction *) object;
-            FalconFreeBytecode(vm, &function->bytecodeChunk);
-            FALCON_FREE(vm, FalconObjFunction, object);
-            break;
-        }
-        case FALCON_OBJ_NATIVE:
-            FALCON_FREE(vm, FalconObjNative, object);
-            break;
-    }
-}
-
-/**
- * Marks all root objects in the VM. Root objects are any object that the VM can reach directly,
- * mostly global variables or objects on the stack.
- */
-static void markRootsGC(FalconVM *vm) {
-    for (FalconValue *slot = vm->stack; slot < vm->stackTop; slot++) {
-        FalconMarkValue(vm, *slot); /* Marks stack objects */
-    }
-
-    for (int i = 0; i < vm->frameCount; i++) {
-        FalconMarkObject(vm, (FalconObj *) vm->frames[i].closure); /* Marks closure objects */
-    }
-
-    for (FalconObjUpvalue *upvalue = vm->openUpvalues; upvalue != NULL; upvalue = upvalue->next) {
-        FalconMarkObject(vm, (FalconObj *) upvalue); /* Marks open upvalues */
-    }
-
-    FalconMarkTable(vm, &vm->globals); /* Marks global variables */
-    FalconMarkCompilerRoots(vm);       /* Marks compilation roots */
-}
-
-/**
- * Traces the references of the "grey" objects while there are still "grey" objects to trace. After
- * being traced, a "grey" object is turned "black".
- */
-static void traceReferencesGC(FalconVM *vm) {
-    while (vm->grayCount > 0) {
-        FalconObj *object = vm->grayStack[--vm->grayCount];
-        FalconBlackenObject(vm, object);
-    }
-}
-
-/**
- * Traverses the list of objects in the VM looking for the "white" ones. When found, "white"
- * objects are removed from the list and freed.
- */
-static void sweepGC(FalconVM *vm) {
-    FalconObj *previous = NULL;
-    FalconObj *current = vm->objects;
-
-    while (current != NULL) {
-        if (current->isMarked) {       /* Is the object marked? If so, keep it */
-            current->isMarked = false; /* Remove the mark for the next GC */
-            previous = current;
-            current = previous->next;
-        } else { /* Unmarked objects - the "white" ones */
-            FalconObj *white = current;
-            current = current->next;
-
-            /* Removes the "white" object from the list */
-            if (previous != NULL) {
-                previous->next = current;
-            } else {
-                vm->objects = current;
-            }
-
-            freeObject(vm, white); /* Frees the "white" object */
-        }
-    }
-}
-
-/**
- * Starts an immediate garbage collection procedure to free unused memory. Garbage collection
- * follows the Mark-sweep algorithm. It consists in two steps:
- *
- * - Marking: starting from the roots (any object that the VM can reach directly), trace all of the
- * objects those roots refer to. Each time an object is visited, it is marked.
- * - Sweeping: every object traced is examined: any unmarked object are unreachable, thus garbage,
- * and is freed.
- */
-void FalconRunGC(FalconVM *vm) {
-#ifdef FALCON_DEBUG_LOG_GC
-    printf("== Gargabe Collector Start ==\n");
-#endif
-
-    markRootsGC(vm);                       /* Marks all roots */
-    traceReferencesGC(vm);                 /* Traces the references of the "grey" objects */
-    FalconRemoveWhitesTable(&vm->strings); /* Removes the "white" strings from the table */
-    sweepGC(vm);                           /* Reclaim the "white" objects - garbage */
-
-#ifdef FALCON_DEBUG_LOG_GC
-    printf("== Gargabe Collector End ==\n");
-#endif
 }
 
 /**
@@ -183,6 +58,41 @@ FalconObj *FalconAllocateObject(FalconVM *vm, size_t size, FalconObjType type) {
 #endif
 
     return object;
+}
+
+/**
+ * Frees a given allocated object.
+ */
+void freeObject(FalconVM *vm, FalconObj *object) {
+#ifdef FALCON_DEBUG_LOG_GC
+    printf("%p free object from type \"%s\"\n", (void *) object, getObjectName(object->type));
+#endif
+
+    switch (object->type) {
+        case FALCON_OBJ_STRING: {
+            FalconObjString *string = (FalconObjString *) object;
+            FalconReallocate(vm, object, sizeof(FalconObjString) + string->length + 1, 0);
+            break;
+        }
+        case FALCON_OBJ_UPVALUE:
+            FALCON_FREE(vm, FalconObjUpvalue, object);
+            break;
+        case FALCON_OBJ_CLOSURE: {
+            FalconObjClosure *closure = (FalconObjClosure *) object;
+            FALCON_FREE_ARRAY(vm, FalconObjUpvalue *, closure->upvalues, closure->upvalueCount);
+            FALCON_FREE(vm, FalconObjClosure, object);
+            break;
+        }
+        case FALCON_OBJ_FUNCTION: {
+            FalconObjFunction *function = (FalconObjFunction *) object;
+            FalconFreeBytecode(vm, &function->bytecodeChunk);
+            FALCON_FREE(vm, FalconObjFunction, object);
+            break;
+        }
+        case FALCON_OBJ_NATIVE:
+            FALCON_FREE(vm, FalconObjNative, object);
+            break;
+    }
 }
 
 /**

@@ -65,7 +65,6 @@ typedef struct sCompiler {
 } FalconFunctionCompiler;
 
 /* Compiler operations */
-void FalconMarkCompilerRoots(FalconVM *vm);
 FalconObjFunction *FalconCompile(FalconVM *vm, const char *source);
 
 /* Compilation error messages */

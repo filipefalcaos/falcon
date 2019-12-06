@@ -12,28 +12,6 @@
 #define FALCON_TABLE_MAX_LOAD 0.75
 
 /**
- * Marks every key/value pair in the hashtable for garbage collection.
- */
-void FalconMarkTable(FalconVM *vm, FalconTable *table) {
-    for (int i = 0; i < table->capacity; i++) {
-        Entry *entry = &table->entries[i];
-        FalconMarkObject(vm, (FalconObj *) entry->key);
-        FalconMarkValue(vm, entry->value);
-    }
-}
-
-/**
- * Removes every key/value pair of "white" objects in the hashtable for garbage collection.
- */
-void FalconRemoveWhitesTable(FalconTable *table) {
-    for (int i = 0; i < table->capacity; i++) {
-        Entry *current = &table->entries[i];
-        if (current->key != NULL && !current->key->obj.isMarked) /* Is a "white" object? */
-            FalconTableDelete(table, current->key); /* Removes key/value pair from the table */
-    }
-}
-
-/**
  * Initializes an empty hashtable.
  */
 void FalconInitTable(FalconTable *table) {

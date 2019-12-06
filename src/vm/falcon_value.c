@@ -48,23 +48,6 @@ void FalconWriteValues(FalconVM *vm, FalconValueArray *valueArray, FalconValue v
 }
 
 /**
- * Marks a Falcon Value for garbage collection.
- */
-void FalconMarkValue(FalconVM *vm, FalconValue value) {
-    if (!FALCON_IS_OBJ(value)) return; /* Num, bool, and null are not dynamically allocated */
-    FalconMarkObject(vm, FALCON_AS_OBJ(value));
-}
-
-/**
- * Marks all Falcon Values in a value array for garbage collection.
- */
-void FalconMarkArray(FalconVM *vm, FalconValueArray *array) {
-    for (int i = 0; i < array->count; i++) {
-        FalconMarkValue(vm, array->values[i]);
-    }
-}
-
-/**
  * Checks if two Falcon Values are equal.
  */
 bool FalconValuesEqual(FalconValue a, FalconValue b) {

@@ -291,18 +291,6 @@ static FalconObjFunction *endFunctionCompiler(FalconCompiler *compiler) {
 }
 
 /**
- * Marks compilation roots (the FalconObjFunction the compiler is compiling into) for garbage
- * collection.
- */
-void FalconMarkCompilerRoots(FalconVM *vm) {
-    FalconFunctionCompiler *compiler = vm->compiler;
-    while (compiler != NULL) {
-        FalconMarkObject(vm, (FalconObj *) compiler->function);
-        compiler = compiler->enclosing;
-    }
-}
-
-/**
  * Begins a new scope by incrementing the current scope depth.
  */
 static void beginScope(FalconFunctionCompiler *fCompiler) { fCompiler->scopeDepth++; }
