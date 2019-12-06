@@ -17,11 +17,16 @@
  * history management */
 #ifdef FALCON_READLINE_AVAILABLE
 
-/* Use "readline" lib for input and history */
-#include <readline/history.h>
-#include <readline/readline.h>
 #include <string.h>
 
+#if __APPLE__ || __linux__ || __unix__ /* MacOS only requires "readline/readline.h" */
+#include <readline/readline.h>
+#endif
+#if __linux__ || __unix__ /* Linux/Unix requires both */
+#include <readline/history.h>
+#endif
+
+/* Use "readline" lib for input and history */
 #define FALCON_READLINE(input, prompt) input = readline(prompt)
 #define FALCON_FREE_INPUT(input)       free(input)
 #define FALCON_ADD_HISTORY(input) \
