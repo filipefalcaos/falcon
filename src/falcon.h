@@ -50,5 +50,7 @@ void FalconPrintUsage();
 #define FALCON_ERR_USAGE    1
 #define FALCON_ERR_COMPILER 2
 #define FALCON_ERR_RUNTIME  3
+#define FALCON_ERR_MEMORY   4
+#define FALCON_ERR_OS       5
 
 #endif // FALCON_H

@@ -41,11 +41,6 @@ void FalconWriteBytecode(FalconVM *vm, FalconBytecodeChunk *bytecode, uint8_t by
         bytecode->code =
             FALCON_INCREASE_ARRAY(vm, bytecode->code, uint8_t, oldCapacity,
                                   bytecode->capacity); /* Increase the bytecode chunk */
-
-        if (bytecode->code == NULL) { /* Checks if the allocation failed */
-            FalconMemoryError();
-            return;
-        }
     }
 
     bytecode->code[bytecode->count] = byte; /* Set byte */
@@ -62,11 +57,6 @@ void FalconWriteBytecode(FalconVM *vm, FalconBytecodeChunk *bytecode, uint8_t by
         bytecode->lines =
             FALCON_INCREASE_ARRAY(vm, bytecode->lines, SourceLine, oldCapacity,
                                   bytecode->lineCapacity); /* Increases the lines list */
-
-        if (bytecode->lines == NULL) { /* Checks if the allocation failed */
-            FalconMemoryError();
-            return;
-        }
     }
 
     SourceLine *sourceLine = &bytecode->lines[bytecode->lineCount++]; /* Sets the line */

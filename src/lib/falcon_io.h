@@ -11,7 +11,7 @@
 #include <stdio.h>
 
 /* File operations */
-char *FalconReadFile(const char *path);
+char *FalconReadFile(FalconVM *vm, const char *path);
 char *FalconReadStrStdin(FalconVM *vm);
 void FalconPrintUntil(FILE *file, const char *str, char delimiter);
 

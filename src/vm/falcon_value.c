@@ -36,11 +36,6 @@ void FalconWriteValues(FalconVM *vm, FalconValueArray *valueArray, FalconValue v
         valueArray->capacity = FALCON_INCREASE_CAPACITY(oldCapacity);
         valueArray->values = FALCON_INCREASE_ARRAY(vm, valueArray->values, FalconValue, oldCapacity,
                                                    valueArray->capacity);
-
-        if (valueArray->values == NULL) { /* Checks if the allocation failed */
-            FalconMemoryError();
-            return;
-        }
     }
 
     valueArray->values[valueArray->count] = value;

@@ -68,12 +68,7 @@ bool FalconTableGet(FalconTable *table, FalconObjString *key, FalconValue *value
  */
 static void adjustCapacity(FalconVM *vm, FalconTable *table, int capacity) {
     Entry *entries = FALCON_ALLOCATE(vm, Entry, capacity); /* Allocates new HashTable entries */
-    if (entries == NULL) {                                 /* Checks if the allocation failed */
-        FalconMemoryError();
-        return;
-    }
-
-    for (int i = 0; i < capacity; i++) { /* Allocates the new entries */
+    for (int i = 0; i < capacity; i++) {                   /* Allocates the new entries */
         entries[i].key = NULL;
         entries[i].value = FALCON_NULL_VAL;
     }

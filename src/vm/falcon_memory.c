@@ -19,7 +19,7 @@
 void FalconMemoryError() {
     fprintf(stderr, FALCON_OUT_OF_MEM_ERR);
     fprintf(stderr, "\n");
-    exit(1);
+    exit(FALCON_ERR_MEMORY);
 }
 
 /**
@@ -43,7 +43,16 @@ void *FalconReallocate(FalconVM *vm, void *previous, size_t oldSize, size_t newS
         return NULL;
     }
 
-    return realloc(previous, newSize); /* Reallocate memory */
+    void *allocatedMemory = realloc(previous, newSize); /* Reallocates memory */
+    if (allocatedMemory == NULL) {                      /* Allocation failed? */
+        FalconRunGC(vm); /* Runs the garbage collector to free some memory */
+        allocatedMemory = realloc(previous, newSize); /* Retries to reallocate memory */
+
+        if (allocatedMemory == NULL) /* Allocation still failed? */
+            FalconMemoryError();     /* No memory available, exit */
+    }
+
+    return allocatedMemory;
 }
 
 /**
@@ -51,11 +60,6 @@ void *FalconReallocate(FalconVM *vm, void *previous, size_t oldSize, size_t newS
  */
 FalconObj *FalconAllocateObject(FalconVM *vm, size_t size, FalconObjType type) {
     FalconObj *object = (FalconObj *) FalconReallocate(vm, NULL, 0, size); /* Sets a new object */
-    if (object == NULL) { /* Checks if the allocation failed */
-        FalconMemoryError();
-        return NULL;
-    }
-
     object->isMarked = false;
     object->type = type;        /* Sets the object type */
     object->next = vm->objects; /* Adds the new object to the object list */
