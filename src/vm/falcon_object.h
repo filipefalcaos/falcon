@@ -82,7 +82,6 @@ ObjUpvalue *falconUpvalue(FalconVM *vm, FalconValue *slot);
 ObjClosure *falconClosure(FalconVM *vm, ObjFunction *function);
 ObjFunction *falconFunction(FalconVM *vm);
 ObjNative *falconNative(FalconVM *vm, FalconNativeFn function, const char *name);
-void falconPrintObj(FalconValue value);
 
 /**
  * Checks if a Value is of an FalconObj type.

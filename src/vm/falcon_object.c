@@ -68,36 +68,3 @@ ObjNative *falconNative(FalconVM *vm, FalconNativeFn function, const char *name)
     native->name = name;
     return native;
 }
-
-/**
- * Prints a Falcon function name.
- */
-static void printFunction(ObjFunction *function) {
-    if (function->name == NULL) { /* Checks if in top level code */
-        printf(FALCON_SCRIPT);
-        return;
-    }
-    printf("<fn %s>", function->name->chars);
-}
-
-/**
- * Prints a single Falcon object.
- */
-void falconPrintObj(FalconValue value) {
-    switch (FALCON_OBJ_TYPE(value)) {
-        case OBJ_STRING:
-            printf("%s", FALCON_AS_CSTRING(value));
-            break;
-        case OBJ_UPVALUE:
-            break; /* Upvalues cannot be printed */
-        case OBJ_CLOSURE:
-            printFunction(FALCON_AS_CLOSURE(value)->function);
-            break;
-        case OBJ_FUNCTION:
-            printFunction(FALCON_AS_FUNCTION(value));
-            break;
-        case OBJ_NATIVE:
-            printf("<native fn>");
-            break;
-    }
-}

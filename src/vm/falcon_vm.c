@@ -305,7 +305,7 @@ static FalconResultCode run(FalconVM *vm) {
     while (true) {
 #ifdef FALCON_DEBUG_LEVEL_01
         if (vm->stack != vm->stackTop) falconDumpStack(vm);
-        falconDumpInstruction(&frame->closure->function->bytecode,
+        falconDumpInstruction(vm, &frame->closure->function->bytecode,
                               (int) (frame->pc - frame->closure->function->bytecode.code));
 #endif
 
@@ -517,7 +517,7 @@ static FalconResultCode run(FalconVM *vm) {
                 bool isString = FALCON_IS_STRING(result);
                 printf(" => ");
                 if (isString) printf("\"");
-                falconPrintVal(result);
+                falconPrintVal(vm, result);
                 if (isString) printf("\"");
                 printf("\n");
                 break;

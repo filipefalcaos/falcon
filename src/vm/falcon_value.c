@@ -76,6 +76,17 @@ bool falconIsFalsey(FalconValue value) {
 #define MAX_NUM_TO_STR       24
 #define NUM_TO_STR_FORMATTER "%.14g"
 
+/* Converts a function to a string */
+#define FUNCTION_TO_STR(vm, function)                                       \
+    do {                                                                    \
+        if (function->name == NULL) {                                       \
+            string = FALCON_SCRIPT;                                         \
+        } else {                                                            \
+            string = FALCON_ALLOCATE(vm, char, function->name->length + 6); \
+            sprintf(string, "<fn %s>", function->name->chars);              \
+        }                                                                   \
+    } while (false)
+
 /**
  * Converts a given Falcon Value to a Falcon string.
  */
@@ -84,27 +95,25 @@ char *falconValToString(FalconVM *vm, FalconValue *value) {
 
     switch (value->type) {
         case VAL_BOOL:
-            string = (FALCON_AS_BOOL(*value) ? "true" : "false");
-            break;
+            return (FALCON_AS_BOOL(*value) ? "true" : "false");
         case VAL_NULL:
-            string = "null";
-            break;
+            return "null";
         case VAL_NUM:
             string = FALCON_ALLOCATE(vm, char, MAX_NUM_TO_STR);
             sprintf(string, NUM_TO_STR_FORMATTER, FALCON_AS_NUM(*value));
             break;
         case VAL_OBJ:
             switch (FALCON_OBJ_TYPE(*value)) {
+                case OBJ_STRING:
+                    return FALCON_AS_CSTRING(*value);
                 case OBJ_CLOSURE: {
                     ObjClosure *closure = FALCON_AS_CLOSURE(*value);
-                    string = FALCON_ALLOCATE(vm, char, closure->function->name->length + 6);
-                    sprintf(string, "<fn %s>", closure->function->name->chars);
+                    FUNCTION_TO_STR(vm, closure->function);
                     break;
                 }
                 case OBJ_FUNCTION: {
                     ObjFunction *function = FALCON_AS_FUNCTION(*value);
-                    string = FALCON_ALLOCATE(vm, char, function->name->length + 6);
-                    sprintf(string, "<fn %s>", function->name->chars);
+                    FUNCTION_TO_STR(vm, function);
                     break;
                 }
                 case OBJ_NATIVE: {
@@ -125,25 +134,18 @@ char *falconValToString(FalconVM *vm, FalconValue *value) {
 
 #undef MAX_NUM_TO_STR
 #undef NUM_TO_STR_FORMATTER
+#undef FUNCTION_TO_STR
 
 /**
  * Prints a single Falcon Value.
  */
-void falconPrintVal(FalconValue value) {
+void falconPrintVal(FalconVM *vm, FalconValue value) {
     switch (value.type) {
-        case VAL_BOOL:
-            printf(FALCON_AS_BOOL(value) ? "true" : "false");
-            break;
-        case VAL_NULL:
-            printf("null");
-            break;
         case VAL_NUM:
             printf("%g", FALCON_AS_NUM(value));
             break;
-        case VAL_OBJ:
-            falconPrintObj(value);
-            break;
         default:
+            printf("%s", falconValToString(vm, &value));
             break;
     }
 }

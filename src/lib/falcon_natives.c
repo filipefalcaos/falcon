@@ -269,11 +269,11 @@ FALCON_NATIVE(falconInputNative) {
 FALCON_NATIVE(falconPrintNative) {
     if (argCount > 1) {
         for (int i = 0; i < argCount; i++) {
-            falconPrintVal(args[i]);
+            falconPrintVal(vm, args[i]);
             if (i < argCount - 1) printf(" "); /* Separator */
         }
     } else {
-        falconPrintVal(*args);
+        falconPrintVal(vm, *args);
     }
 
     printf("\n"); /* End */

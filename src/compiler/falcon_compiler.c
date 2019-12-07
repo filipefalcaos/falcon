@@ -273,7 +273,7 @@ static ObjFunction *endFunctionCompiler(FalconCompiler *compiler) {
 
 #ifdef FALCON_DEBUG_LEVEL_01
     if (!compiler->parser->hadError) {
-        falconDumpBytecode(currentBytecode(compiler->fCompiler),
+        falconDumpBytecode(compiler->vm, currentBytecode(compiler->fCompiler),
                            function->name != NULL ? function->name->chars : FALCON_SCRIPT);
         printf("\n");
     }

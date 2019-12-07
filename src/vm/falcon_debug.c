@@ -39,14 +39,14 @@ static int jumpInstruction(const char *name, int sign, BytecodeChunk *bytecode, 
 /**
  * Displays a constant instruction (8 bits).
  */
-static int constantInstruction(const char *name, BytecodeChunk *bytecode, int offset) {
+static int constantInstruction(const char *name, FalconVM *vm, BytecodeChunk *bytecode, int offset) {
     uint8_t constant = bytecode->code[offset + 1];
     FalconValue value = bytecode->constants.values[constant];
 
     /* Prints the constant */
     printf("%-16s %4d ", name, constant);
     printf("'");
-    falconPrintVal(value);
+    falconPrintVal(vm, value);
     printf("'");
     printf("\n");
     return offset + 2;
@@ -55,14 +55,15 @@ static int constantInstruction(const char *name, BytecodeChunk *bytecode, int of
 /**
  * Displays a constant instruction (16 bits).
  */
-static int constantInstruction16(const char *name, BytecodeChunk *bytecode, int offset) {
+static int constantInstruction16(const char *name, FalconVM *vm, BytecodeChunk *bytecode,
+                                 int offset) {
     uint16_t constant = (bytecode->code[offset + 1] | (uint16_t)(bytecode->code[offset + 2] << 8u));
     FalconValue value = bytecode->constants.values[constant];
 
     /* Prints the constant */
     printf("%-16s %4d ", name, constant);
     printf("'");
-    falconPrintVal(value);
+    falconPrintVal(vm, value);
     printf("'");
     printf("\n");
     return offset + 3;
@@ -71,11 +72,11 @@ static int constantInstruction16(const char *name, BytecodeChunk *bytecode, int 
 /**
  * Displays a closure instruction.
  */
-static int closureInstruction(const char *name, BytecodeChunk *bytecode, int offset) {
+static int closureInstruction(const char *name, FalconVM *vm, BytecodeChunk *bytecode, int offset) {
     offset++;
     uint8_t constant = bytecode->code[offset++];
     printf("%-16s %4d ", name, constant);
-    falconPrintVal(bytecode->constants.values[constant]);
+    falconPrintVal(vm, bytecode->constants.values[constant]);
     printf("\n");
 
     ObjFunction *function = FALCON_AS_FUNCTION(bytecode->constants.values[constant]);
@@ -92,7 +93,7 @@ static int closureInstruction(const char *name, BytecodeChunk *bytecode, int off
 /**
  * Displays a single instruction in a bytecode chunk.
  */
-int falconDumpInstruction(BytecodeChunk *bytecode, int offset) {
+int falconDumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
     printf("%04d ", offset); /* Prints offset info */
     int sourceLine = falconGetLine(bytecode, offset);
 
@@ -106,7 +107,7 @@ int falconDumpInstruction(BytecodeChunk *bytecode, int offset) {
     uint8_t instruction = bytecode->code[offset]; /* Current instruction */
     switch (instruction) {                        /* Verifies the instruction type */
         case OP_CONSTANT:
-            return constantInstruction16("CONSTANT", bytecode, offset);
+            return constantInstruction16("CONSTANT", vm, bytecode, offset);
         case OP_FALSE_LIT:
             return simpleInstruction("FALSE_LIT", offset);
         case OP_TRUE_LIT:
@@ -140,11 +141,11 @@ int falconDumpInstruction(BytecodeChunk *bytecode, int offset) {
         case OP_POW:
             return simpleInstruction("POW", offset);
         case OP_DEFINE_GLOBAL:
-            return constantInstruction("DEFINE_GLOBAL", bytecode, offset);
+            return constantInstruction("DEFINE_GLOBAL", vm, bytecode, offset);
         case OP_GET_GLOBAL:
-            return constantInstruction("GET_GLOBAL", bytecode, offset);
+            return constantInstruction("GET_GLOBAL", vm, bytecode, offset);
         case OP_SET_GLOBAL:
-            return constantInstruction("SET_GLOBAL", bytecode, offset);
+            return constantInstruction("SET_GLOBAL", vm, bytecode, offset);
         case OP_GET_UPVALUE:
             return byteInstruction("GET_UPVALUE", bytecode, offset);
         case OP_SET_UPVALUE:
@@ -162,7 +163,7 @@ int falconDumpInstruction(BytecodeChunk *bytecode, int offset) {
         case OP_LOOP:
             return jumpInstruction("LOOP", -1, bytecode, offset);
         case OP_CLOSURE:
-            return closureInstruction("CLOSURE", bytecode, offset);
+            return closureInstruction("CLOSURE", vm, bytecode, offset);
         case OP_CALL:
             return byteInstruction("CALL", bytecode, offset);
         case OP_RETURN:
@@ -184,10 +185,10 @@ int falconDumpInstruction(BytecodeChunk *bytecode, int offset) {
 /**
  * Displays a complete bytecode chunk.
  */
-void falconDumpBytecode(BytecodeChunk *bytecode, const char *name) {
+void falconDumpBytecode(FalconVM *vm, BytecodeChunk *bytecode, const char *name) {
     printf("== %s ==\n", name);
-    for (int offset = 0; offset < bytecode->count;) {     /* Loop through the instructions */
-        offset = falconDumpInstruction(bytecode, offset); /* Disassemble instruction */
+    for (int offset = 0; offset < bytecode->count;) {         /* Loop through the instructions */
+        offset = falconDumpInstruction(vm, bytecode, offset); /* Disassemble instruction */
     }
 }
 
@@ -198,7 +199,7 @@ void falconDumpStack(FalconVM *vm) {
     printf("Stack:  ");
     for (FalconValue *slot = vm->stack; slot < vm->stackTop; slot++) {
         printf("[ ");
-        falconPrintVal(*slot);
+        falconPrintVal(vm, *slot);
         printf(" ] ");
     }
     printf("\n");
@@ -227,18 +228,18 @@ void falconGCStatus(const char *status) { printf("== Garbage Collector %s ==\n",
 /**
  * Displays debug information on the "marking" of a Falcon Object for garbage collection.
  */
-void falconDumpMark(FalconObj *object) {
+void falconDumpMark(FalconVM *vm, FalconObj *object) {
     printf("%p marked ", (void *) object);
-    falconPrintVal(FALCON_OBJ_VAL(object));
+    falconPrintVal(vm, FALCON_OBJ_VAL(object));
     printf("\n");
 }
 
 /**
  * Displays debug information on the "blacken" of a Falcon Object for garbage collection.
  */
-void falconDumpBlacken(FalconObj *object) {
+void falconDumpBlacken(FalconVM *vm, FalconObj *object) {
     printf("%p blackened ", (void *) object);
-    falconPrintVal(FALCON_OBJ_VAL(object));
+    falconPrintVal(vm, FALCON_OBJ_VAL(object));
     printf("\n");
 }
 
