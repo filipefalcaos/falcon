@@ -11,23 +11,17 @@
 #include "falcon_value.h"
 
 /* Types of objects on Falcon */
-typedef enum {
-    FALCON_OBJ_STRING,
-    FALCON_OBJ_UPVALUE,
-    FALCON_OBJ_CLOSURE,
-    FALCON_OBJ_FUNCTION,
-    FALCON_OBJ_NATIVE
-} FalconObjType;
+typedef enum { OBJ_STRING, OBJ_UPVALUE, OBJ_CLOSURE, OBJ_FUNCTION, OBJ_NATIVE } ObjType;
 
 /* Object representation */
 struct sObj {
     bool isMarked;
-    FalconObjType type;
+    ObjType type;
     struct sObj *next;
 };
 
 /* Falcon's string object */
-struct sObjString {
+struct _ObjString {
     FalconObj obj;
     size_t length;
     uint32_t hash;
@@ -35,29 +29,29 @@ struct sObjString {
 };
 
 /* Falcon's upvalue object */
-typedef struct sUpvalue {
+typedef struct _sUpvalue {
     FalconObj obj;
     FalconValue *slot;
     FalconValue closed;
-    struct sUpvalue *next;
-} FalconObjUpvalue;
+    struct _sUpvalue *next;
+} ObjUpvalue;
 
 /* Falcon's function object */
 typedef struct {
     FalconObj obj;
     int arity;
     int upvalueCount;
-    FalconBytecodeChunk bytecode;
-    FalconObjString *name;
-} FalconObjFunction;
+    BytecodeChunk bytecode;
+    ObjString *name;
+} ObjFunction;
 
 /* Falcon's closure object */
 typedef struct {
     FalconObj obj;
-    FalconObjFunction *function;
-    FalconObjUpvalue **upvalues;
+    ObjFunction *function;
+    ObjUpvalue **upvalues;
     int upvalueCount;
-} FalconObjClosure;
+} ObjClosure;
 
 /* Native functions implementations */
 typedef FalconValue (*FalconNativeFn)(FalconVM *vm, int argCount, FalconValue *args);
@@ -67,33 +61,33 @@ typedef struct {
     FalconObj obj;
     FalconNativeFn function;
     const char *name;
-} FalconObjNative;
+} ObjNative;
 
 /* Gets a object type from an Falcon Value */
 #define FALCON_OBJ_TYPE(value) (FALCON_AS_OBJ(value)->type)
 
 /* Checks if a Value is an FalconObj type */
-#define FALCON_IS_STRING(value) isObjType(value, FALCON_OBJ_STRING)
+#define FALCON_IS_STRING(value) falconIsObjType(value, OBJ_STRING)
 
 /* Gets the object value from a Falcon Value */
-#define FALCON_AS_CLOSURE(value)  ((FalconObjClosure *) FALCON_AS_OBJ(value))
-#define FALCON_AS_FUNCTION(value) ((FalconObjFunction *) FALCON_AS_OBJ(value))
-#define FALCON_AS_NATIVE(value)   ((FalconObjNative *) FALCON_AS_OBJ(value))
-#define FALCON_AS_STRING(value)   ((FalconObjString *) FALCON_AS_OBJ(value))
-#define FALCON_AS_CSTRING(value)  (((FalconObjString *) FALCON_AS_OBJ(value))->chars)
+#define FALCON_AS_CLOSURE(value)  ((ObjClosure *) FALCON_AS_OBJ(value))
+#define FALCON_AS_FUNCTION(value) ((ObjFunction *) FALCON_AS_OBJ(value))
+#define FALCON_AS_NATIVE(value)   ((ObjNative *) FALCON_AS_OBJ(value))
+#define FALCON_AS_STRING(value)   ((ObjString *) FALCON_AS_OBJ(value))
+#define FALCON_AS_CSTRING(value)  (((ObjString *) FALCON_AS_OBJ(value))->chars)
 
 /* Object operations */
-const char *getObjectName(FalconObjType type);
-FalconObjUpvalue *FalconNewUpvalue(FalconVM *vm, FalconValue *slot);
-FalconObjClosure *FalconNewClosure(FalconVM *vm, FalconObjFunction *function);
-FalconObjFunction *FalconNewFunction(FalconVM *vm);
-FalconObjNative *FalconNewNative(FalconVM *vm, FalconNativeFn function, const char *name);
-void FalconPrintObject(FalconValue value);
+const char *falconGetObjName(ObjType type);
+ObjUpvalue *falconUpvalue(FalconVM *vm, FalconValue *slot);
+ObjClosure *falconClosure(FalconVM *vm, ObjFunction *function);
+ObjFunction *falconFunction(FalconVM *vm);
+ObjNative *falconNative(FalconVM *vm, FalconNativeFn function, const char *name);
+void falconPrintObj(FalconValue value);
 
 /**
  * Checks if a Value is of an FalconObj type.
  */
-static inline bool isObjType(FalconValue value, FalconObjType type) {
+static inline bool falconIsObjType(FalconValue value, ObjType type) {
     return FALCON_IS_OBJ(value) && FALCON_AS_OBJ(value)->type == type;
 }
 

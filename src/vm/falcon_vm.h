@@ -15,10 +15,10 @@
 
 /* Call frame representation */
 typedef struct {
-    FalconObjClosure *closure; /* Running closure */
+    ObjClosure *closure; /* Running closure */
     uint8_t *pc;               /* Function's program counter */
     FalconValue *slots;        /* Function's stack pointer */
-} FalconCallFrame;
+} CallFrame;
 
 /* Falcon's virtual machine representation */
 struct FalconVM {
@@ -29,11 +29,11 @@ struct FalconVM {
     bool isREPL;
 
     /* Bytecode chunk to interpret and the program counter */
-    FalconBytecodeChunk *bytecode;
+    BytecodeChunk *bytecode;
     uint8_t *pc;
 
     /* VM's call frames */
-    FalconCallFrame frames[FALCON_FRAMES_MAX];
+    CallFrame frames[FALCON_FRAMES_MAX];
     int frameCount;
 
     /* VM's stack and it's pointer to the stack top */
@@ -41,7 +41,7 @@ struct FalconVM {
     FalconValue *stackTop;
 
     /* List of open upvalues */
-    FalconObjUpvalue *openUpvalues;
+    ObjUpvalue *openUpvalues;
 
     /* List of runtime objects */
     FalconObj *objects;
@@ -54,7 +54,7 @@ struct FalconVM {
 
     /* Current function compiler. This is necessary when the garbage collector is triggered during
      * the compilation stage */
-    FalconFunctionCompiler *compiler;
+    FunctionCompiler *compiler;
 
     /* The stack of unprocessed objects (i.e., "greys") while garbage collection is in process */
     int grayCount;
@@ -72,12 +72,12 @@ struct FalconVM {
 typedef enum { FALCON_OK, FALCON_COMPILE_ERROR, FALCON_RUNTIME_ERROR } FalconResultCode;
 
 /* Virtual machine operations */
-void FalconVMError(FalconVM *vm, const char *format, ...);
-void FalconInitVM(FalconVM *vm);
-void FalconFreeVM(FalconVM *vm);
-bool FalconPush(FalconVM *vm, FalconValue value);
-FalconValue FalconPop(FalconVM *vm);
-FalconResultCode FalconInterpret(FalconVM *vm, const char *source);
+void falconVMError(FalconVM *vm, const char *format, ...);
+void falconInitVM(FalconVM *vm);
+void falconFreeVM(FalconVM *vm);
+bool falconPush(FalconVM *vm, FalconValue value);
+FalconValue falconPop(FalconVM *vm);
+FalconResultCode falconInterpret(FalconVM *vm, const char *source);
 
 /* Runtime error messages */
 #define FALCON_BUG \

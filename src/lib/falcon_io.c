@@ -11,7 +11,7 @@
 /**
  * Reads the content of an input file.
  */
-char *FalconReadFile(FalconVM *vm, const char *path) {
+char *falconReadFile(FalconVM *vm, const char *path) {
     char *buffer;
     FILE *file = fopen(path, "rb"); /* Opens the input file */
 
@@ -38,23 +38,26 @@ char *FalconReadFile(FalconVM *vm, const char *path) {
     return buffer;
 }
 
+/* Initial string allocation size */
+#define STR_INITIAL_ALLOC 128
+
 /**
  * Reads an input string from the standard input dynamically allocating memory.
  */
-char *FalconReadStrStdin(FalconVM *vm) {
-    uint64_t currentLength = 0;
-    uint64_t initialLength = FALCON_STR_INITIAL_ALLOC;      /* Initial allocation length */
+char *falconReadStrStdin(FalconVM *vm) {
+    uint64_t currentSize = 0;
+    uint64_t initialLength = STR_INITIAL_ALLOC;             /* Initial allocation size */
     char *input = FALCON_ALLOCATE(vm, char, initialLength); /* Allocates initial space */
-    currentLength = initialLength;
+    currentSize = initialLength;
 
     uint64_t i = 0;
     int currentChar = getchar(); /* Reads the first char */
 
     while (currentChar != '\n' && currentChar != EOF) {
         input[i++] = (char) currentChar;
-        if (i == currentLength) {
-            currentLength = FALCON_INCREASE_CAPACITY(i);
-            input = FalconReallocate(vm, input, i, currentLength); /* Increases string size */
+        if (i == currentSize) {
+            currentSize = FALCON_INCREASE_CAPACITY(i);
+            input = falconReallocate(vm, input, i, currentSize); /* Increases string size */
         }
 
         currentChar = getchar(); /* Reads the next char */
@@ -64,10 +67,12 @@ char *FalconReadStrStdin(FalconVM *vm) {
     return input;
 }
 
+#undef STR_INITIAL_ALLOC
+
 /**
  * Prints a string character by character until a specified character is found.
  */
-void FalconPrintUntil(FILE *file, const char *str, char delimiter) {
+void falconPrintUntil(FILE *file, const char *str, char delimiter) {
     for (int i = 0; str[i] != '\0'; i++) {
         if (str[i] == delimiter) break;
         fprintf(file, "%c", str[i]);

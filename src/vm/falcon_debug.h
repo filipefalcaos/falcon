@@ -11,20 +11,20 @@
 #include "falcon_object.h"
 
 /* Compiler/VM debugging operations */
-void FalconOpcodesHeader();
-void FalconExecutionHeader();
-int FalconDumpInstruction(FalconBytecodeChunk *bytecode, int offset);
-void FalconDumpBytecode(FalconBytecodeChunk *bytecode, const char *name);
-void FalconDumpStack(FalconVM *vm);
+void falconOpcodesHeader();
+void falconExecutionHeader();
+int falconDumpInstruction(BytecodeChunk *bytecode, int offset);
+void falconDumpBytecode(BytecodeChunk *bytecode, const char *name);
+void falconDumpStack(FalconVM *vm);
 
 /* Memory allocation debugging operations */
-void FalconDumpAllocation(FalconObj *object, size_t size, FalconObjType type);
-void FalconDumpFree(FalconObj *object);
+void falconDumpAllocation(FalconObj *object, size_t size, ObjType type);
+void falconDumpFree(FalconObj *object);
 
 /* Garbage collection debugging operations */
-void FalconGCStatus(const char *status);
-void FalconDumpMark(FalconObj *object);
-void FalconDumpBlacken(FalconObj *object);
-void FalconDumpGC(FalconVM *vm, size_t bytesAllocated);
+void falconGCStatus(const char *status);
+void falconDumpMark(FalconObj *object);
+void falconDumpBlacken(FalconObj *object);
+void falconDumpGC(FalconVM *vm, size_t bytesAllocated);
 
 #endif // FALCON_DEBUG_H

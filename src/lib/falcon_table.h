@@ -12,7 +12,7 @@
 
 /* Hashtable entry representation */
 typedef struct {
-    FalconObjString *key;
+    ObjString *key;
     FalconValue value;
 } Entry;
 
@@ -24,12 +24,11 @@ typedef struct {
 } FalconTable;
 
 /* Hashtable operations */
-void FalconInitTable(FalconTable *table);
-void FalconFreeTable(FalconVM *vm, FalconTable *table);
-bool FalconTableGet(FalconTable *table, FalconObjString *key, FalconValue *value);
-bool FalconTableSet(FalconVM *vm, FalconTable *table, FalconObjString *key, FalconValue value);
-bool FalconTableDelete(FalconTable *table, FalconObjString *key);
-FalconObjString *FalconTableFindStr(FalconTable *table, const char *chars, size_t length,
-                                    uint32_t hash);
+void falconInitTable(FalconTable *table);
+void falconFreeTable(FalconVM *vm, FalconTable *table);
+bool falconTableGet(FalconTable *table, ObjString *key, FalconValue *value);
+bool falconTableSet(FalconVM *vm, FalconTable *table, ObjString *key, FalconValue value);
+bool falconTableDelete(FalconTable *table, ObjString *key);
+ObjString *falconTableFindStr(FalconTable *table, const char *chars, size_t length, uint32_t hash);
 
 #endif // FALCON_TABLE_H

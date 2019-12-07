@@ -11,18 +11,18 @@
 /**
  * Gets the name (string) of a given Falcon Object type.
  */
-const char *getObjectName(FalconObjType type) {
-    const char *objectTypeNames[] = {"FALCON_OBJ_STRING", "FALCON_OBJ_UPVALUE",
-                                     "FALCON_OBJ_CLOSURE", "FALCON_OBJ_FUNCTION",
-                                     "FALCON_OBJ_NATIVE"};
+const char *falconGetObjName(ObjType type) {
+    const char *objectTypeNames[] = {"OBJ_STRING", "OBJ_UPVALUE",
+                                     "OBJ_CLOSURE", "OBJ_FUNCTION",
+                                     "OBJ_NATIVE"};
     return objectTypeNames[type];
 }
 
 /**
  * Allocates a new Falcon upvalue object.
  */
-FalconObjUpvalue *FalconNewUpvalue(FalconVM *vm, FalconValue *slot) {
-    FalconObjUpvalue *upvalue = FALCON_ALLOCATE_OBJ(vm, FalconObjUpvalue, FALCON_OBJ_UPVALUE);
+ObjUpvalue *falconUpvalue(FalconVM *vm, FalconValue *slot) {
+    ObjUpvalue *upvalue = FALCON_ALLOCATE_OBJ(vm, ObjUpvalue, OBJ_UPVALUE);
     upvalue->slot = slot;
     upvalue->next = NULL;
     upvalue->closed = FALCON_NULL_VAL;
@@ -32,15 +32,15 @@ FalconObjUpvalue *FalconNewUpvalue(FalconVM *vm, FalconValue *slot) {
 /**
  * Allocates a new Falcon closure object.
  */
-FalconObjClosure *FalconNewClosure(FalconVM *vm, FalconObjFunction *function) {
-    FalconObjUpvalue **upvalues =
-        FALCON_ALLOCATE(vm, FalconObjUpvalue *, function->upvalueCount); /* Sets upvalue list */
+ObjClosure *falconClosure(FalconVM *vm, ObjFunction *function) {
+    ObjUpvalue **upvalues =
+        FALCON_ALLOCATE(vm, ObjUpvalue *, function->upvalueCount); /* Sets upvalue list */
 
     for (int i = 0; i < function->upvalueCount; i++) {
         upvalues[i] = NULL; /* Initialize current upvalue */
     }
 
-    FalconObjClosure *closure = FALCON_ALLOCATE_OBJ(vm, FalconObjClosure, FALCON_OBJ_CLOSURE);
+    ObjClosure *closure = FALCON_ALLOCATE_OBJ(vm, ObjClosure, OBJ_CLOSURE);
     closure->function = function;
     closure->upvalues = upvalues;
     closure->upvalueCount = function->upvalueCount;
@@ -50,20 +50,20 @@ FalconObjClosure *FalconNewClosure(FalconVM *vm, FalconObjFunction *function) {
 /**
  * Allocates a new Falcon function object.
  */
-FalconObjFunction *FalconNewFunction(FalconVM *vm) {
-    FalconObjFunction *function = FALCON_ALLOCATE_OBJ(vm, FalconObjFunction, FALCON_OBJ_FUNCTION);
+ObjFunction *falconFunction(FalconVM *vm) {
+    ObjFunction *function = FALCON_ALLOCATE_OBJ(vm, ObjFunction, OBJ_FUNCTION);
     function->arity = 0;
     function->upvalueCount = 0;
     function->name = NULL;
-    FalconInitBytecode(&function->bytecode);
+    falconInitBytecode(&function->bytecode);
     return function;
 }
 
 /**
  * Allocates a new Falcon native function object.
  */
-FalconObjNative *FalconNewNative(FalconVM *vm, FalconNativeFn function, const char *name) {
-    FalconObjNative *native = FALCON_ALLOCATE_OBJ(vm, FalconObjNative, FALCON_OBJ_NATIVE);
+ObjNative *falconNative(FalconVM *vm, FalconNativeFn function, const char *name) {
+    ObjNative *native = FALCON_ALLOCATE_OBJ(vm, ObjNative, OBJ_NATIVE);
     native->function = function;
     native->name = name;
     return native;
@@ -72,7 +72,7 @@ FalconObjNative *FalconNewNative(FalconVM *vm, FalconNativeFn function, const ch
 /**
  * Prints a Falcon function name.
  */
-static void printFunction(FalconObjFunction *function) {
+static void printFunction(ObjFunction *function) {
     if (function->name == NULL) { /* Checks if in top level code */
         printf(FALCON_SCRIPT);
         return;
@@ -83,20 +83,20 @@ static void printFunction(FalconObjFunction *function) {
 /**
  * Prints a single Falcon object.
  */
-void FalconPrintObject(FalconValue value) {
+void falconPrintObj(FalconValue value) {
     switch (FALCON_OBJ_TYPE(value)) {
-        case FALCON_OBJ_STRING:
+        case OBJ_STRING:
             printf("%s", FALCON_AS_CSTRING(value));
             break;
-        case FALCON_OBJ_UPVALUE:
+        case OBJ_UPVALUE:
             break; /* Upvalues cannot be printed */
-        case FALCON_OBJ_CLOSURE:
+        case OBJ_CLOSURE:
             printFunction(FALCON_AS_CLOSURE(value)->function);
             break;
-        case FALCON_OBJ_FUNCTION:
+        case OBJ_FUNCTION:
             printFunction(FALCON_AS_FUNCTION(value));
             break;
-        case FALCON_OBJ_NATIVE:
+        case OBJ_NATIVE:
             printf("<native fn>");
             break;
     }

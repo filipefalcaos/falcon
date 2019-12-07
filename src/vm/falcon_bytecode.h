@@ -26,14 +26,14 @@ typedef struct {
     uint8_t *code;
     SourceLine *lines;
     FalconValueArray constants;
-} FalconBytecodeChunk;
+} BytecodeChunk;
 
 /* Bytecode chunk operations */
-void FalconInitBytecode(FalconBytecodeChunk *bytecode);
-void FalconFreeBytecode(FalconVM *vm, FalconBytecodeChunk *bytecode);
-void FalconWriteBytecode(FalconVM *vm, FalconBytecodeChunk *bytecode, uint8_t byte, int line);
-int FalconGetLine(FalconBytecodeChunk *bytecode, int instruction);
-int FalconAddConstant(FalconVM *vm, FalconBytecodeChunk *bytecode, FalconValue value);
-void FalconWriteConstant(FalconVM *vm, FalconBytecodeChunk *bytecode, uint16_t index, int line);
+void falconInitBytecode(BytecodeChunk *bytecode);
+void falconFreeBytecode(FalconVM *vm, BytecodeChunk *bytecode);
+void falconWriteBytecode(FalconVM *vm, BytecodeChunk *bytecode, uint8_t byte, int line);
+int falconGetLine(BytecodeChunk *bytecode, int instruction);
+int falconAddConstant(FalconVM *vm, BytecodeChunk *bytecode, FalconValue value);
+void falconWriteConstant(FalconVM *vm, BytecodeChunk *bytecode, uint16_t index, int line);
 
 #endif // FALCON_BYTECODE_H

@@ -11,69 +11,69 @@
 typedef enum {
 
     /* Symbols */
-    FALCON_TK_LEFT_PAREN,
-    FALCON_TK_RIGHT_PAREN,
-    FALCON_TK_LEFT_BRACE,
-    FALCON_TK_RIGHT_BRACE,
-    FALCON_TK_COMMA,
-    FALCON_TK_DOT,
-    FALCON_TK_COLON,
-    FALCON_TK_SEMICOLON,
-    FALCON_TK_ARROW,
+    TK_LEFT_PAREN,
+    TK_RIGHT_PAREN,
+    TK_LEFT_BRACE,
+    TK_RIGHT_BRACE,
+    TK_COMMA,
+    TK_DOT,
+    TK_COLON,
+    TK_SEMICOLON,
+    TK_ARROW,
 
     /* Operators */
-    FALCON_TK_MINUS,
-    FALCON_TK_MINUS_EQUAL,
-    FALCON_TK_PLUS,
-    FALCON_TK_PLUS_EQUAL,
-    FALCON_TK_DIV,
-    FALCON_TK_DIV_EQUAL,
-    FALCON_TK_MOD,
-    FALCON_TK_MOD_EQUAL,
-    FALCON_TK_MULTIPLY,
-    FALCON_TK_MULTIPLY_EQUAL,
-    FALCON_TK_POW,
-    FALCON_TK_POW_EQUAL,
-    FALCON_TK_NOT,
-    FALCON_TK_NOT_EQUAL,
-    FALCON_TK_EQUAL,
-    FALCON_TK_EQUAL_EQUAL,
-    FALCON_TK_GREATER,
-    FALCON_TK_GREATER_EQUAL,
-    FALCON_TK_LESS,
-    FALCON_TK_LESS_EQUAL,
-    FALCON_TK_AND, /* Also a keyword */
-    FALCON_TK_OR,  /* Also a keyword */
-    FALCON_TK_TERNARY,
+    TK_MINUS,
+    TK_MINUS_EQUAL,
+    TK_PLUS,
+    TK_PLUS_EQUAL,
+    TK_DIV,
+    TK_DIV_EQUAL,
+    TK_MOD,
+    TK_MOD_EQUAL,
+    TK_MULTIPLY,
+    TK_MULTIPLY_EQUAL,
+    TK_POW,
+    TK_POW_EQUAL,
+    TK_NOT,
+    TK_NOT_EQUAL,
+    TK_EQUAL,
+    TK_EQUAL_EQUAL,
+    TK_GREATER,
+    TK_GREATER_EQUAL,
+    TK_LESS,
+    TK_LESS_EQUAL,
+    TK_AND, /* Also a keyword */
+    TK_OR,  /* Also a keyword */
+    TK_TERNARY,
 
     /* Identifier and Literals */
-    FALCON_TK_IDENTIFIER,
-    FALCON_TK_STRING,
-    FALCON_TK_NUMBER,
+    TK_IDENTIFIER,
+    TK_STRING,
+    TK_NUMBER,
 
     /* Keywords */
-    FALCON_TK_BREAK,
-    FALCON_TK_CLASS,
-    FALCON_TK_ELSE,
-    FALCON_TK_FALSE, /* Also a literal */
-    FALCON_TK_FOR,
-    FALCON_TK_FUNCTION,
-    FALCON_TK_IF,
-    FALCON_TK_NEXT,
-    FALCON_TK_NULL,
-    FALCON_TK_RETURN,
-    FALCON_TK_SUPER,
-    FALCON_TK_SWITCH,
-    FALCON_TK_THIS,
-    FALCON_TK_TRUE, /* Also a literal */
-    FALCON_TK_VAR,
-    FALCON_TK_WHEN,
-    FALCON_TK_WHILE,
+    TK_BREAK,
+    TK_CLASS,
+    TK_ELSE,
+    TK_FALSE, /* Also a literal */
+    TK_FOR,
+    TK_FUNCTION,
+    TK_IF,
+    TK_NEXT,
+    TK_NULL,
+    TK_RETURN,
+    TK_SUPER,
+    TK_SWITCH,
+    TK_THIS,
+    TK_TRUE, /* Also a literal */
+    TK_VAR,
+    TK_WHEN,
+    TK_WHILE,
 
     /* Error and EOF */
-    FALCON_TK_ERROR,
-    FALCON_TK_EOF
+    TK_ERROR,
+    TK_EOF
 
-} FalconTokenType;
+} FalconTokens;
 
 #endif // FALCON_TOKENS_H

@@ -11,12 +11,9 @@
 #include <stdio.h>
 
 /* File operations */
-char *FalconReadFile(FalconVM *vm, const char *path);
-char *FalconReadStrStdin(FalconVM *vm);
-void FalconPrintUntil(FILE *file, const char *str, char delimiter);
-
-/* Allocation constants */
-#define FALCON_STR_INITIAL_ALLOC 128
+char *falconReadFile(FalconVM *vm, const char *path);
+char *falconReadStrStdin(FalconVM *vm);
+void falconPrintUntil(FILE *file, const char *str, char delimiter);
 
 /* File errors */
 #define FALCON_OPEN_ERR "Could not open file"

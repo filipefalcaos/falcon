@@ -10,7 +10,7 @@
 #include "../vm/falcon_vm.h"
 
 /* Native functions operations */
-void FalconDefineNatives(FalconVM *vm);
+void falconDefNatives(FalconVM *vm);
 
 /* Native functions errors */
 #define FALCON_CONV_STR_NUM_ERR "Could not convert string to number."

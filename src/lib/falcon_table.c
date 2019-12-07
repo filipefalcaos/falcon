@@ -14,7 +14,7 @@
 /**
  * Initializes an empty hashtable.
  */
-void FalconInitTable(FalconTable *table) {
+void falconInitTable(FalconTable *table) {
     table->count = 0;
     table->capacity = 0;
     table->entries = NULL;
@@ -23,15 +23,15 @@ void FalconInitTable(FalconTable *table) {
 /**
  * Frees a hashtable.
  */
-void FalconFreeTable(FalconVM *vm, FalconTable *table) {
+void falconFreeTable(FalconVM *vm, FalconTable *table) {
     FALCON_FREE_ARRAY(vm, Entry, table->entries, table->capacity);
-    FalconInitTable(table);
+    falconInitTable(table);
 }
 
 /**
  * Find an entry for a given key.
  */
-static Entry *findEntry(Entry *entries, int capacity, FalconObjString *key) {
+static Entry *findEntry(Entry *entries, int capacity, ObjString *key) {
     uint32_t index = key->hash % capacity;
     Entry *tombstone = NULL;
 
@@ -54,7 +54,7 @@ static Entry *findEntry(Entry *entries, int capacity, FalconObjString *key) {
 /**
  * Gets the value corresponding to a given key in a hashtable.
  */
-bool FalconTableGet(FalconTable *table, FalconObjString *key, FalconValue *value) {
+bool falconTableGet(FalconTable *table, ObjString *key, FalconValue *value) {
     if (table->count == 0) return false;
     Entry *entry = findEntry(table->entries, table->capacity, key);
     if (entry->key == NULL) return false;
@@ -92,7 +92,7 @@ static void adjustCapacity(FalconVM *vm, FalconTable *table, int capacity) {
  * Adds the given key/value pair into the given hashtable. If an entry for that key is already
  * present, the new value overwrites the old.
  */
-bool FalconTableSet(FalconVM *vm, FalconTable *table, FalconObjString *key, FalconValue value) {
+bool falconTableSet(FalconVM *vm, FalconTable *table, ObjString *key, FalconValue value) {
     if (table->count + 1 > table->capacity * FALCON_TABLE_MAX_LOAD) { /* Max load was reached? */
         int capacity = FALCON_INCREASE_CAPACITY(table->capacity);
         adjustCapacity(vm, table, capacity); /* Adjust the hashtable capacity */
@@ -109,7 +109,7 @@ bool FalconTableSet(FalconVM *vm, FalconTable *table, FalconObjString *key, Falc
 /**
  * Deletes a key/value pair from a given hashtable.
  */
-bool FalconTableDelete(FalconTable *table, FalconObjString *key) {
+bool falconTableDelete(FalconTable *table, ObjString *key) {
     if (table->count == 0) return false;
     Entry *entry = findEntry(table->entries, table->capacity, key);
     if (entry->key == NULL) return false;
@@ -121,8 +121,7 @@ bool FalconTableDelete(FalconTable *table, FalconObjString *key) {
 /**
  * Finds whether a string is set in a hashtable or not.
  */
-FalconObjString *FalconTableFindStr(FalconTable *table, const char *chars, size_t length,
-                                    uint32_t hash) {
+ObjString *falconTableFindStr(FalconTable *table, const char *chars, size_t length, uint32_t hash) {
     if (table->count == 0) return NULL;
     uint32_t index = hash % table->capacity;
 

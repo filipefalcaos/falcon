@@ -10,9 +10,9 @@
 #include <math.h>
 
 /* Mathematical operations */
-int FalconGetDigits(int n);
-double FalconAbs(double value);
-double FalconSqrt(double value);
-double FalconPow(double x, double y);
+int falconGetDigits(int n);
+double falconAbs(double value);
+double falconSqrt(double value);
+double falconPow(double x, double y);
 
 #endif // FALCON_MATH_H

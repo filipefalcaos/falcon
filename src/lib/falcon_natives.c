@@ -14,20 +14,20 @@
 #include <time.h>
 
 /* Checks the validity of a given argument count */
-#define FALCON_CHECK_ARGS(vm, op, argCount, expectedCount)                     \
+#define CHECK_ARGS(vm, op, argCount, expectedCount)                            \
     do {                                                                       \
         if (argCount op expectedCount) {                                       \
-            FalconVMError(vm, FALCON_ARGS_COUNT_ERR, expectedCount, argCount); \
+            falconVMError(vm, FALCON_ARGS_COUNT_ERR, expectedCount, argCount); \
             return FALCON_ERR_VAL;                                             \
         }                                                                      \
     } while (false)
 
 /* Checks if a given value "value" of a given type "type" at a given position "pos" is a value of
  * the requested type */
-#define FALCON_CHECK_TYPE(type, typeName, value, vm, pos)           \
+#define CHECK_TYPE(type, typeName, value, vm, pos)                  \
     do {                                                            \
         if (!type(value)) {                                         \
-            FalconVMError(vm, FALCON_ARGS_TYPE_ERR, pos, typeName); \
+            falconVMError(vm, FALCON_ARGS_TYPE_ERR, pos, typeName); \
             return FALCON_ERR_VAL;                                  \
         }                                                           \
     } while (false)
@@ -44,9 +44,9 @@
 /**
  * Native Falcon function to print Falcon's authors.
  */
-FALCON_NATIVE(FalconAuthorsNative) {
+FALCON_NATIVE(falconAuthorsNative) {
     (void) args; /* Unused */
-    FALCON_CHECK_ARGS(vm, !=, argCount, 0);
+    CHECK_ARGS(vm, !=, argCount, 0);
     FalconPrintAuthors();
     return FALCON_NULL_VAL;
 }
@@ -54,9 +54,9 @@ FALCON_NATIVE(FalconAuthorsNative) {
 /**
  * Native Falcon function to print Falcon's MIT license.
  */
-FALCON_NATIVE(FalconLicenseNative) {
+FALCON_NATIVE(falconLicenseNative) {
     (void) args; /* Unused */
-    FALCON_CHECK_ARGS(vm, !=, argCount, 0);
+    CHECK_ARGS(vm, !=, argCount, 0);
     FalconPrintLicense();
     return FALCON_NULL_VAL;
 }
@@ -64,9 +64,9 @@ FALCON_NATIVE(FalconLicenseNative) {
 /**
  * Native Falcon function to print interpreter usage details.
  */
-FALCON_NATIVE(FalconHelpNative) {
+FALCON_NATIVE(falconHelpNative) {
     (void) args; /* Unused */
-    FALCON_CHECK_ARGS(vm, !=, argCount, 0);
+    CHECK_ARGS(vm, !=, argCount, 0);
     FalconPrintUsage();
     return FALCON_NULL_VAL;
 }
@@ -74,27 +74,27 @@ FALCON_NATIVE(FalconHelpNative) {
 /**
  * Native Falcon function to exit the running process with a given exit code.
  */
-FALCON_NATIVE(FalconExitNative) {
-    FALCON_CHECK_ARGS(vm, !=, argCount, 1);
-    FALCON_CHECK_TYPE(FALCON_IS_NUM, "number", *args, vm, 1);
+FALCON_NATIVE(falconExitNative) {
+    CHECK_ARGS(vm, !=, argCount, 1);
+    CHECK_TYPE(FALCON_IS_NUM, "number", *args, vm, 1);
     exit((int) FALCON_AS_NUM(*args)); /* Exits the process */
 }
 
 /**
  * Native Falcon function to compute the elapsed time since the program started running, in seconds.
  */
-FALCON_NATIVE(FalconClockNative) {
+FALCON_NATIVE(falconClockNative) {
     (void) args; /* Unused */
-    FALCON_CHECK_ARGS(vm, !=, argCount, 0);
+    CHECK_ARGS(vm, !=, argCount, 0);
     return FALCON_NUM_VAL((double) clock() / CLOCKS_PER_SEC);
 }
 
 /**
  * Native Falcon function to compute the UNIX timestamp, in seconds.
  */
-FALCON_NATIVE(FalconTimeNative) {
+FALCON_NATIVE(falconTimeNative) {
     (void) args; /* Unused */
-    FALCON_CHECK_ARGS(vm, !=, argCount, 0);
+    CHECK_ARGS(vm, !=, argCount, 0);
     return FALCON_NUM_VAL((double) time(NULL));
 }
 
@@ -107,34 +107,34 @@ FALCON_NATIVE(FalconTimeNative) {
 /**
  * Native Falcon function to get the type of a given Falcon Value, as a string.
  */
-FALCON_NATIVE(FalconTypeNative) {
-    FALCON_CHECK_ARGS(vm, !=, argCount, 1);
+FALCON_NATIVE(falconTypeNative) {
+    CHECK_ARGS(vm, !=, argCount, 1);
     char *typeString = NULL;
     size_t typeStringLen = 0;
 
     /* Checks the value type */
     switch (args->type) {
-        case FALCON_VAL_BOOL:
+        case VAL_BOOL:
             typeString = "<bool>";
             typeStringLen = 6;
             break;
-        case FALCON_VAL_NULL:
+        case VAL_NULL:
             typeString = "<null>";
             typeStringLen = 6;
             break;
-        case FALCON_VAL_NUM:
+        case VAL_NUM:
             typeString = "<number>";
             typeStringLen = 8;
             break;
-        case FALCON_VAL_OBJ:
+        case VAL_OBJ:
             switch (FALCON_OBJ_TYPE(*args)) {
-                case FALCON_OBJ_STRING:
+                case OBJ_STRING:
                     typeString = "<string>";
                     typeStringLen = 8;
                     break;
-                case FALCON_OBJ_CLOSURE:
-                case FALCON_OBJ_FUNCTION:
-                case FALCON_OBJ_NATIVE:
+                case OBJ_CLOSURE:
+                case OBJ_FUNCTION:
+                case OBJ_NATIVE:
                     typeString = "<function>";
                     typeStringLen = 10;
                     break;
@@ -146,27 +146,27 @@ FALCON_NATIVE(FalconTypeNative) {
             break;
     }
 
-    return FALCON_OBJ_VAL(FalconCopyString(vm, typeString, typeStringLen));
+    return FALCON_OBJ_VAL(falconCopyString(vm, typeString, typeStringLen));
 }
 
 /**
  * Native Falcon function to convert a given Falcon Value to a number. The conversion is implemented
- * through the "FalconIsFalsey" function.
+ * through the "falconIsFalsey" function.
  */
-FALCON_NATIVE(FalconBoolNative) {
-    FALCON_CHECK_ARGS(vm, !=, argCount, 1);
-    if (!FALCON_IS_BOOL(*args)) return FALCON_BOOL_VAL(!FalconIsFalsey(*args));
+FALCON_NATIVE(falconBoolNative) {
+    CHECK_ARGS(vm, !=, argCount, 1);
+    if (!FALCON_IS_BOOL(*args)) return FALCON_BOOL_VAL(!falconIsFalsey(*args));
     return *args; /* Given value is already a boolean */
 }
 
 /**
  * Native Falcon function to convert a given Falcon Value to a number.
  */
-FALCON_NATIVE(FalconNumNative) {
-    FALCON_CHECK_ARGS(vm, !=, argCount, 1);
+FALCON_NATIVE(falconNumNative) {
+    CHECK_ARGS(vm, !=, argCount, 1);
     if (!FALCON_IS_NUM(*args)) {
         if (!FALCON_IS_STRING(*args) && !FALCON_IS_BOOL(*args)) {
-            FalconVMError(vm, FALCON_ARGS_TYPE_ERR, 1, "string, boolean, or number");
+            falconVMError(vm, FALCON_ARGS_TYPE_ERR, 1, "string, boolean, or number");
             return FALCON_ERR_VAL;
         }
 
@@ -175,7 +175,7 @@ FALCON_NATIVE(FalconNumNative) {
             double number = strtod(FALCON_AS_CSTRING(*args), &end); /* Converts to double */
 
             if (start == end) { /* Checks for conversion success */
-                FalconVMError(vm, FALCON_CONV_STR_NUM_ERR);
+                falconVMError(vm, FALCON_CONV_STR_NUM_ERR);
                 return FALCON_ERR_VAL;
             }
 
@@ -190,13 +190,13 @@ FALCON_NATIVE(FalconNumNative) {
 
 /**
  * Native Falcon function to convert a given Falcon Value to a string. The conversion is implemented
- * through the "FalconValueToString" function.
+ * through the "falconValToString" function.
  */
-FALCON_NATIVE(FalconStrNative) {
-    FALCON_CHECK_ARGS(vm, !=, argCount, 1);
+FALCON_NATIVE(falconStrNative) {
+    CHECK_ARGS(vm, !=, argCount, 1);
     if (!FALCON_IS_STRING(*args)) {
-        char *string = FalconValueToString(vm, args); /* Converts value to a string */
-        return FALCON_OBJ_VAL(FalconCopyString(vm, string, strlen(string)));
+        char *string = falconValToString(vm, args); /* Converts value to a string */
+        return FALCON_OBJ_VAL(falconCopyString(vm, string, strlen(string)));
     }
 
     return *args; /* Given value is already a string */
@@ -211,33 +211,33 @@ FALCON_NATIVE(FalconStrNative) {
 /**
  * Native Falcon function to get the absolute value of a given Falcon Value.
  */
-FALCON_NATIVE(FalconAbsNative) {
-    FALCON_CHECK_ARGS(vm, !=, argCount, 1);
-    FALCON_CHECK_TYPE(FALCON_IS_NUM, "number", *args, vm, 1);
-    double absValue = FalconAbs(FALCON_AS_NUM(*args)); /* Gets the abs value */
+FALCON_NATIVE(falconAbsNative) {
+    CHECK_ARGS(vm, !=, argCount, 1);
+    CHECK_TYPE(FALCON_IS_NUM, "number", *args, vm, 1);
+    double absValue = falconAbs(FALCON_AS_NUM(*args)); /* Gets the abs value */
     return FALCON_NUM_VAL(absValue);
 }
 
 /**
  * Native Falcon function to get the square root of a given Falcon Value.
  */
-FALCON_NATIVE(FalconSqrtNative) {
-    FALCON_CHECK_ARGS(vm, !=, argCount, 1);
-    FALCON_CHECK_TYPE(FALCON_IS_NUM, "number", *args, vm, 1);
-    double sqrtValue = FalconSqrt(FALCON_AS_NUM(*args)); /* Gets the sqrt value */
+FALCON_NATIVE(falconSqrtNative) {
+    CHECK_ARGS(vm, !=, argCount, 1);
+    CHECK_TYPE(FALCON_IS_NUM, "number", *args, vm, 1);
+    double sqrtValue = falconSqrt(FALCON_AS_NUM(*args)); /* Gets the sqrt value */
     return FALCON_NUM_VAL(sqrtValue);
 }
 
 /**
  * Native Falcon function to get the value of a number "x" to the power of a number "y".
  */
-FALCON_NATIVE(FalconPowNative) {
-    FALCON_CHECK_ARGS(vm, !=, argCount, 2);
-    FALCON_CHECK_TYPE(FALCON_IS_NUM, "number", args[0], vm, 1);
-    FALCON_CHECK_TYPE(FALCON_IS_NUM, "number", args[1], vm, 2);
+FALCON_NATIVE(falconPowNative) {
+    CHECK_ARGS(vm, !=, argCount, 2);
+    CHECK_TYPE(FALCON_IS_NUM, "number", args[0], vm, 1);
+    CHECK_TYPE(FALCON_IS_NUM, "number", args[1], vm, 2);
 
     double powValue =
-        FalconPow(FALCON_AS_NUM(args[0]), FALCON_AS_NUM(args[1])); /* Gets the pow value */
+        falconPow(FALCON_AS_NUM(args[0]), FALCON_AS_NUM(args[1])); /* Gets the pow value */
     return FALCON_NUM_VAL(powValue);
 }
 
@@ -251,36 +251,36 @@ FALCON_NATIVE(FalconPowNative) {
  * Native Falcon function to prompt the user for an input and return the given input as an Falcon
  * Value.
  */
-FALCON_NATIVE(FalconInputNative) {
-    FALCON_CHECK_ARGS(vm, >, argCount, 1);
+FALCON_NATIVE(falconInputNative) {
+    CHECK_ARGS(vm, >, argCount, 1);
     if (argCount == 1) {
         FalconValue prompt = *args;
-        FALCON_CHECK_TYPE(FALCON_IS_STRING, "string", prompt, vm, 1); /* Checks if is valid */
-        printf("%s", FALCON_AS_CSTRING(prompt));                      /* Prints the prompt */
+        CHECK_TYPE(FALCON_IS_STRING, "string", prompt, vm, 1); /* Checks if is valid */
+        printf("%s", FALCON_AS_CSTRING(prompt));               /* Prints the prompt */
     }
 
-    char *inputString = FalconReadStrStdin(vm); /* Reads the input string */
-    return FALCON_OBJ_VAL(FalconCopyString(vm, inputString, strlen(inputString)));
+    char *inputString = falconReadStrStdin(vm); /* Reads the input string */
+    return FALCON_OBJ_VAL(falconCopyString(vm, inputString, strlen(inputString)));
 }
 
 /**
  * Native Falcon function to print (with a new line) a given Falcon value.
  */
-FALCON_NATIVE(FalconPrintNative) {
+FALCON_NATIVE(falconPrintNative) {
     if (argCount > 1) {
         for (int i = 0; i < argCount; i++) {
-            FalconPrintValue(args[i]);
+            falconPrintVal(args[i]);
             if (i < argCount - 1) printf(" "); /* Separator */
         }
     } else {
-        FalconPrintValue(*args);
+        falconPrintVal(*args);
     }
 
     printf("\n"); /* End */
     return FALCON_NULL_VAL;
 }
 
-#undef FALCON_CHECK_ARGS
+#undef CHECK_ARGS
 
 /*
  * ================================================================================================
@@ -291,37 +291,37 @@ FALCON_NATIVE(FalconPrintNative) {
 /**
  * Defines a new native function for Falcon.
  */
-static void defineNative(FalconVM *vm, const char *name, FalconNativeFn function) {
-    FalconPush(vm, FALCON_OBJ_VAL(FalconCopyString(vm, name, (int) strlen(name))));
-    FalconPush(vm, FALCON_OBJ_VAL(FalconNewNative(vm, function, name)));
-    FalconTableSet(vm, &vm->globals, FALCON_AS_STRING(vm->stack[0]), vm->stack[1]);
-    FalconPop(vm);
-    FalconPop(vm);
+static void defNative(FalconVM *vm, const char *name, FalconNativeFn function) {
+    falconPush(vm, FALCON_OBJ_VAL(falconCopyString(vm, name, (int) strlen(name))));
+    falconPush(vm, FALCON_OBJ_VAL(falconNative(vm, function, name)));
+    falconTableSet(vm, &vm->globals, FALCON_AS_STRING(vm->stack[0]), vm->stack[1]);
+    falconPop(vm);
+    falconPop(vm);
 }
 
 /**
  * Defines the complete set of native function for Falcon.
  */
-void FalconDefineNatives(FalconVM *vm) {
-    const FalconObjNative nativeFunctions[] = { /* Native functions implementations */
-        { .function = FalconAuthorsNative, .name = "authors" },
-        { .function = FalconLicenseNative, .name = "license" },
-        { .function = FalconHelpNative, .name = "help" },
-        { .function = FalconExitNative, .name = "exit" },
-        { .function = FalconClockNative, .name = "clock" },
-        { .function = FalconTimeNative, .name = "time" },
-        { .function = FalconTypeNative, .name = "type" },
-        { .function = FalconBoolNative, .name = "bool" },
-        { .function = FalconNumNative, .name = "num" },
-        { .function = FalconStrNative, .name = "str" },
-        { .function = FalconAbsNative, .name = "abs" },
-        { .function = FalconSqrtNative, .name = "sqrt" },
-        { .function = FalconPowNative, .name = "pow" },
-        { .function = FalconInputNative, .name = "input" },
-        { .function = FalconPrintNative, .name = "print" }
+void falconDefNatives(FalconVM *vm) {
+    const ObjNative nativeFunctions[] = { /* Native functions implementations */
+        { .function = falconAuthorsNative, .name = "authors" },
+        { .function = falconLicenseNative, .name = "license" },
+        { .function = falconHelpNative, .name = "help" },
+        { .function = falconExitNative, .name = "exit" },
+        { .function = falconClockNative, .name = "clock" },
+        { .function = falconTimeNative, .name = "time" },
+        { .function = falconTypeNative, .name = "type" },
+        { .function = falconBoolNative, .name = "bool" },
+        { .function = falconNumNative, .name = "num" },
+        { .function = falconStrNative, .name = "str" },
+        { .function = falconAbsNative, .name = "abs" },
+        { .function = falconSqrtNative, .name = "sqrt" },
+        { .function = falconPowNative, .name = "pow" },
+        { .function = falconInputNative, .name = "input" },
+        { .function = falconPrintNative, .name = "print" }
     };
 
     /* Define listed native functions */
     for (unsigned long i = 0; i < sizeof(nativeFunctions) / sizeof(nativeFunctions[0]); i++)
-        defineNative(vm, nativeFunctions[i].name, nativeFunctions[i].function);
+        defNative(vm, nativeFunctions[i].name, nativeFunctions[i].function);
 }

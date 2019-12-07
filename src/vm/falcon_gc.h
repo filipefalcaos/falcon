@@ -10,6 +10,6 @@
 #include "falcon_vm.h"
 
 /* Garbage collector operations */
-void FalconRunGC(FalconVM *vm);
+void falconRunGC(FalconVM *vm);
 
 #endif // FALCON_GC_H

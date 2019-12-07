@@ -18,7 +18,7 @@
  * - If factor < 1, then the number of bytes required for the next garbage collector will be lower
  * - If factor = 1, then the number of bytes required for the next garbage collector will be the
  * current number of allocated bytes */
-#define FALCON_HEAP_GROW_FACTOR 2
+#define HEAP_GROW_FACTOR 2
 
 /**
  * Marks a Falcon Object for garbage collection.
@@ -28,7 +28,7 @@ static void markObject(FalconVM *vm, FalconObj *object) {
     if (object->isMarked) return;
 
     object->isMarked = true;
-    if (object->type == FALCON_OBJ_NATIVE || object->type == FALCON_OBJ_STRING)
+    if (object->type == OBJ_NATIVE || object->type == OBJ_STRING)
         return; /* Strings and native functions contain no references to trace */
 
 #ifdef FALCON_DEBUG_LOG_GC
@@ -44,11 +44,11 @@ static void markObject(FalconVM *vm, FalconObj *object) {
 }
 
 /**
- * Marks compilation roots (the FalconObjFunction the compiler is compiling into) for garbage
+ * Marks compilation roots (the ObjFunction the compiler is compiling into) for garbage
  * collection.
  */
 static void markCompilerRoots(FalconVM *vm) {
-    FalconFunctionCompiler *compiler = vm->compiler;
+    FunctionCompiler *compiler = vm->compiler;
     while (compiler != NULL) {
         markObject(vm, (FalconObj *) compiler->function);
         compiler = compiler->enclosing;
@@ -86,7 +86,7 @@ static void markArray(FalconVM *vm, FalconValueArray *array) {
 /**
  * Marks all the captured upvalues of a closure for garbage collection.
  */
-static void markUpvalues(FalconVM *vm, FalconObjClosure *closure) {
+static void markUpvalues(FalconVM *vm, ObjClosure *closure) {
     for (int i = 0; i < closure->upvalueCount; i++) {
         markObject(vm, (FalconObj *) closure->upvalues[i]);
     }
@@ -103,23 +103,23 @@ static void blackenObject(FalconVM *vm, FalconObj *object) {
 #endif
 
     switch (object->type) {
-        case FALCON_OBJ_CLOSURE: {
-            FalconObjClosure *closure = (FalconObjClosure *) object;
+        case OBJ_CLOSURE: {
+            ObjClosure *closure = (ObjClosure *) object;
             markObject(vm, (FalconObj *) closure->function);
             markUpvalues(vm, closure);
             break;
         }
-        case FALCON_OBJ_FUNCTION: {
-            FalconObjFunction *function = (FalconObjFunction *) object;
+        case OBJ_FUNCTION: {
+            ObjFunction *function = (ObjFunction *) object;
             markObject(vm, (FalconObj *) function->name);
             markArray(vm, &function->bytecode.constants);
             break;
         }
-        case FALCON_OBJ_UPVALUE:
-            markValue(vm, ((FalconObjUpvalue *) object)->closed);
+        case OBJ_UPVALUE:
+            markValue(vm, ((ObjUpvalue *) object)->closed);
             break;
-        case FALCON_OBJ_NATIVE:
-        case FALCON_OBJ_STRING:
+        case OBJ_NATIVE:
+        case OBJ_STRING:
             break;
     }
 }
@@ -128,7 +128,7 @@ static void blackenObject(FalconVM *vm, FalconObj *object) {
  * Marks all root objects in the VM. Root objects are any object that the VM can reach directly,
  * mostly global variables or objects on the stack.
  */
-static void markRootsGC(FalconVM *vm) {
+static void markRoots(FalconVM *vm) {
     for (FalconValue *slot = vm->stack; slot < vm->stackTop; slot++) {
         markValue(vm, *slot); /* Marks stack objects */
     }
@@ -137,7 +137,7 @@ static void markRootsGC(FalconVM *vm) {
         markObject(vm, (FalconObj *) vm->frames[i].closure); /* Marks closure objects */
     }
 
-    for (FalconObjUpvalue *upvalue = vm->openUpvalues; upvalue != NULL; upvalue = upvalue->next) {
+    for (ObjUpvalue *upvalue = vm->openUpvalues; upvalue != NULL; upvalue = upvalue->next) {
         markObject(vm, (FalconObj *) upvalue); /* Marks open upvalues */
     }
 
@@ -149,7 +149,7 @@ static void markRootsGC(FalconVM *vm) {
  * Traces the references of the "grey" objects while there are still "grey" objects to trace. After
  * being traced, a "grey" object is turned "black".
  */
-static void traceReferencesGC(FalconVM *vm) {
+static void traceReferences(FalconVM *vm) {
     while (vm->grayCount > 0) {
         FalconObj *object = vm->grayStack[--vm->grayCount];
         blackenObject(vm, object);
@@ -163,7 +163,7 @@ static void removeWhitesTable(FalconTable *table) {
     for (int i = 0; i < table->capacity; i++) {
         Entry *current = &table->entries[i];
         if (current->key != NULL && !current->key->obj.isMarked) /* Is a "white" object? */
-            FalconTableDelete(table, current->key); /* Removes key/value pair from the table */
+            falconTableDelete(table, current->key); /* Removes key/value pair from the table */
     }
 }
 
@@ -171,7 +171,7 @@ static void removeWhitesTable(FalconTable *table) {
  * Traverses the list of objects in the VM looking for the "white" ones. When found, "white"
  * objects are removed from the list and freed.
  */
-static void sweepGC(FalconVM *vm) {
+static void sweep(FalconVM *vm) {
     FalconObj *previous = NULL;
     FalconObj *current = vm->objects;
 
@@ -191,7 +191,7 @@ static void sweepGC(FalconVM *vm) {
                 vm->objects = current;
             }
 
-            freeObject(vm, white); /* Frees the "white" object */
+            falconFreeObj(vm, white); /* Frees the "white" object */
         }
     }
 }
@@ -205,17 +205,17 @@ static void sweepGC(FalconVM *vm) {
  * - Sweeping: every object traced is examined: any unmarked object are unreachable, thus garbage,
  * and is freed.
  */
-void FalconRunGC(FalconVM *vm) {
+void falconRunGC(FalconVM *vm) {
 #ifdef FALCON_DEBUG_LOG_GC
     FalconGCStatus("Start");
     size_t bytesAllocated = vm->bytesAllocated;
 #endif
 
-    markRootsGC(vm);                 /* Marks all roots */
-    traceReferencesGC(vm);           /* Traces the references of the "grey" objects */
+    markRoots(vm);                   /* Marks all roots */
+    traceReferences(vm);             /* Traces the references of the "grey" objects */
     removeWhitesTable(&vm->strings); /* Removes the "white" strings from the table */
-    sweepGC(vm);                     /* Reclaim the "white" objects - garbage */
-    vm->nextGC = vm->bytesAllocated * FALCON_HEAP_GROW_FACTOR; /* Adjust the next GC threshold */
+    sweep(vm);                       /* Reclaim the "white" objects - garbage */
+    vm->nextGC = vm->bytesAllocated * HEAP_GROW_FACTOR; /* Adjust the next GC threshold */
 
 #ifdef FALCON_DEBUG_LOG_GC
     FalconDumpGC(vm, bytesAllocated);

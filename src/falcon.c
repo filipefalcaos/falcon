@@ -81,8 +81,8 @@ void FalconPrintUsage() {
  * Interprets a Falcon source file.
  */
 static void runFile(FalconVM *vm) {
-    char *source = FalconReadFile(vm, vm->fileName);           /* Gets the source content */
-    FalconResultCode resultCode = FalconInterpret(vm, source); /* Interprets the source code */
+    char *source = falconReadFile(vm, vm->fileName);           /* Gets the source content */
+    FalconResultCode resultCode = falconInterpret(vm, source); /* Interprets the source code */
     free(source);
     if (resultCode == FALCON_COMPILE_ERROR) exit(FALCON_ERR_COMPILER);
     if (resultCode == FALCON_RUNTIME_ERROR) exit(FALCON_ERR_RUNTIME);
@@ -110,7 +110,7 @@ static void repl(FalconVM *vm) {
         }
 
         FALCON_ADD_HISTORY(input);  /* Adds history to the REPL */
-        FalconInterpret(vm, input); /* Interprets the source line */
+        falconInterpret(vm, input); /* Interprets the source line */
     }
 
     FALCON_FREE_INPUT(input); /* Frees the input line when over */
@@ -204,7 +204,7 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
         if (inputCommand != NULL) {
             vm->fileName = FALCON_REPL;
             vm->isREPL = true;
-            FalconInterpret(vm, inputCommand); /* Interprets the input command */
+            falconInterpret(vm, inputCommand); /* Interprets the input command */
         } else {
             vm->fileName = fileName;
             vm->isREPL = false;
@@ -219,8 +219,8 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
 
 int main(int argc, char **argv) {
     FalconVM vm;
-    FalconInitVM(&vm);
+    falconInitVM(&vm);
     processArgs(&vm, argc, argv);
-    FalconFreeVM(&vm);
+    falconFreeVM(&vm);
     return 0;
 }

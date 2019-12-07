@@ -12,12 +12,12 @@
 
 /* Token representation */
 typedef struct {
-    FalconTokenType type;
+    FalconTokens type;
     const char *start;
     uint32_t length;
     uint32_t line;
     uint32_t column;
-} FalconToken;
+} Token;
 
 /* Scanner representation (lexical analysis) */
 typedef struct {
@@ -26,15 +26,15 @@ typedef struct {
     const char *lineContent;
     uint32_t line;
     uint32_t column;
-} FalconScanner;
+} Scanner;
 
 /* Scanning operations */
-void FalconInitScanner(const char *source, FalconScanner *scanner);
-const char *FalconGetSourceFromLine(FalconScanner *scanner);
-FalconToken FalconScanToken(FalconScanner *scanner);
+void falconInitScanner(const char *source, Scanner *scanner);
+const char *falconGetSourceFromLine(Scanner *scanner);
+Token falconScanToken(Scanner *scanner);
 
 /* Scanning error messages */
 #define FALCON_UNTERMINATED_STR_ERR "Unterminated string."
-#define FALCON_UNEXPECTED_TK_ERR "Unexpected token."
+#define FALCON_UNEXPECTED_TK_ERR    "Unexpected token."
 
 #endif // FALCON_SCANNER_H
