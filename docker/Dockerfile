@@ -1,8 +1,8 @@
-# Run in dir "/falcon/docker":
-# - with readline lib: docker build -t falcon-alpine . --build-arg use_readline=true
-# - without readline lib: docker build -t falcon-alpine .
+# Run in dir "/falcon/docker"
+# With readline lib:    docker build -t falcon-alpine . --build-arg use_readline=true
+# Without readline lib: docker build -t falcon-alpine .
 
-# Run in dir "/falcon":
+# Run in dir "/falcon"
 # docker run --rm -it --cap-add=SYS_PTRACE --security-opt seccomp=unconfined -v $(pwd):/usr/local/falcon falcon-alpine
 
 FROM alpine:latest

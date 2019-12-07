@@ -14,12 +14,9 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#ifdef FALCON_DEBUG_TRACE_EXECUTION
+#ifdef FALCON_DEBUG_LEVEL_01
 #include "falcon_debug.h"
 #endif
-
-/* The initial allocation size for the heap, in bytes */
-#define FALCON_BASE_HEAP_SIZE 1000000 /* 1Mb */
 
 /**
  * Resets the virtual machine stack.
@@ -70,7 +67,7 @@ void falconInitVM(FalconVM *vm) {
 
     falconInitTable(&vm->strings); /* Inits the table of interned strings */
     falconInitTable(&vm->globals); /* Inits the table of globals */
-    falconDefNatives(vm);       /* Sets native functions */
+    falconDefNatives(vm);          /* Sets native functions */
 }
 
 /**
@@ -305,12 +302,8 @@ static FalconResultCode run(FalconVM *vm) {
         }                                                                                 \
     } while (false)
 
-#ifdef FALCON_DEBUG_TRACE_EXECUTION
-    falconExecutionHeader();
-#endif
-
     while (true) {
-#ifdef FALCON_DEBUG_TRACE_EXECUTION
+#ifdef FALCON_DEBUG_LEVEL_01
         if (vm->stack != vm->stackTop) falconDumpStack(vm);
         falconDumpInstruction(&frame->closure->function->bytecode,
                               (int) (frame->pc - frame->closure->function->bytecode.code));

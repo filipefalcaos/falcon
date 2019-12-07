@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef FALCON_DEBUG_PRINT_CODE
+#ifdef FALCON_DEBUG_LEVEL_01
 #include "../vm/falcon_debug.h"
 #include <stdio.h>
 #endif
@@ -271,14 +271,11 @@ static ObjFunction *endFunctionCompiler(FalconCompiler *compiler) {
     emitReturn(compiler);
     ObjFunction *function = currentFunction(compiler->fCompiler);
 
-#ifdef FALCON_DEBUG_PRINT_CODE
+#ifdef FALCON_DEBUG_LEVEL_01
     if (!compiler->parser->hadError) {
-        falconOpcodesHeader();
         falconDumpBytecode(currentBytecode(compiler->fCompiler),
                            function->name != NULL ? function->name->chars : FALCON_SCRIPT);
-#ifdef FALCON_DEBUG_TRACE_EXECUTION
         printf("\n");
-#endif
     }
 #endif
 

@@ -8,7 +8,7 @@
 #include "falcon_memory.h"
 #include <stdlib.h>
 
-#ifdef FALCON_DEBUG_LOG_GC
+#ifdef FALCON_DEBUG_LEVEL_02
 #include "falcon_debug.h"
 #endif
 
@@ -31,7 +31,7 @@ static void markObject(FalconVM *vm, FalconObj *object) {
     if (object->type == OBJ_NATIVE || object->type == OBJ_STRING)
         return; /* Strings and native functions contain no references to trace */
 
-#ifdef FALCON_DEBUG_LOG_GC
+#ifdef FALCON_DEBUG_LEVEL_02
     falconDumpMark(object);
 #endif
 
@@ -98,7 +98,7 @@ static void markUpvalues(FalconVM *vm, ObjClosure *closure) {
  * are not in the "grey" stack.
  */
 static void blackenObject(FalconVM *vm, FalconObj *object) {
-#ifdef FALCON_DEBUG_LOG_GC
+#ifdef FALCON_DEBUG_LEVEL_02
     falconDumpBlacken(object);
 #endif
 
@@ -206,7 +206,7 @@ static void sweep(FalconVM *vm) {
  * and is freed.
  */
 void falconRunGC(FalconVM *vm) {
-#ifdef FALCON_DEBUG_LOG_GC
+#ifdef FALCON_DEBUG_LEVEL_02
     falconGCStatus("Start");
     size_t bytesAllocated = vm->bytesAllocated;
 #endif
@@ -217,7 +217,7 @@ void falconRunGC(FalconVM *vm) {
     sweep(vm);                       /* Reclaim the "white" objects - garbage */
     vm->nextGC = vm->bytesAllocated * HEAP_GROW_FACTOR; /* Adjust the next GC threshold */
 
-#ifdef FALCON_DEBUG_LOG_GC
+#ifdef FALCON_DEBUG_LEVEL_02
     falconDumpGC(vm, bytesAllocated);
     falconGCStatus("End");
 #endif

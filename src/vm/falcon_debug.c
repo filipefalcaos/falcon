@@ -10,24 +10,6 @@
 #include <stdio.h>
 
 /**
- * Displays the debugging (opcodes) header.
- */
-void falconOpcodesHeader() {
-    printf("=============================================================\n");
-    printf("================= DEBUGGING - PRINT OPCODES =================\n");
-    printf("=============================================================\n");
-}
-
-/**
- * Displays the debugging (trace execution) header.
- */
-void falconExecutionHeader() {
-    printf("=============================================================\n");
-    printf("================ DEBUGGING - TRACE EXECUTION ================\n");
-    printf("=============================================================\n");
-}
-
-/**
  * Displays a simple bytecode instruction.
  */
 static int simpleInstruction(const char *name, int offset) {
@@ -213,13 +195,13 @@ void falconDumpBytecode(BytecodeChunk *bytecode, const char *name) {
  * Displays the Falcon's virtual machine stack.
  */
 void falconDumpStack(FalconVM *vm) {
-    printf("Stack: ");
+    printf("Stack:  ");
     for (FalconValue *slot = vm->stack; slot < vm->stackTop; slot++) {
         printf("[ ");
         falconPrintVal(*slot);
         printf(" ] ");
     }
-    printf("\nStack count: %ld\n", vm->stackTop - &vm->stack[0]);
+    printf("\n");
 }
 
 /**

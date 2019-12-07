@@ -79,6 +79,9 @@ bool falconPush(FalconVM *vm, FalconValue value);
 FalconValue falconPop(FalconVM *vm);
 FalconResultCode falconInterpret(FalconVM *vm, const char *source);
 
+/* The initial allocation size for the heap, in bytes */
+#define FALCON_BASE_HEAP_SIZE 1000000 /* 1Mb */
+
 /* Runtime error messages */
 #define FALCON_BUG \
     "This is most likely a bug in Falcon itself. Please provide a bug report."

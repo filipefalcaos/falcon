@@ -11,8 +11,6 @@
 #include "falcon_object.h"
 
 /* Compiler/VM debugging operations */
-void falconOpcodesHeader();
-void falconExecutionHeader();
 int falconDumpInstruction(BytecodeChunk *bytecode, int offset);
 void falconDumpBytecode(BytecodeChunk *bytecode, const char *name);
 void falconDumpStack(FalconVM *vm);

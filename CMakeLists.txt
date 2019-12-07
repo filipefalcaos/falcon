@@ -6,6 +6,7 @@
 cmake_minimum_required(VERSION 3.12)
 project(falcon C)
 set(CMAKE_C_STANDARD 99)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # Set cmake modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -20,77 +21,70 @@ add_compile_definitions(CMAKE_C_COMPILER_VERSION="${CMAKE_C_COMPILER_VERSION}")
 add_compile_definitions(CMAKE_SYSTEM_NAME="${CMAKE_SYSTEM_NAME}")
 
 # Debugging options
-option(DEBUG_PRINT_CODE "DEBUG_PRINT_CODE" OFF)
-option(DEBUG_TRACE_EXECUTION "DEBUG_TRACE_EXECUTION" OFF)
+option(DEBUG_LEVEL_01 "DEBUG_LEVEL_01" OFF)
+option(DEBUG_LEVEL_02 "DEBUG_LEVEL_02" OFF)
 option(DEBUG_STRESS_GC "DEBUG_STRESS_GC" OFF)
-option(DEBUG_LOG_GC "DEBUG_LOG_GC" OFF)
-option(DEBUG_LOG_MEMORY "DEBUG_LOG_MEMORY" OFF)
 
 # Adds Falcon debugging macros if requested
-if (DEBUG_PRINT_CODE)
-    add_compile_definitions(FALCON_DEBUG_PRINT_CODE)
-endif (DEBUG_PRINT_CODE)
+# Sets LEVEL_01 flag
+if (DEBUG_LEVEL_01)
+    add_compile_definitions(FALCON_DEBUG_LEVEL_01)
+endif (DEBUG_LEVEL_01)
 
-if (DEBUG_TRACE_EXECUTION)
-    add_compile_definitions(FALCON_DEBUG_TRACE_EXECUTION)
-endif (DEBUG_TRACE_EXECUTION)
+# Sets LEVEL_02 flag only if not in LEVEL_01 already
+if (DEBUG_LEVEL_02 AND (NOT DEBUG_LEVEL_01))
+    add_compile_definitions(FALCON_DEBUG_LEVEL_02)
+endif (DEBUG_LEVEL_02 AND (NOT DEBUG_LEVEL_01))
 
+# Sets the STRESS_GC flag
 if (DEBUG_STRESS_GC)
     add_compile_definitions(FALCON_DEBUG_STRESS_GC)
 endif (DEBUG_STRESS_GC)
 
-if (DEBUG_LOG_GC)
-    add_compile_definitions(FALCON_DEBUG_LOG_GC)
-endif (DEBUG_LOG_GC)
-
-if (DEBUG_LOG_MEMORY)
-    add_compile_definitions(FALCON_DEBUG_LOG_MEMORY)
-endif (DEBUG_LOG_MEMORY)
-
 # Build config
 add_executable(
-        falcon
-        src/commons.h
-        src/falcon.h
-        src/falcon.c
+    falcon
+    src/commons.h
+    src/falcon.h
+    src/falcon.c
 
-        # Compiler
-        src/compiler/falcon_compiler.h
-        src/compiler/falcon_compiler.c
-        src/compiler/falcon_scanner.h
-        src/compiler/falcon_scanner.c
-        src/compiler/falcon_tokens.h
+    # Compiler
+    src/compiler/falcon_compiler.h
+    src/compiler/falcon_compiler.c
+    src/compiler/falcon_scanner.h
+    src/compiler/falcon_scanner.c
+    src/compiler/falcon_tokens.h
 
-        # Standard Lib
-        src/lib/falcon_error.h
-        src/lib/falcon_error.c
-        src/lib/falcon_natives.h
-        src/lib/falcon_natives.c
-        src/lib/falcon_table.h
-        src/lib/falcon_table.c
-        src/lib/falcon_math.h
-        src/lib/falcon_math.c
-        src/lib/falcon_io.h
-        src/lib/falcon_io.c
-        src/lib/falcon_string.h
-        src/lib/falcon_string.c
+    # Standard Lib
+    src/lib/falcon_error.h
+    src/lib/falcon_error.c
+    src/lib/falcon_natives.h
+    src/lib/falcon_natives.c
+    src/lib/falcon_table.h
+    src/lib/falcon_table.c
+    src/lib/falcon_math.h
+    src/lib/falcon_math.c
+    src/lib/falcon_io.h
+    src/lib/falcon_io.c
+    src/lib/falcon_string.h
+    src/lib/falcon_string.c
 
-        # Virtual Machine
-        src/vm/falcon_bytecode.h
-        src/vm/falcon_bytecode.c
-        src/vm/falcon_debug.h
-        src/vm/falcon_debug.c
-        src/vm/falcon_gc.h
-        src/vm/falcon_gc.c
-        src/vm/falcon_memory.h
-        src/vm/falcon_memory.c
-        src/vm/falcon_object.h
-        src/vm/falcon_object.c
-        src/vm/falcon_opcodes.h
-        src/vm/falcon_value.h
-        src/vm/falcon_value.c
-        src/vm/falcon_vm.h
-        src/vm/falcon_vm.c
+    # Virtual Machine
+    src/vm/falcon_bytecode.h
+    src/vm/falcon_bytecode.c
+    src/vm/falcon_debug.h
+    src/vm/falcon_debug.c
+    src/vm/falcon_gc.h
+    src/vm/falcon_gc.c
+    src/vm/falcon_memory.h
+    src/vm/falcon_memory.c
+    src/vm/falcon_object.h
+    src/vm/falcon_object.c
+    src/vm/falcon_opcodes.h
+    src/vm/falcon_value.h
+    src/vm/falcon_value.c
+    src/vm/falcon_vm.h
+    src/vm/falcon_vm.c
 )
 
 # Link the <math.h> library

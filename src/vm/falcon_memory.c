@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef FALCON_DEBUG_LOG_MEMORY
+#ifdef FALCON_DEBUG_LEVEL_02
 #include "falcon_debug.h"
 #endif
 
@@ -65,7 +65,7 @@ FalconObj *falconAllocateObj(FalconVM *vm, size_t size, ObjType type) {
     object->next = vm->objects; /* Adds the new object to the object list */
     vm->objects = object;
 
-#ifdef FALCON_DEBUG_LOG_MEMORY
+#ifdef FALCON_DEBUG_LEVEL_02
     falconDumpAllocation(object, size, type);
 #endif
 
@@ -76,7 +76,7 @@ FalconObj *falconAllocateObj(FalconVM *vm, size_t size, ObjType type) {
  * Frees a given allocated object.
  */
 void falconFreeObj(FalconVM *vm, FalconObj *object) {
-#ifdef FALCON_DEBUG_LOG_MEMORY
+#ifdef FALCON_DEBUG_LEVEL_02
     falconDumpFree(object);
 #endif
 
