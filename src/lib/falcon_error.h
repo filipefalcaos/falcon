@@ -11,8 +11,7 @@
 #include <stdarg.h>
 
 /* Compiler/runtime error handling functions */
-void falconCompileError(FalconVM *vm, Scanner *scanner, Token *token,
-                            const char *message);
+void falconCompileError(FalconVM *vm, Scanner *scanner, Token *token, const char *message);
 void falconRuntimeError(FalconVM *vm, const char *format, va_list args);
 
 #endif // FALCON_ERROR_H

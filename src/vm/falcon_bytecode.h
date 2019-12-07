@@ -25,7 +25,7 @@ typedef struct {
     int lineCapacity;
     uint8_t *code;
     SourceLine *lines;
-    FalconValueArray constants;
+    ValueArray constants;
 } BytecodeChunk;
 
 /* Bytecode chunk operations */

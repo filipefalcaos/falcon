@@ -306,13 +306,13 @@ static FalconResultCode run(FalconVM *vm) {
     } while (false)
 
 #ifdef FALCON_DEBUG_TRACE_EXECUTION
-    FalconExecutionHeader();
+    falconExecutionHeader();
 #endif
 
     while (true) {
 #ifdef FALCON_DEBUG_TRACE_EXECUTION
-        if (vm->stack != vm->stackTop) FalconDumpStack(vm);
-        FalconDumpInstruction(&frame->closure->function->bytecode,
+        if (vm->stack != vm->stackTop) falconDumpStack(vm);
+        falconDumpInstruction(&frame->closure->function->bytecode,
                               (int) (frame->pc - frame->closure->function->bytecode.code));
 #endif
 
@@ -320,24 +320,24 @@ static FalconResultCode run(FalconVM *vm) {
         switch (instruction) { /* Reads the next byte and switches through the opcodes */
 
             /* Constants and literals */
-            case CONSTANT: {
+            case OP_CONSTANT: {
                 uint16_t index = READ_BYTE() | (uint16_t)(READ_BYTE() << 8u);
                 if (!falconPush(vm, CURR_CONSTANTS().values[index]))
                     return FALCON_RUNTIME_ERROR;
                 break;
             }
-            case FALSE_LIT:
+            case OP_FALSE_LIT:
                 if (!falconPush(vm, FALCON_BOOL_VAL(false))) return FALCON_RUNTIME_ERROR;
                 break;
-            case TRUE_LIT:
+            case OP_TRUE_LIT:
                 if (!falconPush(vm, FALCON_BOOL_VAL(true))) return FALCON_RUNTIME_ERROR;
                 break;
-            case NULL_LIT:
+            case OP_NULL_LIT:
                 if (!falconPush(vm, FALCON_NULL_VAL)) return FALCON_RUNTIME_ERROR;
                 break;
 
             /* Relational operations */
-            case AND: {
+            case OP_AND: {
                 uint16_t offset = READ_SHORT();
                 if (falconIsFalsey(peek(vm, 0)))
                     frame->pc += offset;
@@ -345,7 +345,7 @@ static FalconResultCode run(FalconVM *vm) {
                     falconPop(vm);
                 break;
             }
-            case OR: {
+            case OP_OR: {
                 uint16_t offset = READ_SHORT();
                 if (falconIsFalsey(peek(vm, 0)))
                     falconPop(vm);
@@ -353,23 +353,23 @@ static FalconResultCode run(FalconVM *vm) {
                     frame->pc += offset;
                 break;
             }
-            case NOT:
+            case OP_NOT:
                 vm->stackTop[-1] = FALCON_BOOL_VAL(falconIsFalsey(vm->stackTop[-1]));
                 break;
-            case EQUAL: {
+            case OP_EQUAL: {
                 FalconValue b = falconPop(vm);
                 vm->stackTop[-1] = FALCON_BOOL_VAL(falconValEqual(vm->stackTop[-1], b));
                 break;
             }
-            case GREATER:
+            case OP_GREATER:
                 GL_COMPARE(vm, >);
                 break;
-            case LESS:
+            case OP_LESS:
                 GL_COMPARE(vm, <);
                 break;
 
             /* Arithmetic operations */
-            case ADD: {
+            case OP_ADD: {
                 if (FALCON_IS_STRING(peek(vm, 0)) && FALCON_IS_STRING(peek(vm, 1))) {
                     concatenateStrings(vm);
                 } else if (FALCON_IS_NUM(peek(vm, 0)) && FALCON_IS_NUM(peek(vm, 1))) {
@@ -381,24 +381,24 @@ static FalconResultCode run(FalconVM *vm) {
                 }
                 break;
             }
-            case SUBTRACT:
+            case OP_SUBTRACT:
                 BINARY_OP(vm, -, FALCON_NUM_VAL);
                 break;
-            case NEGATE:
+            case OP_NEGATE:
                 ASSERT_TOP_NUM(vm);
                 vm->stackTop[-1] = FALCON_NUM_VAL(-FALCON_AS_NUM(vm->stackTop[-1]));
                 break;
-            case MULTIPLY:
+            case OP_MULTIPLY:
                 BINARY_OP(vm, *, FALCON_NUM_VAL);
                 break;
-            case MOD:
+            case OP_MOD:
                 DIVISION_OP(vm, %, int);
                 break;
-            case DIVIDE: {
+            case OP_DIVIDE: {
                 DIVISION_OP(vm, /, double);
                 break;
             }
-            case POW: {
+            case OP_POW: {
                 ASSERT_TOP2_NUM(vm);
                 double a = FALCON_AS_NUM(falconPop(vm));
                 vm->stackTop[-1] = FALCON_NUM_VAL(falconPow(FALCON_AS_NUM(vm->stackTop[-1]), a));
@@ -406,13 +406,13 @@ static FalconResultCode run(FalconVM *vm) {
             }
 
             /* Variable operations */
-            case DEFINE_GLOBAL: {
+            case OP_DEFINE_GLOBAL: {
                 ObjString *name = READ_STRING();
                 falconTableSet(vm, &vm->globals, name, peek(vm, 0));
                 falconPop(vm);
                 break;
             }
-            case GET_GLOBAL: {
+            case OP_GET_GLOBAL: {
                 ObjString *name = READ_STRING();
                 FalconValue value;
                 if (!falconTableGet(&vm->globals, name, &value)) /* Checks if undefined */
@@ -420,57 +420,57 @@ static FalconResultCode run(FalconVM *vm) {
                 if (!falconPush(vm, value)) return FALCON_RUNTIME_ERROR;
                 break;
             }
-            case SET_GLOBAL: {
+            case OP_SET_GLOBAL: {
                 ObjString *name = READ_STRING();
                 if (falconTableSet(vm, &vm->globals, name, peek(vm, 0))) /* Checks if undefined */
                     return undefinedVariableError(vm, name, true);
                 break;
             }
-            case GET_UPVALUE: {
+            case OP_GET_UPVALUE: {
                 uint8_t slot = READ_BYTE();
                 if (!falconPush(vm, *frame->closure->upvalues[slot]->slot))
                     return FALCON_RUNTIME_ERROR;
                 break;
             }
-            case SET_UPVALUE: {
+            case OP_SET_UPVALUE: {
                 uint8_t slot = READ_BYTE();
                 *frame->closure->upvalues[slot]->slot = peek(vm, 0);
                 break;
             }
-            case CLOSE_UPVALUE:
+            case OP_CLOSE_UPVALUE:
                 closeUpvalues(vm, vm->stackTop - 1);
                 falconPop(vm);
                 break;
-            case GET_LOCAL: {
+            case OP_GET_LOCAL: {
                 uint8_t slot = READ_BYTE();
                 if (!falconPush(vm, frame->slots[slot])) return FALCON_RUNTIME_ERROR;
                 break;
             }
-            case SET_LOCAL: {
+            case OP_SET_LOCAL: {
                 uint8_t slot = READ_BYTE();
                 frame->slots[slot] = peek(vm, 0);
                 break;
             }
 
             /* Jump/loop operations */
-            case JUMP: {
+            case OP_JUMP: {
                 uint16_t offset = READ_SHORT();
                 frame->pc += offset;
                 break;
             }
-            case JUMP_IF_FALSE: {
+            case OP_JUMP_IF_FALSE: {
                 uint16_t offset = READ_SHORT();
                 if (falconIsFalsey(peek(vm, 0))) frame->pc += offset;
                 break;
             }
-            case LOOP: {
+            case OP_LOOP: {
                 uint16_t offset = READ_SHORT();
                 frame->pc -= offset;
                 break;
             }
 
             /* Function operations */
-            case CLOSURE: {
+            case OP_CLOSURE: {
                 ObjFunction *function = FALCON_AS_FUNCTION(READ_CONSTANT());
                 ObjClosure *closure = falconClosure(vm, function);
                 if (!falconPush(vm, FALCON_OBJ_VAL(closure))) return FALCON_RUNTIME_ERROR;
@@ -489,13 +489,13 @@ static FalconResultCode run(FalconVM *vm) {
 
                 break;
             }
-            case CALL: {
+            case OP_CALL: {
                 int argCount = READ_BYTE();
                 if (!callValue(vm, peek(vm, argCount), argCount)) return FALCON_RUNTIME_ERROR;
                 frame = &vm->frames[vm->frameCount - 1]; /* Updates the current frame */
                 break;
             }
-            case RETURN: {
+            case OP_RETURN: {
                 FalconValue result = falconPop(vm); /* Gets the function's return value */
                 closeUpvalues(vm, frame->slots);    /* Closes upvalues */
                 vm->frameCount--;
@@ -513,13 +513,13 @@ static FalconResultCode run(FalconVM *vm) {
             }
 
             /* VM operations */
-            case DUP:
+            case OP_DUP:
                 falconPush(vm, peek(vm, 0));
                 break;
-            case POP:
+            case OP_POP:
                 falconPop(vm);
                 break;
-            case POP_EXPR: {
+            case OP_POP_EXPR: {
                 FalconValue result = falconPop(vm);
                 bool isString = FALCON_IS_STRING(result);
                 printf(" => ");
@@ -529,7 +529,7 @@ static FalconResultCode run(FalconVM *vm) {
                 printf("\n");
                 break;
             }
-            case TEMP:
+            case OP_TEMP:
                 falconVMError(vm, FALCON_UNREACHABLE_ERR, instruction);
                 return FALCON_RUNTIME_ERROR;
 

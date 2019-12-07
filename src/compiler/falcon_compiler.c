@@ -158,7 +158,7 @@ static void emitBytes(FalconCompiler *compiler, uint8_t byte_1, uint8_t byte_2) 
  * Emits a new 'loop back' instruction which jumps backwards by a given offset.
  */
 static void emitLoop(FalconCompiler *compiler, int loopStart) {
-    emitByte(compiler, LOOP);
+    emitByte(compiler, OP_LOOP);
     uint16_t offset = (uint16_t)(currentBytecode(compiler->fCompiler)->count - loopStart + 2);
 
     if (offset > UINT16_MAX) /* Loop is too long? */
@@ -182,7 +182,7 @@ static int emitJump(FalconCompiler *compiler, uint8_t instruction) {
  * Emits the OP_RETURN bytecode instruction.
  */
 static void emitReturn(FalconCompiler *compiler) {
-    emitBytes(compiler, NULL_LIT, RETURN);
+    emitBytes(compiler, OP_NULL_LIT, OP_RETURN);
 }
 
 /**
@@ -273,8 +273,8 @@ static ObjFunction *endFunctionCompiler(FalconCompiler *compiler) {
 
 #ifdef FALCON_DEBUG_PRINT_CODE
     if (!compiler->parser->hadError) {
-        FalconOpcodesHeader();
-        FalconDumpBytecode(currentBytecode(compiler->fCompiler),
+        falconOpcodesHeader();
+        falconDumpBytecode(currentBytecode(compiler->fCompiler),
                            function->name != NULL ? function->name->chars : FALCON_SCRIPT);
 #ifdef FALCON_DEBUG_TRACE_EXECUTION
         printf("\n");
@@ -303,9 +303,9 @@ static void endScope(FalconCompiler *compiler) {
     while (fCompiler->localCount > 0 &&
            fCompiler->locals[fCompiler->localCount - 1].depth > fCompiler->scopeDepth) {
         if (fCompiler->locals[fCompiler->localCount - 1].isCaptured) {
-            emitByte(compiler, CLOSE_UPVALUE);
+            emitByte(compiler, OP_CLOSE_UPVALUE);
         } else {
-            emitByte(compiler, POP);
+            emitByte(compiler, OP_POP);
         }
 
         fCompiler->localCount--;
@@ -468,7 +468,7 @@ static void defineVariable(FalconCompiler *compiler, uint8_t global) {
         return;                               /* Only globals are defined at runtime */
     }
 
-    emitBytes(compiler, DEFINE_GLOBAL, global);
+    emitBytes(compiler, OP_DEFINE_GLOBAL, global);
 }
 
 /**
@@ -511,15 +511,15 @@ static void namedVariable(FalconCompiler *compiler, Token name, bool canAssign) 
 
     /* Finds the current scope */
     if (arg != FALCON_UNRESOLVED_LOCAL) { /* Local variable? */
-        getOpcode = GET_LOCAL;
-        setOpcode = SET_LOCAL;
+        getOpcode = OP_GET_LOCAL;
+        setOpcode = OP_SET_LOCAL;
     } else if ((arg = resolveUpvalue(compiler, compiler->fCompiler, &name)) != -1) { /* Upvalue? */
-        getOpcode = GET_UPVALUE;
-        setOpcode = SET_UPVALUE;
+        getOpcode = OP_GET_UPVALUE;
+        setOpcode = OP_SET_UPVALUE;
     } else { /* Global variable */
         arg = identifierConstant(compiler, &name);
-        getOpcode = GET_GLOBAL;
-        setOpcode = SET_GLOBAL;
+        getOpcode = OP_GET_GLOBAL;
+        setOpcode = OP_SET_GLOBAL;
     }
 
     /* Compiles variable assignments or access */
@@ -527,17 +527,17 @@ static void namedVariable(FalconCompiler *compiler, Token name, bool canAssign) 
         expression(compiler);
         emitBytes(compiler, setOpcode, (uint8_t) arg);
     } else if (canAssign && match(compiler, TK_MINUS_EQUAL)) { /* a -= ... */
-        compoundAssignment(compiler, getOpcode, setOpcode, arg, SUBTRACT);
+        compoundAssignment(compiler, getOpcode, setOpcode, arg, OP_SUBTRACT);
     } else if (canAssign && match(compiler, TK_PLUS_EQUAL)) { /* a += ... */
-        compoundAssignment(compiler, getOpcode, setOpcode, arg, ADD);
+        compoundAssignment(compiler, getOpcode, setOpcode, arg, OP_ADD);
     } else if (canAssign && match(compiler, TK_DIV_EQUAL)) { /* a /= ... */
-        compoundAssignment(compiler, getOpcode, setOpcode, arg, DIVIDE);
+        compoundAssignment(compiler, getOpcode, setOpcode, arg, OP_DIVIDE);
     } else if (canAssign && match(compiler, TK_MOD_EQUAL)) { /* a %= ... */
-        compoundAssignment(compiler, getOpcode, setOpcode, arg, MOD);
+        compoundAssignment(compiler, getOpcode, setOpcode, arg, OP_MOD);
     } else if (canAssign && match(compiler, TK_MULTIPLY_EQUAL)) { /* a *= ... */
-        compoundAssignment(compiler, getOpcode, setOpcode, arg, MULTIPLY);
+        compoundAssignment(compiler, getOpcode, setOpcode, arg, OP_MULTIPLY);
     } else if (canAssign && match(compiler, TK_POW_EQUAL)) { /* a ^= ... */
-        compoundAssignment(compiler, getOpcode, setOpcode, arg, POW);
+        compoundAssignment(compiler, getOpcode, setOpcode, arg, OP_POW);
     } else { /* Access variable */
         emitBytes(compiler, getOpcode, (uint8_t) arg);
     }
@@ -551,7 +551,7 @@ static void namedVariable(FalconCompiler *compiler, Token name, bool canAssign) 
  */
 PARSE_RULE(and_) {
     (void) canAssign; /* Unused */
-    int jump = emitJump(compiler, AND);
+    int jump = emitJump(compiler, OP_AND);
     parsePrecedence(compiler, FALCON_PREC_AND);
     patchJump(compiler, jump);
 }
@@ -561,7 +561,7 @@ PARSE_RULE(and_) {
  */
 PARSE_RULE(or_) {
     (void) canAssign; /* Unused */
-    int jump = emitJump(compiler, OR);
+    int jump = emitJump(compiler, OP_OR);
     parsePrecedence(compiler, FALCON_PREC_OR);
     patchJump(compiler, jump);
 }
@@ -574,43 +574,43 @@ PARSE_RULE(or_) {
 PARSE_RULE(binary) {
     (void) canAssign; /* Unused */
     FalconTokens operatorType = compiler->parser->previous.type;
-    ParseRule *rule = getParseRule(operatorType); /* Gets the current rule */
-    parsePrecedence(compiler, rule->precedence + 1);    /* Compiles with the correct precedence */
+    ParseRule *rule = getParseRule(operatorType);    /* Gets the current rule */
+    parsePrecedence(compiler, rule->precedence + 1); /* Compiles with the correct precedence */
 
     /* Emits the operator instruction */
     switch (operatorType) {
         case TK_NOT_EQUAL:
-            emitBytes(compiler, EQUAL, NOT);
+            emitBytes(compiler, OP_EQUAL, OP_NOT);
             break;
         case TK_EQUAL_EQUAL:
-            emitByte(compiler, EQUAL);
+            emitByte(compiler, OP_EQUAL);
             break;
         case TK_GREATER:
-            emitByte(compiler, GREATER);
+            emitByte(compiler, OP_GREATER);
             break;
         case TK_GREATER_EQUAL:
-            emitBytes(compiler, LESS, NOT);
+            emitBytes(compiler, OP_LESS, OP_NOT);
             break;
         case TK_LESS:
-            emitByte(compiler, LESS);
+            emitByte(compiler, OP_LESS);
             break;
         case TK_LESS_EQUAL:
-            emitBytes(compiler, GREATER, NOT);
+            emitBytes(compiler, OP_GREATER, OP_NOT);
             break;
         case TK_PLUS:
-            emitByte(compiler, ADD);
+            emitByte(compiler, OP_ADD);
             break;
         case TK_MINUS:
-            emitByte(compiler, SUBTRACT);
+            emitByte(compiler, OP_SUBTRACT);
             break;
         case TK_DIV:
-            emitByte(compiler, DIVIDE);
+            emitByte(compiler, OP_DIVIDE);
             break;
         case TK_MOD:
-            emitByte(compiler, MOD);
+            emitByte(compiler, OP_MOD);
             break;
         case TK_MULTIPLY:
-            emitByte(compiler, MULTIPLY);
+            emitByte(compiler, OP_MULTIPLY);
             break;
         default:
             return; /* Unreachable */
@@ -624,7 +624,7 @@ PARSE_RULE(binary) {
 PARSE_RULE(call) {
     (void) canAssign; /* Unused */
     uint8_t argCount = argumentList(compiler);
-    emitBytes(compiler, CALL, argCount);
+    emitBytes(compiler, OP_CALL, argCount);
 }
 
 /**
@@ -644,13 +644,13 @@ PARSE_RULE(literal) {
     (void) canAssign; /* Unused */
     switch (compiler->parser->previous.type) {
         case TK_FALSE:
-            emitByte(compiler, FALSE_LIT);
+            emitByte(compiler, OP_FALSE_LIT);
             break;
         case TK_NULL:
-            emitByte(compiler, NULL_LIT);
+            emitByte(compiler, OP_NULL_LIT);
             break;
         case TK_TRUE:
-            emitByte(compiler, TRUE_LIT);
+            emitByte(compiler, OP_TRUE_LIT);
             break;
         default:
             return; /* Unreachable */
@@ -673,7 +673,7 @@ PARSE_RULE(number) {
 PARSE_RULE(pow_) {
     (void) canAssign;                           /* Unused */
     parsePrecedence(compiler, FALCON_PREC_POW); /* Compiles the operand */
-    emitByte(compiler, POW);
+    emitByte(compiler, OP_POW);
 }
 
 /**
@@ -696,16 +696,15 @@ PARSE_RULE(variable) { namedVariable(compiler, compiler->parser->previous, canAs
  * Handles the ternary "?:" conditional operator expression.
  */
 PARSE_RULE(ternary) {
-    (void) canAssign;                                         /* Unused */
-    int ifJump = emitJump(compiler, JUMP_IF_FALSE); /* Jumps if the condition is false */
-    emitByte(compiler, POP);                        /* Pops the condition result */
-    parsePrecedence(compiler, FALCON_PREC_TERNARY);           /* Compiles the first branch */
+    (void) canAssign;                                  /* Unused */
+    int ifJump = emitJump(compiler, OP_JUMP_IF_FALSE); /* Jumps if the condition is false */
+    emitByte(compiler, OP_POP);                        /* Pops the condition result */
+    parsePrecedence(compiler, FALCON_PREC_TERNARY);    /* Compiles the first branch */
     consume(compiler, TK_COLON, FALCON_TERNARY_EXPR_ERR);
 
-    int elseJump =
-        emitJump(compiler, JUMP);        /* Jumps the second branch if first was taken */
+    int elseJump = emitJump(compiler, OP_JUMP);    /* Jumps the second branch if first was taken */
     patchJump(compiler, ifJump);                   /* Patches the jump over the first branch */
-    emitByte(compiler, POP);             /* Pops the condition result */
+    emitByte(compiler, OP_POP);                    /* Pops the condition result */
     parsePrecedence(compiler, FALCON_PREC_ASSIGN); /* Compiles the second branch */
     patchJump(compiler, elseJump);                 /* Patches the jump over the second branch */
 }
@@ -721,10 +720,10 @@ PARSE_RULE(unary) {
 
     switch (operatorType) {
         case TK_MINUS:
-            emitByte(compiler, NEGATE);
+            emitByte(compiler, OP_NEGATE);
             break;
         case TK_NOT:
-            emitByte(compiler, NOT);
+            emitByte(compiler, OP_NOT);
             break;
         default:
             return;
@@ -870,7 +869,7 @@ static void singleVarDeclaration(FalconCompiler *compiler) {
     if (match(compiler, TK_EQUAL)) {
         expression(compiler); /* Compiles the variable initializer */
     } else {
-        emitByte(compiler, NULL_LIT); /* Default variable value is "null" */
+        emitByte(compiler, OP_NULL_LIT); /* Default variable value is "null" */
     }
 
     defineVariable(compiler, global); /* Emits the declaration bytecode */
@@ -919,7 +918,7 @@ static void function(FalconCompiler *compiler, FunctionType type) {
 
     /* Create the function object */
     ObjFunction *function = endFunctionCompiler(compiler);
-    emitBytes(compiler, CLOSURE, makeConstant(compiler, FALCON_OBJ_VAL(function)));
+    emitBytes(compiler, OP_CLOSURE, makeConstant(compiler, FALCON_OBJ_VAL(function)));
 
     /* Emits the captured upvalues */
     for (int i = 0; i < function->upvalueCount; i++) {
@@ -945,7 +944,7 @@ static void expressionStatement(FalconCompiler *compiler) {
     expression(compiler);
     consume(compiler, TK_SEMICOLON, FALCON_EXPR_STMT_ERR);
     //    emitByte(compiler->parser, (compiler->vm->isREPL) ? POP_EXPR : POP);
-    emitByte(compiler, POP);
+    emitByte(compiler, OP_POP);
 }
 
 /**
@@ -955,17 +954,17 @@ static void ifStatement(FalconCompiler *compiler) {
     expression(compiler); /* Compiles condition */
     consume(compiler, TK_LEFT_BRACE, FALCON_IF_STMT_ERR);
 
-    int thenJump = emitJump(compiler, JUMP_IF_FALSE);
-    emitByte(compiler, POP);
+    int thenJump = emitJump(compiler, OP_JUMP_IF_FALSE);
+    emitByte(compiler, OP_POP);
 
     /* Compiles the "if" block */
     beginScope(compiler->fCompiler);
     block(compiler);
     endScope(compiler);
 
-    int elseJump = emitJump(compiler, JUMP);
+    int elseJump = emitJump(compiler, OP_JUMP);
     patchJump(compiler, thenJump);
-    emitByte(compiler, POP);
+    emitByte(compiler, OP_POP);
 
     /* Compiles the "else" block */
     if (match(compiler, TK_ELSE)) {
@@ -1007,23 +1006,22 @@ static void switchStatement(FalconCompiler *compiler) {
             if (switchState == FALCON_AFT_ELSE) { /* Already compiled the else case? */
                 compilerError(compiler, &parser->previous, FALCON_ELSE_END_ERR);
             } else if (switchState == FALCON_BEF_ELSE) { /* Else case not compiled yet? */
-                caseEnds[caseCount++] =
-                    emitJump(compiler, JUMP); /* Jumps the other cases */
-                patchJump(compiler, previousCaseSkip);  /* Patches the jump */
-                emitByte(compiler, POP);
+                caseEnds[caseCount++] = emitJump(compiler, OP_JUMP); /* Jumps the other cases */
+                patchJump(compiler, previousCaseSkip);               /* Patches the jump */
+                emitByte(compiler, OP_POP);
             }
 
             if (caseType == TK_WHEN) {
                 switchState = FALCON_BEF_ELSE;
 
                 /* Checks if the case is equal to the switch value */
-                emitByte(compiler, DUP); /* "==" pops its operand, so duplicate before */
+                emitByte(compiler, OP_DUP); /* "==" pops its operand, so duplicate before */
                 expression(compiler);
                 consume(compiler, TK_ARROW, FALCON_ARR_CASE_ERR);
-                emitByte(compiler, EQUAL);
-                previousCaseSkip = emitJump(compiler, JUMP_IF_FALSE);
+                emitByte(compiler, OP_EQUAL);
+                previousCaseSkip = emitJump(compiler, OP_JUMP_IF_FALSE);
 
-                emitByte(compiler, POP); /* Pops the comparison result */
+                emitByte(compiler, OP_POP); /* Pops the comparison result */
             } else {
                 switchState = FALCON_AFT_ELSE;
                 consume(compiler, TK_ARROW, FALCON_ARR_ELSE_ERR);
@@ -1039,7 +1037,7 @@ static void switchStatement(FalconCompiler *compiler) {
     /* If no else case, patch its condition jump */
     if (switchState == FALCON_BEF_ELSE) {
         patchJump(compiler, previousCaseSkip);
-        emitByte(compiler, POP);
+        emitByte(compiler, OP_POP);
     }
 
     /* Patch all the case jumps to the end */
@@ -1047,7 +1045,7 @@ static void switchStatement(FalconCompiler *compiler) {
         patchJump(compiler, caseEnds[i]);
     }
 
-    emitByte(compiler, POP); /* Pops the switch value */
+    emitByte(compiler, OP_POP); /* Pops the switch value */
 
 #undef FALCON_BEF_CASES
 #undef FALCON_BEF_ELSE
@@ -1073,47 +1071,47 @@ static void switchStatement(FalconCompiler *compiler) {
  */
 int instructionArgs(const BytecodeChunk *bytecode, int pc) {
     switch (bytecode->code[pc]) {
-        case FALSE_LIT:
-        case TRUE_LIT:
-        case NULL_LIT:
-        case NOT:
-        case EQUAL:
-        case GREATER:
-        case LESS:
-        case ADD:
-        case SUBTRACT:
-        case NEGATE:
-        case DIVIDE:
-        case MOD:
-        case MULTIPLY:
-        case POW:
-        case CLOSE_UPVALUE:
-        case RETURN:
-        case DUP:
-        case POP:
-        case POP_EXPR:
-        case TEMP:
+        case OP_FALSE_LIT:
+        case OP_TRUE_LIT:
+        case OP_NULL_LIT:
+        case OP_NOT:
+        case OP_EQUAL:
+        case OP_GREATER:
+        case OP_LESS:
+        case OP_ADD:
+        case OP_SUBTRACT:
+        case OP_NEGATE:
+        case OP_DIVIDE:
+        case OP_MOD:
+        case OP_MULTIPLY:
+        case OP_POW:
+        case OP_CLOSE_UPVALUE:
+        case OP_RETURN:
+        case OP_DUP:
+        case OP_POP:
+        case OP_POP_EXPR:
+        case OP_TEMP:
             return 0; /* Instructions with no arguments */
 
-        case DEFINE_GLOBAL:
-        case GET_GLOBAL:
-        case SET_GLOBAL:
-        case GET_UPVALUE:
-        case SET_UPVALUE:
-        case GET_LOCAL:
-        case SET_LOCAL:
-        case CALL:
+        case OP_DEFINE_GLOBAL:
+        case OP_GET_GLOBAL:
+        case OP_SET_GLOBAL:
+        case OP_GET_UPVALUE:
+        case OP_SET_UPVALUE:
+        case OP_GET_LOCAL:
+        case OP_SET_LOCAL:
+        case OP_CALL:
             return 1; /* Instructions with single byte as argument */
 
-        case CONSTANT:
-        case AND:
-        case OR:
-        case JUMP:
-        case JUMP_IF_FALSE:
-        case LOOP:
+        case OP_CONSTANT:
+        case OP_AND:
+        case OP_OR:
+        case OP_JUMP:
+        case OP_JUMP_IF_FALSE:
+        case OP_LOOP:
             return 2; /* Instructions with 2 bytes as arguments */
 
-        case CLOSURE: {
+        case OP_CLOSURE: {
             int index = bytecode->code[pc + 1];
             ObjFunction *function = FALCON_AS_FUNCTION(bytecode->constants.values[index]);
             return 1 + function->upvalueCount * 2; /* Function: 1 byte; Upvalues: 2 bytes each */
@@ -1135,9 +1133,9 @@ static void endLoop(FalconCompiler *compiler) {
     int index = fCompiler->loop->body;
 
     while (index < bytecode->count) {
-        if (bytecode->code[index] == TEMP) { /* Is a temporary for a "break"? */
-            bytecode->code[index] = JUMP;    /* Set the correct "OP_JUMP" instruction */
-            patchJump(compiler, index + 1);            /* Patch the jump to the end of the loop */
+        if (bytecode->code[index] == OP_TEMP) { /* Is a temporary for a "break"? */
+            bytecode->code[index] = OP_JUMP;    /* Set the correct "OP_JUMP" instruction */
+            patchJump(compiler, index + 1);     /* Patch the jump to the end of the loop */
             index += 3;
         } else { /* Jumps the instruction and its arguments */
             index += 1 + instructionArgs(bytecode, index); /* +1 byte - instruction */
@@ -1156,8 +1154,8 @@ static void whileStatement(FalconCompiler *compiler) {
     START_LOOP(fCompiler); /* Starts a bew loop */
     expression(compiler);  /* Compiles the loop condition */
     consume(compiler, TK_LEFT_BRACE, FALCON_WHILE_STMT_ERR);
-    int exitJump = emitJump(compiler, JUMP_IF_FALSE);
-    emitByte(compiler, POP);
+    int exitJump = emitJump(compiler, OP_JUMP_IF_FALSE);
+    emitByte(compiler, OP_POP);
 
     /* Compiles the "while" block */
     beginScope(fCompiler);
@@ -1167,7 +1165,7 @@ static void whileStatement(FalconCompiler *compiler) {
     /* Emits the loop and patches the next jump */
     emitLoop(compiler, fCompiler->loop->entry);
     patchJump(compiler, exitJump);
-    emitByte(compiler, POP);
+    emitByte(compiler, OP_POP);
     endLoop(compiler); /* Ends the loop */
 }
 
@@ -1191,14 +1189,14 @@ static void forStatement(FalconCompiler *compiler) {
     /* Compiles the conditional clause */
     expression(compiler);
     consume(compiler, TK_COMMA, FALCON_FOR_STMT_CM2_ERR);
-    int exitJump = emitJump(compiler, JUMP_IF_FALSE);
-    emitByte(compiler, POP); /* Pops condition */
+    int exitJump = emitJump(compiler, OP_JUMP_IF_FALSE);
+    emitByte(compiler, OP_POP); /* Pops condition */
 
     /* Compiles the increment clause */
-    int bodyJump = emitJump(compiler, JUMP);
+    int bodyJump = emitJump(compiler, OP_JUMP);
     int incrementStart = currentBytecode(fCompiler)->count;
     expression(compiler);
-    emitByte(compiler, POP); /* Pops increment */
+    emitByte(compiler, OP_POP); /* Pops increment */
     consume(compiler, TK_LEFT_BRACE, FALCON_FOR_STMT_BRC_ERR);
     emitLoop(compiler, fCompiler->loop->entry);
     fCompiler->loop->entry = incrementStart;
@@ -1208,7 +1206,7 @@ static void forStatement(FalconCompiler *compiler) {
     emitLoop(compiler, fCompiler->loop->entry);
     if (exitJump != -1) {
         patchJump(compiler, exitJump);
-        emitByte(compiler, POP); /* Pops condition */
+        emitByte(compiler, OP_POP); /* Pops condition */
     }
 
     endScope(compiler); /* Ends the loop scope */
@@ -1233,9 +1231,9 @@ static void discardLocalsLoop(FalconCompiler *compiler) {
     for (int i = fCompiler->localCount - 1;
          i >= 0 && fCompiler->locals[i].depth > fCompiler->loop->scopeDepth; i--) {
         if (fCompiler->locals[fCompiler->localCount - 1].isCaptured) {
-            emitByte(compiler, CLOSE_UPVALUE);
+            emitByte(compiler, OP_CLOSE_UPVALUE);
         } else {
-            emitByte(compiler, POP);
+            emitByte(compiler, OP_POP);
         }
     }
 }
@@ -1252,7 +1250,7 @@ static void breakStatement(FalconCompiler *compiler) {
 
     /* Emits a temporary instruction to signal a "break" statement. It should become an "OP_JUMP"
      * instruction, once the size of the loop body is known */
-    emitJump(compiler, TEMP);
+    emitJump(compiler, OP_TEMP);
 }
 
 /**
@@ -1283,7 +1281,7 @@ static void returnStatement(FalconCompiler *compiler) {
     } else {
         expression(compiler);
         consume(compiler, TK_SEMICOLON, FALCON_RETURN_STMT_ERR);
-        emitByte(compiler, RETURN);
+        emitByte(compiler, OP_RETURN);
     }
 }
 

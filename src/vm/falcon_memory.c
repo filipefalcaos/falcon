@@ -31,7 +31,7 @@ void *falconReallocate(FalconVM *vm, void *previous, size_t oldSize, size_t newS
 
     if (newSize > oldSize) { /* More memory allocation? */
 #ifdef FALCON_DEBUG_STRESS_GC
-        FalconRunGC(vm); /* Runs the garbage collector always */
+        falconRunGC(vm); /* Runs the garbage collector always */
 #else
         if (vm->bytesAllocated > vm->nextGC)
             falconRunGC(vm); /* Runs the garbage collector, if needed */
@@ -66,7 +66,7 @@ FalconObj *falconAllocateObj(FalconVM *vm, size_t size, ObjType type) {
     vm->objects = object;
 
 #ifdef FALCON_DEBUG_LOG_MEMORY
-    FalconDumpAllocation(object, size, type);
+    falconDumpAllocation(object, size, type);
 #endif
 
     return object;
@@ -77,7 +77,7 @@ FalconObj *falconAllocateObj(FalconVM *vm, size_t size, ObjType type) {
  */
 void falconFreeObj(FalconVM *vm, FalconObj *object) {
 #ifdef FALCON_DEBUG_LOG_MEMORY
-    FalconDumpFree(object);
+    falconDumpFree(object);
 #endif
 
     switch (object->type) {

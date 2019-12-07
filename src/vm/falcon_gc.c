@@ -32,7 +32,7 @@ static void markObject(FalconVM *vm, FalconObj *object) {
         return; /* Strings and native functions contain no references to trace */
 
 #ifdef FALCON_DEBUG_LOG_GC
-    FalconDumpMark(object);
+    falconDumpMark(object);
 #endif
 
     if (vm->grayCapacity < vm->grayCount + 1) {
@@ -77,7 +77,7 @@ static void markTable(FalconVM *vm, FalconTable *table) {
 /**
  * Marks all Falcon Values in a value array for garbage collection.
  */
-static void markArray(FalconVM *vm, FalconValueArray *array) {
+static void markArray(FalconVM *vm, ValueArray *array) {
     for (int i = 0; i < array->count; i++) {
         markValue(vm, array->values[i]);
     }
@@ -99,7 +99,7 @@ static void markUpvalues(FalconVM *vm, ObjClosure *closure) {
  */
 static void blackenObject(FalconVM *vm, FalconObj *object) {
 #ifdef FALCON_DEBUG_LOG_GC
-    FalconDumpBlacken(object);
+    falconDumpBlacken(object);
 #endif
 
     switch (object->type) {
@@ -207,7 +207,7 @@ static void sweep(FalconVM *vm) {
  */
 void falconRunGC(FalconVM *vm) {
 #ifdef FALCON_DEBUG_LOG_GC
-    FalconGCStatus("Start");
+    falconGCStatus("Start");
     size_t bytesAllocated = vm->bytesAllocated;
 #endif
 
@@ -218,7 +218,7 @@ void falconRunGC(FalconVM *vm) {
     vm->nextGC = vm->bytesAllocated * HEAP_GROW_FACTOR; /* Adjust the next GC threshold */
 
 #ifdef FALCON_DEBUG_LOG_GC
-    FalconDumpGC(vm, bytesAllocated);
-    FalconGCStatus("End");
+    falconDumpGC(vm, bytesAllocated);
+    falconGCStatus("End");
 #endif
 }

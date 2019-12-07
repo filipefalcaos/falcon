@@ -8,9 +8,9 @@
 #define FALCON_H
 
 /* Falcon functions */
-void FalconPrintAuthors();
-void FalconPrintLicense();
-void FalconPrintUsage();
+void falconPrintAuthors();
+void falconPrintLicense();
+void falconPrintUsage();
 
 /* Falcon version and copyright */
 #define FALCON_VERSION_MAJOR   "0"

@@ -12,7 +12,7 @@
 /**
  * Initializes an empty ValueArray.
  */
-void falconInitValArray(FalconValueArray *valueArray) {
+void falconInitValArray(ValueArray *valueArray) {
     valueArray->count = 0;
     valueArray->capacity = 0;
     valueArray->values = NULL;
@@ -21,7 +21,7 @@ void falconInitValArray(FalconValueArray *valueArray) {
 /**
  * Frees a ValueArray.
  */
-void falconFreeValArray(FalconVM *vm, FalconValueArray *valueArray) {
+void falconFreeValArray(FalconVM *vm, ValueArray *valueArray) {
     FALCON_FREE_ARRAY(vm, FalconValue, valueArray->values, valueArray->capacity);
     falconInitValArray(valueArray);
 }
@@ -30,7 +30,7 @@ void falconFreeValArray(FalconVM *vm, FalconValueArray *valueArray) {
  * Appends a Value to the end of a ValueArray. If the current size is not enough, the capacity of
  * the array is increased to fit the new Value.
  */
-void falconWriteValArray(FalconVM *vm, FalconValueArray *valueArray, FalconValue value) {
+void falconWriteValArray(FalconVM *vm, ValueArray *valueArray, FalconValue value) {
     if (valueArray->capacity < valueArray->count + 1) {
         int oldCapacity = valueArray->capacity;
         valueArray->capacity = FALCON_INCREASE_CAPACITY(oldCapacity);

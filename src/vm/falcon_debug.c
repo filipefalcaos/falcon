@@ -123,75 +123,75 @@ int falconDumpInstruction(BytecodeChunk *bytecode, int offset) {
 
     uint8_t instruction = bytecode->code[offset]; /* Current instruction */
     switch (instruction) {                        /* Verifies the instruction type */
-        case CONSTANT:
+        case OP_CONSTANT:
             return constantInstruction16("CONSTANT", bytecode, offset);
-        case FALSE_LIT:
+        case OP_FALSE_LIT:
             return simpleInstruction("FALSE_LIT", offset);
-        case TRUE_LIT:
+        case OP_TRUE_LIT:
             return simpleInstruction("TRUE_LIT", offset);
-        case NULL_LIT:
+        case OP_NULL_LIT:
             return simpleInstruction("NULL_LIT", offset);
-        case AND:
+        case OP_AND:
             return simpleInstruction("AND", offset);
-        case OR:
+        case OP_OR:
             return simpleInstruction("OR", offset);
-        case NOT:
+        case OP_NOT:
             return simpleInstruction("NOT", offset);
-        case EQUAL:
+        case OP_EQUAL:
             return simpleInstruction("EQUAL", offset);
-        case GREATER:
+        case OP_GREATER:
             return simpleInstruction("GREATER", offset);
-        case LESS:
+        case OP_LESS:
             return simpleInstruction("LESS", offset);
-        case ADD:
+        case OP_ADD:
             return simpleInstruction("ADD", offset);
-        case SUBTRACT:
+        case OP_SUBTRACT:
             return simpleInstruction("SUBTRACT", offset);
-        case NEGATE:
+        case OP_NEGATE:
             return simpleInstruction("NEGATE", offset);
-        case DIVIDE:
+        case OP_DIVIDE:
             return simpleInstruction("DIVIDE", offset);
-        case MOD:
+        case OP_MOD:
             return simpleInstruction("MOD", offset);
-        case MULTIPLY:
+        case OP_MULTIPLY:
             return simpleInstruction("MULTIPLY", offset);
-        case POW:
+        case OP_POW:
             return simpleInstruction("POW", offset);
-        case DEFINE_GLOBAL:
+        case OP_DEFINE_GLOBAL:
             return constantInstruction("DEFINE_GLOBAL", bytecode, offset);
-        case GET_GLOBAL:
+        case OP_GET_GLOBAL:
             return constantInstruction("GET_GLOBAL", bytecode, offset);
-        case SET_GLOBAL:
+        case OP_SET_GLOBAL:
             return constantInstruction("SET_GLOBAL", bytecode, offset);
-        case GET_UPVALUE:
+        case OP_GET_UPVALUE:
             return byteInstruction("GET_UPVALUE", bytecode, offset);
-        case SET_UPVALUE:
+        case OP_SET_UPVALUE:
             return byteInstruction("SET_UPVALUE", bytecode, offset);
-        case CLOSE_UPVALUE:
+        case OP_CLOSE_UPVALUE:
             return simpleInstruction("CLOSE_UPVALUE", offset);
-        case GET_LOCAL:
+        case OP_GET_LOCAL:
             return byteInstruction("GET_LOCAL", bytecode, offset);
-        case SET_LOCAL:
+        case OP_SET_LOCAL:
             return byteInstruction("SET_LOCAL", bytecode, offset);
-        case JUMP:
+        case OP_JUMP:
             return jumpInstruction("JUMP", 1, bytecode, offset);
-        case JUMP_IF_FALSE:
+        case OP_JUMP_IF_FALSE:
             return jumpInstruction("JUMP_IF_FALSE", 1, bytecode, offset);
-        case LOOP:
+        case OP_LOOP:
             return jumpInstruction("LOOP", -1, bytecode, offset);
-        case CLOSURE:
+        case OP_CLOSURE:
             return closureInstruction("CLOSURE", bytecode, offset);
-        case CALL:
+        case OP_CALL:
             return byteInstruction("CALL", bytecode, offset);
-        case RETURN:
+        case OP_RETURN:
             return simpleInstruction("RETURN", offset);
-        case DUP:
+        case OP_DUP:
             return simpleInstruction("DUP", offset);
-        case POP:
+        case OP_POP:
             return simpleInstruction("POP", offset);
-        case POP_EXPR:
+        case OP_POP_EXPR:
             return simpleInstruction("POP_EXPR", offset);
-        case TEMP:
+        case OP_TEMP:
             return simpleInstruction("TEMP", offset); /* Should not be reachable */
         default:
             printf("Unknown opcode %d\n", instruction);

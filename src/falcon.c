@@ -60,17 +60,17 @@ static void printInfo() {
 /**
  * Prints Falcon's authors.
  */
-void FalconPrintAuthors() { printf("Falcon authors: %s\n", FALCON_AUTHORS); }
+void falconPrintAuthors() { printf("Falcon authors: %s\n", FALCON_AUTHORS); }
 
 /**
  * Prints Falcon's MIT license.
  */
-void FalconPrintLicense() { printf("%s\n%s\n", FALCON_COPYRIGHT, FALCON_MORE_INFO); }
+void falconPrintLicense() {  printf("%s\n%s\n", FALCON_COPYRIGHT, FALCON_MORE_INFO); }
 
 /**
  * Prints Falcon's interpreter usage details.
  */
-void FalconPrintUsage() {
+void falconPrintUsage() {
     printf("Usage: \n%*c%s\n\n", 4, ' ', FALCON_USAGE);
     printf("Flags: \n%*c%s\n%*c%s\n\n", 4, ' ', FALCON_HELP_FLAG, 4, ' ', FALCON_VERSION_FLAG);
     printf("Options: \n%*c%s\n\n", 4, ' ', FALCON_INPUT_OPTION);
@@ -117,26 +117,26 @@ static void repl(FalconVM *vm) {
 }
 
 /* CLI parsing errors */
-#define FALCON_UNKNOWN_OPT_ERROR "Unknown option '%s'.\n"
-#define FALCON_REQUIRED_ARG_ERROR "Option '%s' requires a string argument.\n"
+#define UNKNOWN_OPT_ERROR  "Unknown option '%s'.\n"
+#define REQUIRED_ARG_ERROR "Option '%s' requires a string argument.\n"
 
 /* Reports a given CLI error and then prints the CLI usage */
-#define FALCON_CLI_ERROR(argv, index, error)   \
+#define CLI_ERROR(argv, index, error)          \
     do {                                       \
         fprintf(stderr, error, (argv)[index]); \
-        FalconPrintUsage();                    \
+        falconPrintUsage();                    \
         exit(FALCON_ERR_USAGE);                \
     } while (false)
 
 /* Checks if there are no extra characters in the same option. If so, reports a CLI error through
- * FALCON_CLI_ERROR */
-#define FALCON_CHECK_EXTRA_CHARS(argv, index)                                              \
-    do {                                                                                   \
-        if ((argv)[i][2] != '\0') FALCON_CLI_ERROR(argv, index, FALCON_UNKNOWN_OPT_ERROR); \
+ * CLI_ERROR */
+#define CHECK_EXTRA_CHARS(argv, index)                                       \
+    do {                                                                     \
+        if ((argv)[i][2] != '\0') CLI_ERROR(argv, index, UNKNOWN_OPT_ERROR); \
     } while (false)
 
 /* Checks if there are no arguments for the last parsed option */
-#define FALCON_CHECK_NO_ARG(argv, i) ((argv)[i] == NULL || (argv)[i][0] == '-')
+#define CHECK_NO_ARG(argv, i) ((argv)[i] == NULL || (argv)[i][0] == '-')
 
 /**
  * Processes the given CLI arguments and proceeds with the requested action. The following options
@@ -172,19 +172,19 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
         } else { /* Is an option */
             switch (argv[i][1]) {
                 case 'h':
-                    FALCON_CHECK_EXTRA_CHARS(argv, i);
+                    CHECK_EXTRA_CHARS(argv, i);
                     hasHelp = true;
                     break;
                 case 'v':
-                    FALCON_CHECK_EXTRA_CHARS(argv, i);
+                    CHECK_EXTRA_CHARS(argv, i);
                     hasVersion = true;
                     break;
                 case 'i':
-                    FALCON_CHECK_EXTRA_CHARS(argv, i);
+                    CHECK_EXTRA_CHARS(argv, i);
                     i++; /* Goes to the next arg */
 
-                    if (FALCON_CHECK_NO_ARG(argv, i)) { /* Has no argument or is another option? */
-                        FALCON_CLI_ERROR(argv, i - 1, FALCON_REQUIRED_ARG_ERROR);
+                    if (CHECK_NO_ARG(argv, i)) { /* Has no argument or is another option? */
+                        CLI_ERROR(argv, i - 1, REQUIRED_ARG_ERROR);
                     } else {
                         hasScript = true;
                         inputCommand = argv[i];
@@ -192,14 +192,14 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
 
                     break;
                 default:
-                    FALCON_CLI_ERROR(argv, i, FALCON_UNKNOWN_OPT_ERROR);
+                    CLI_ERROR(argv, i, UNKNOWN_OPT_ERROR);
             }
         }
     }
 
     if (!hasScript) {
         if (hasVersion && !hasHelp) printInfo(); /* Prints version details */
-        if (hasHelp) FalconPrintUsage();         /* Prints usage */
+        if (hasHelp) falconPrintUsage();         /* Prints usage */
     } else {
         if (inputCommand != NULL) {
             vm->fileName = FALCON_REPL;
@@ -213,9 +213,9 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
     }
 }
 
-#undef FALCON_CLI_ERROR
-#undef FALCON_CHECK_EXTRA_CHARS
-#undef FALCON_CHECK_NO_ARG
+#undef CLI_ERROR
+#undef CHECK_EXTRA_CHARS
+#undef CHECK_NO_ARG
 
 int main(int argc, char **argv) {
     FalconVM vm;

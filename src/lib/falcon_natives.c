@@ -47,7 +47,7 @@
 FALCON_NATIVE(falconAuthorsNative) {
     (void) args; /* Unused */
     CHECK_ARGS(vm, !=, argCount, 0);
-    FalconPrintAuthors();
+    falconPrintAuthors();
     return FALCON_NULL_VAL;
 }
 
@@ -57,7 +57,7 @@ FALCON_NATIVE(falconAuthorsNative) {
 FALCON_NATIVE(falconLicenseNative) {
     (void) args; /* Unused */
     CHECK_ARGS(vm, !=, argCount, 0);
-    FalconPrintLicense();
+    falconPrintLicense();
     return FALCON_NULL_VAL;
 }
 
@@ -67,7 +67,7 @@ FALCON_NATIVE(falconLicenseNative) {
 FALCON_NATIVE(falconHelpNative) {
     (void) args; /* Unused */
     CHECK_ARGS(vm, !=, argCount, 0);
-    FalconPrintUsage();
+    falconPrintUsage();
     return FALCON_NULL_VAL;
 }
 

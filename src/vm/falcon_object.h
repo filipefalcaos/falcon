@@ -14,10 +14,10 @@
 typedef enum { OBJ_STRING, OBJ_UPVALUE, OBJ_CLOSURE, OBJ_FUNCTION, OBJ_NATIVE } ObjType;
 
 /* Object representation */
-struct sObj {
+struct _Obj {
     bool isMarked;
     ObjType type;
-    struct sObj *next;
+    struct _Obj *next;
 };
 
 /* Falcon's string object */
@@ -29,11 +29,11 @@ struct _ObjString {
 };
 
 /* Falcon's upvalue object */
-typedef struct _sUpvalue {
+typedef struct _ObjUpvalue {
     FalconObj obj;
     FalconValue *slot;
     FalconValue closed;
-    struct _sUpvalue *next;
+    struct _ObjUpvalue *next;
 } ObjUpvalue;
 
 /* Falcon's function object */

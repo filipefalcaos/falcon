@@ -10,7 +10,7 @@
 #include "../commons.h"
 
 /* Forward object declaration */
-typedef struct sObj FalconObj;
+typedef struct _Obj FalconObj;
 typedef struct _ObjString ObjString;
 
 /* Types of values on Falcon */
@@ -50,12 +50,12 @@ typedef struct {
     int count;
     int capacity;
     FalconValue *values;
-} FalconValueArray;
+} ValueArray;
 
 /* ValueArray operations */
-void falconInitValArray(FalconValueArray *valueArray);
-void falconFreeValArray(FalconVM *vm, FalconValueArray *valueArray);
-void falconWriteValArray(FalconVM *vm, FalconValueArray *valueArray, FalconValue value);
+void falconInitValArray(ValueArray *valueArray);
+void falconFreeValArray(FalconVM *vm, ValueArray *valueArray);
+void falconWriteValArray(FalconVM *vm, ValueArray *valueArray, FalconValue value);
 
 /* Value operations */
 bool falconValEqual(FalconValue a, FalconValue b);
