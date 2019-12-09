@@ -513,13 +513,16 @@ static FalconResultCode run(FalconVM *vm) {
                 falconPop(vm);
                 break;
             case OP_POP_EXPR: {
-                FalconValue result = falconPop(vm);
-                bool isString = FALCON_IS_STRING(result);
-                printf(" => ");
-                if (isString) printf("\"");
-                falconPrintVal(vm, result);
-                if (isString) printf("\"");
-                printf("\n");
+                FalconValue result = peek(vm, 0);
+                if (!FALCON_IS_NULL(result)) {
+                    bool isString = FALCON_IS_STRING(result);
+                    if (isString) printf("\"");
+                    falconPrintVal(vm, result);
+                    if (isString) printf("\"");
+                    printf("\n");
+                }
+
+                falconPop(vm);
                 break;
             }
             case OP_TEMP:

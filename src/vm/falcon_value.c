@@ -77,14 +77,14 @@ bool falconIsFalsey(FalconValue value) {
 #define NUM_TO_STR_FORMATTER "%.14g"
 
 /* Converts a function to a string */
-#define FUNCTION_TO_STR(vm, function)                                       \
-    do {                                                                    \
-        if (function->name == NULL) {                                       \
-            string = FALCON_SCRIPT;                                         \
-        } else {                                                            \
-            string = FALCON_ALLOCATE(vm, char, function->name->length + 6); \
-            sprintf(string, "<fn %s>", function->name->chars);              \
-        }                                                                   \
+#define FUNCTION_TO_STR(vm, function)                                         \
+    do {                                                                      \
+        if ((function)->name == NULL) {                                       \
+            string = FALCON_SCRIPT;                                           \
+        } else {                                                              \
+            string = FALCON_ALLOCATE(vm, char, (function)->name->length + 6); \
+            sprintf(string, "<fn %s>", (function)->name->chars);              \
+        }                                                                     \
     } while (false)
 
 /**

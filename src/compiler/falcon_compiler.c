@@ -9,6 +9,7 @@
 #include "../lib/falcon_string.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #ifdef FALCON_DEBUG_LEVEL_01
 #include "../vm/falcon_debug.h"
@@ -940,8 +941,9 @@ static void funDeclaration(FalconCompiler *compiler) {
 static void expressionStatement(FalconCompiler *compiler) {
     expression(compiler);
     consume(compiler, TK_SEMICOLON, FALCON_EXPR_STMT_ERR);
-    //    emitByte(compiler->parser, (compiler->vm->isREPL) ? POP_EXPR : POP);
-    emitByte(compiler, OP_POP);
+    emitByte(compiler, (compiler->vm->isREPL && compiler->fCompiler->type == TYPE_SCRIPT)
+                           ? OP_POP_EXPR
+                           : OP_POP);
 }
 
 /**
