@@ -201,13 +201,12 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
         if (hasVersion && !hasHelp) printInfo(); /* Prints version details */
         if (hasHelp) falconPrintUsage();         /* Prints usage */
     } else {
+        vm->isREPL = false;
         if (inputCommand != NULL) {
-            vm->fileName = FALCON_REPL;
-            vm->isREPL = true;
+            vm->fileName = FALCON_INPUT;
             falconInterpret(vm, inputCommand); /* Interprets the input command */
         } else {
             vm->fileName = fileName;
-            vm->isREPL = false;
             runFile(vm); /* Interprets the input file */
         }
     }

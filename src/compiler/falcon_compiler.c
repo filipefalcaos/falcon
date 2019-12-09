@@ -940,10 +940,8 @@ static void funDeclaration(FalconCompiler *compiler) {
 static void expressionStatement(FalconCompiler *compiler) {
     expression(compiler);
     consume(compiler, TK_SEMICOLON, FALCON_EXPR_STMT_ERR);
-    //    emitByte(compiler, (compiler->vm->isREPL && compiler->fCompiler->type == TYPE_SCRIPT)
-    //                           ? OP_POP_EXPR
-    //                           : OP_POP);
-    emitByte(compiler, OP_POP);
+    bool retRepl = compiler->vm->isREPL && compiler->fCompiler->scopeDepth == FALCON_GLOBAL_SCOPE;
+    emitByte(compiler, retRepl ? OP_POP_EXPR : OP_POP);
 }
 
 /**
