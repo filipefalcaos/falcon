@@ -15,6 +15,9 @@ char *falconReadFile(FalconVM *vm, const char *path);
 char *falconReadStrStdin(FalconVM *vm);
 void falconPrintUntil(FILE *file, const char *str, char delimiter);
 
+/* Readline errors */
+#define FALCON_READLINE_ERR "Could not read input line"
+
 /* File errors */
 #define FALCON_OPEN_ERR "Could not open file"
 #define FALCON_READ_ERR "Could not read file"

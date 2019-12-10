@@ -15,7 +15,7 @@ char *falconReadFile(FalconVM *vm, const char *path) {
     char *buffer;
     FILE *file = fopen(path, "rb"); /* Opens the input file */
 
-    if (file == NULL) { /* Failed to open the file */
+    if (file == NULL) { /* Failed to open the file? */
         fprintf(stderr, "%s \"%s\"\n", FALCON_OPEN_ERR, path);
         exit(FALCON_ERR_OS);
     }

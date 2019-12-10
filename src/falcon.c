@@ -89,9 +89,27 @@ static void runFile(FalconVM *vm) {
 }
 
 /**
- * Starts Falcon REPL.
+ * Sets the Falcon file interpreter.
  */
-static void repl(FalconVM *vm) {
+void setFile(FalconVM *vm, const char *fileName) {
+    vm->isREPL = false;
+    vm->fileName = fileName;
+    runFile(vm); /* Interprets the input file */
+}
+
+/**
+ * Sets the Falcon command interpreter.
+ */
+void setCommand(FalconVM *vm, const char *inputCommand) {
+    vm->isREPL = false;
+    vm->fileName = FALCON_INPUT;
+    falconInterpret(vm, inputCommand); /* Interprets the input command */
+}
+
+/**
+ * Reads an input line from the terminal by using the "FALCON_READLINE" macro.
+ */
+char *readLine() {
     char *input;
 #ifndef FALCON_READLINE_AVAILABLE
     char inputLine[FALCON_REPL_MAX];
@@ -99,21 +117,37 @@ static void repl(FalconVM *vm) {
     (void) input;      /* Unused */
 #endif
 
-    printInfo();
-    printHelp();
+    FALCON_READLINE(input, FALCON_PROMPT); /* Reads the input line */
+    return input;
+}
 
+/**
+ * Starts Falcon REPL procedure: read (R) a source line, evaluate (E) it, print (P) the results,
+ * and loop (L) back.
+ */
+static void repl(FalconVM *vm) {
     while (true) {
-        FALCON_READLINE(input, FALCON_PROMPT); /* Reads the input line */
-        if (!input) {                          /* Checks if failed to read */
-            free(input);
-            break;
+        char *input = readLine();     /* Reads the input line */
+        if (!input) {                 /* Checks if failed to read */
+            FALCON_FREE_INPUT(input); /* Frees the input line */
+            fprintf(stderr, "%s\n", FALCON_READLINE_ERR);
+            exit(FALCON_ERR_OS);
         }
 
         FALCON_ADD_HISTORY(input);  /* Adds history to the REPL */
         falconInterpret(vm, input); /* Interprets the source line */
     }
+}
 
-    FALCON_FREE_INPUT(input); /* Frees the input line when over */
+/**
+ * Sets the Falcon interactive mode (i.e., REPL).
+ */
+static void setRepl(FalconVM *vm) {
+    vm->fileName = FALCON_REPL;
+    vm->isREPL = true;
+    printInfo();
+    printHelp();
+    repl(vm); /* Starts the REPL */
 }
 
 /* CLI parsing errors */
@@ -158,9 +192,7 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
     hasHelp = hasVersion = hasScript = false;
 
     if (argc == 1) { /* No arguments provided? */
-        vm->fileName = FALCON_REPL;
-        vm->isREPL = true;
-        repl(vm); /* Starts the REPL */
+        setRepl(vm); /* Sets the Falcon REPL */
         return;
     }
 
@@ -201,13 +233,10 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
         if (hasVersion && !hasHelp) printInfo(); /* Prints version details */
         if (hasHelp) falconPrintUsage();         /* Prints usage */
     } else {
-        vm->isREPL = false;
         if (inputCommand != NULL) {
-            vm->fileName = FALCON_INPUT;
-            falconInterpret(vm, inputCommand); /* Interprets the input command */
+            setCommand(vm, inputCommand); /* Sets the command interpreter */
         } else {
-            vm->fileName = fileName;
-            runFile(vm); /* Interprets the input file */
+            setFile(vm, fileName); /* Sets the file interpreter */
         }
     }
 }
