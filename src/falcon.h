@@ -25,6 +25,7 @@ void falconPrintUsage();
 
 /* REPL macros */
 #define FALCON_PROMPT       ">>> "
+#define FALCON_PROMPT_2     "*** "
 #define FALCON_SCRIPT       "<script>"
 #define FALCON_REPL         "repl"
 #define FALCON_INPUT        "input"

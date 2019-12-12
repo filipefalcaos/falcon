@@ -11,6 +11,16 @@
 #include "../vm/falcon_object.h"
 #include "falcon_scanner.h"
 
+/* Parser representation */
+typedef struct {
+    Token current;      /* The last "lexed" token */
+    Token previous;     /* The last consumed token */
+    bool hadError;      /* Whether a syntax/compile error occurred or not */
+    bool panicMode;     /* Whether the parser is in error recovery (Panic Mode) or not */
+    bool unexpectedEOL; /* Whether the error is due to an unexpected EOL */
+    bool silenceErrors; /* Whether to silence syntax/compile errors */
+} Parser;
+
 /* Function types:
  * - TYPE_FUNCTION represents an user-defined function
  * - TYPE_SCRIPT represents the top-level (global scope) code */
@@ -64,7 +74,16 @@ typedef struct sCompiler {
 
 } FunctionCompiler;
 
+/* Program compiler representation */
+typedef struct {
+    FalconVM *vm;                /* Falcon's virtual machine instance */
+    Parser *parser;              /* Falcon's parser instance */
+    Scanner *scanner;            /* Falcon's scanner instance */
+    FunctionCompiler *fCompiler; /* The compiler for the currently compiling function */
+} FalconCompiler;
+
 /* Compiler operations */
+FalconCompiler parseSource(FalconVM *vm, const char *source, bool silenceErrors);
 ObjFunction *falconCompile(FalconVM *vm, const char *source);
 
 /* Compilation error messages */

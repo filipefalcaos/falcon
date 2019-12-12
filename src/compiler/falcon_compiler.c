@@ -21,14 +21,6 @@
 #define FALCON_UNRESOLVED_LOCAL FALCON_ERROR_STATE
 #define FALCON_GLOBAL_SCOPE     0
 
-/* Parser representation */
-typedef struct {
-    Token current;  /* The last "lexed" token */
-    Token previous; /* The last consumed token */
-    bool hadError;  /* Whether a syntax/compile error occurred or not */
-    bool panicMode; /* Whether the parser is in error recovery (Panic Mode) or not */
-} Parser;
-
 /* Precedence levels, from lowest to highest */
 typedef enum {
     FALCON_PREC_NONE,
@@ -44,14 +36,6 @@ typedef enum {
     FALCON_PREC_POW,     /* 10: "^" */
     FALCON_PREC_POSTFIX  /* 11: ".", "()", "[]" */
 } PrecedenceLevels;
-
-/* Program compiler representation */
-typedef struct {
-    FalconVM *vm;                /* Falcon's virtual machine instance */
-    Parser *parser;              /* Falcon's parser instance */
-    Scanner *scanner;            /* Falcon's scanner instance */
-    FunctionCompiler *fCompiler; /* The compiler for the currently compiling function */
-} FalconCompiler;
 
 /* Function pointer to the parsing functions */
 typedef void (*ParseFunction)(FalconCompiler *compiler, bool canAssign);
@@ -69,6 +53,7 @@ typedef struct {
 static void initParser(Parser *parser) {
     parser->hadError = false;
     parser->panicMode = false;
+    parser->unexpectedEOL = false;
 }
 
 /**
@@ -77,8 +62,9 @@ static void initParser(Parser *parser) {
 void compilerError(FalconCompiler *compiler, Token *token, const char *message) {
     if (compiler->parser->panicMode) return; /* Checks and sets error recovery */
     compiler->parser->panicMode = true;
-    falconCompileError(compiler->vm, compiler->scanner, token, message); /* Presents the error */
     compiler->parser->hadError = true;
+    if (compiler->parser->silenceErrors) return; /* Silences error reporting */
+    falconCompileError(compiler->vm, compiler->scanner, token, message); /* Presents the error */
 }
 
 /**
@@ -105,6 +91,7 @@ static void consume(FalconCompiler *compiler, FalconTokens type, const char *mes
         return;
     }
 
+    if (type == TK_RIGHT_BRACE) compiler->parser->unexpectedEOL = true;
     compilerError(compiler, &compiler->parser->current, message);
 }
 
@@ -1354,6 +1341,31 @@ static void declaration(FalconCompiler *compiler) {
     }
 
     if (compiler->parser->panicMode) synchronize(compiler);
+}
+
+/**
+ * Parses the given source code. If a unexpected EOL (e.g., unclosed block) error occurs during the
+ * parsing, returns "false". Otherwise, returns "true".
+ */
+FalconCompiler parseSource(FalconVM *vm, const char *source, bool silenceErrors) {
+    Parser parser;
+    Scanner scanner;
+    FalconCompiler compiler;
+    FunctionCompiler fCompiler;
+
+    /* Inits the parser, scanner, and compiler */
+    initParser(&parser);
+    falconInitScanner(source, &scanner);
+    initCompiler(&compiler, vm, &parser, &scanner);
+    initFunctionCompiler(&compiler, &fCompiler, NULL, TYPE_SCRIPT);
+    parser.silenceErrors = silenceErrors;
+
+    advance(&compiler);                 /* Get the first token */
+    while (!match(&compiler, TK_EOF)) { /* Main compiler loop */
+        declaration(&compiler);         /* Falcon's grammar entry point */
+    }
+
+    return compiler;
 }
 
 /**

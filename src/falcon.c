@@ -27,16 +27,16 @@
 #endif
 
 /* Use "readline" lib for input and history */
-#define FALCON_READLINE(input, prompt) input = readline(prompt)
+#define FALCON_READLINE(input, prompt) ((input) = readline(prompt)) != NULL
 #define FALCON_FREE_INPUT(input)       free(input)
 #define FALCON_ADD_HISTORY(input) \
-    if (strlen(input) > 0) add_history(input)
+    if ((input) && *(input)) add_history(input)
 
 #else
 
 /* Use fgets for input and disables history */
 #define FALCON_READLINE(input, prompt) \
-    (fputs(prompt, stdout), fflush(stdout), fgets(input, FALCON_REPL_MAX, stdin))
+    (fputs(prompt, stdout), fflush(stdout), fgets(input, FALCON_REPL_MAX, stdin) != NULL)
 #define FALCON_FREE_INPUT(input)  ((void) input)
 #define FALCON_ADD_HISTORY(input) ((void) input)
 
@@ -107,37 +107,56 @@ void setCommand(FalconVM *vm, const char *inputCommand) {
 }
 
 /**
- * Reads an input line from the terminal by using the "FALCON_READLINE" macro.
+ * Silently parses the given input source code and returns whether a unexpected EOL error occurred
+ * during parsing.
  */
-char *readLine() {
-    char *input;
-#ifndef FALCON_READLINE_AVAILABLE
-    char inputLine[FALCON_REPL_MAX];
-    input = inputLine; /* Fixed array needed for fgets */
-    (void) input;      /* Unused */
-#endif
-
-    FALCON_READLINE(input, FALCON_PROMPT); /* Reads the input line */
-    return input;
+static bool isIncomplete(FalconVM *vm, const char *input) {
+    FalconCompiler compiler = parseSource(vm, input, true);
+    return (compiler.parser->hadError && compiler.parser->unexpectedEOL) ? true : false;
 }
+
+/* Checks if an error occurred when reading a input line in the REPL. If so, reports a input error
+ * and ends the interpreter */
+#define CHECK_READLINE_ERROR(readlineStatus)                          \
+    do {                                                              \
+        if ((readlineStatus) == 0) { /* Failed to read input line? */ \
+            fprintf(stderr, "%s\n", FALCON_READLINE_ERR);             \
+            exit(FALCON_ERR_OS);                                      \
+        }                                                             \
+    } while (false)
 
 /**
  * Starts Falcon REPL procedure: read (R) a source line, evaluate (E) it, print (P) the results,
  * and loop (L) back.
  */
 static void repl(FalconVM *vm) {
-    while (true) {
-        char *input = readLine();     /* Reads the input line */
-        if (!input) {                 /* Checks if failed to read */
-            FALCON_FREE_INPUT(input); /* Frees the input line */
-            fprintf(stderr, "%s\n", FALCON_READLINE_ERR);
-            exit(FALCON_ERR_OS);
+    while (true) { /* Main REPL loop */
+        char *readlineIn, *prevReadlineIn;
+        bool readlineStat = FALCON_READLINE(readlineIn, FALCON_PROMPT); /* Reads the line */
+        CHECK_READLINE_ERROR(readlineStat);
+
+        /* Finds out if input is "incomplete" (unexpected EOL occurred) */
+        bool isInputIncomplete = isIncomplete(vm, readlineIn);
+
+        /* Tries to append more lines to complete input */
+        while (isInputIncomplete) {
+            prevReadlineIn = readlineIn;
+            readlineStat = FALCON_READLINE(readlineIn, FALCON_PROMPT_2); /* Reads the new line */
+            CHECK_READLINE_ERROR(readlineStat);
+
+            /* Concatenates both lines and tests the new one */
+            prevReadlineIn = strcat(prevReadlineIn, "\n");
+            readlineIn = strcat(prevReadlineIn, readlineIn);
+            isInputIncomplete = isIncomplete(vm, readlineIn);
         }
 
-        FALCON_ADD_HISTORY(input);  /* Adds history to the REPL */
-        falconInterpret(vm, input); /* Interprets the source line */
+        FALCON_ADD_HISTORY(readlineIn);  /* Adds history to the REPL */
+        falconInterpret(vm, readlineIn); /* Interprets the source line */
+        FALCON_FREE_INPUT(readlineIn);   /* Frees the input line */
     }
 }
+
+#undef CHECK_READLINE_ERROR
 
 /**
  * Sets the Falcon interactive mode (i.e., REPL).
