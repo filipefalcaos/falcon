@@ -17,8 +17,6 @@
  * history management */
 #ifdef FALCON_READLINE_AVAILABLE
 
-#include <string.h>
-
 #if __APPLE__ || __linux__ || __unix__ /* MacOS only requires "readline/readline.h" */
 #include <readline/readline.h>
 #endif
@@ -30,7 +28,7 @@
 #define FALCON_READLINE(input, prompt) input = readline(prompt)
 #define FALCON_FREE_INPUT(input)       free(input)
 #define FALCON_ADD_HISTORY(input) \
-    if (strlen(input) > 0) add_history(input)
+    if ((input) && *(input)) add_history(input)
 
 #else
 
