@@ -27,6 +27,7 @@ void falconPrintUsage();
 #define FALCON_PROMPT       ">>> "
 #define FALCON_SCRIPT       "<script>"
 #define FALCON_REPL         "repl"
+#define FALCON_INPUT        "input"
 #define FALCON_USAGE        "falcon [flags] [options] [script]"
 #define FALCON_HELP_FLAG    "-h    output usage information"
 #define FALCON_VERSION_FLAG "-v    output version information"
