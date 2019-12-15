@@ -57,6 +57,7 @@ void falconInitVM(FalconVM *vm) {
     vm->fileName = NULL;
     vm->isREPL = false;
     vm->objects = NULL;
+    vm->compiler = NULL;
 
     /* Inits the garbage collection fields */
     vm->grayCount = 0;
