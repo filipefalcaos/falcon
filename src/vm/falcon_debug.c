@@ -209,15 +209,16 @@ void falconDumpStack(FalconVM *vm) {
  * Displays debug information on the allocation of a Falcon Object on the heap.
  */
 void falconDumpAllocation(FalconObj *object, size_t size, ObjType type) {
-    printf("%p allocated %ld bytes for type \"%s\"\n", (void *) object, size,
-           falconGetObjName(type));
+    printf("Allocated %ld bytes for type \"%s\" at address %p\n", size, falconGetObjName(type),
+           (void *) object);
 }
 
 /**
  * Displays debug information on the free of a Falcon Object on the heap.
  */
 void falconDumpFree(FalconObj *object) {
-    printf("%p freed object from type \"%s\"\n", (void *) object, falconGetObjName(object->type));
+    printf("Freed object from type \"%s\" at address %p\n", falconGetObjName(object->type),
+           (void *) object);
 }
 
 /**
