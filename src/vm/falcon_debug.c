@@ -228,19 +228,15 @@ void falconGCStatus(const char *status) { printf("== Garbage Collector %s ==\n",
 /**
  * Displays debug information on the "marking" of a Falcon Object for garbage collection.
  */
-void falconDumpMark(FalconVM *vm, FalconObj *object) {
-    printf("%p marked ", (void *) object);
-    falconPrintVal(vm, FALCON_OBJ_VAL(object));
-    printf("\n");
+void falconDumpMark(FalconObj *object) {
+    printf("Object at address %p marked\n", (void *) object);
 }
 
 /**
  * Displays debug information on the "blacken" of a Falcon Object for garbage collection.
  */
-void falconDumpBlacken(FalconVM *vm, FalconObj *object) {
-    printf("%p blackened ", (void *) object);
-    falconPrintVal(vm, FALCON_OBJ_VAL(object));
-    printf("\n");
+void falconDumpBlacken(FalconObj *object) {
+    printf("Object at address %p blackened\n", (void *) object);
 }
 
 /**

@@ -21,8 +21,8 @@ void falconDumpFree(FalconObj *object);
 
 /* Garbage collection debugging operations */
 void falconGCStatus(const char *status);
-void falconDumpMark(FalconVM *vm, FalconObj *object);
-void falconDumpBlacken(FalconVM *vm, FalconObj *object);
+void falconDumpMark(FalconObj *object);
+void falconDumpBlacken(FalconObj *object);
 void falconDumpGC(FalconVM *vm, size_t bytesAllocated);
 
 #endif // FALCON_DEBUG_H

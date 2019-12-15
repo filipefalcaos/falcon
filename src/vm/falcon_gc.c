@@ -32,7 +32,7 @@ static void markObject(FalconVM *vm, FalconObj *object) {
         return; /* Strings and native functions contain no references to trace */
 
 #ifdef FALCON_DEBUG_LEVEL_02
-    falconDumpMark(vm, object);
+    falconDumpMark(object);
 #endif
 
     if (vm->grayCapacity < vm->grayCount + 1) {
@@ -99,7 +99,7 @@ static void markUpvalues(FalconVM *vm, ObjClosure *closure) {
  */
 static void blackenObject(FalconVM *vm, FalconObj *object) {
 #ifdef FALCON_DEBUG_LEVEL_02
-    falconDumpBlacken(vm, object);
+    falconDumpBlacken(object);
 #endif
 
     switch (object->type) {
