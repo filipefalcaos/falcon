@@ -69,7 +69,8 @@ bool falconValEqual(FalconValue a, FalconValue b) {
 bool falconIsFalsy(FalconValue value) {
     return FALCON_IS_NULL(value) || (FALCON_IS_BOOL(value) && !FALCON_AS_BOOL(value)) ||
            (FALCON_IS_NUM(value) && FALCON_AS_NUM(value) == 0) ||
-           (FALCON_IS_STRING(value) && FALCON_AS_STRING(value)->length == 0);
+           (FALCON_IS_STRING(value) && FALCON_AS_STRING(value)->length == 0) ||
+           (FALCON_IS_LIST(value) && FALCON_AS_LIST(value)->elements->count == 0);
 }
 
 /* String conversion constants */

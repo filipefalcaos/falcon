@@ -74,6 +74,7 @@ typedef struct {
 
 /* Checks if a Value is an FalconObj type */
 #define FALCON_IS_STRING(value) falconIsObjType(value, OBJ_STRING)
+#define FALCON_IS_LIST(value)   falconIsObjType(value, OBJ_LIST)
 
 /* Gets the object value from a Falcon Value */
 #define FALCON_AS_CLOSURE(value)  ((ObjClosure *) FALCON_AS_OBJ(value))
