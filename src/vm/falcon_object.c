@@ -67,3 +67,12 @@ ObjNative *falconNative(FalconVM *vm, FalconNativeFn function, const char *name)
     native->name = name;
     return native;
 }
+
+/**
+ * Allocates a new Falcon list object.
+ */
+ObjList *falconList(FalconVM *vm) {
+    ObjList *list = FALCON_ALLOCATE_OBJ(vm, ObjList, OBJ_LIST);
+    falconInitValArray(list->elements);
+    return list;
+}

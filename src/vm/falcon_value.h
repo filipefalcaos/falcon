@@ -59,7 +59,7 @@ void falconWriteValArray(FalconVM *vm, ValueArray *valueArray, FalconValue value
 
 /* Value operations */
 bool falconValEqual(FalconValue a, FalconValue b);
-bool falconIsFalsey(FalconValue value);
+bool falconIsFalsy(FalconValue value);
 char *falconValToString(FalconVM *vm, FalconValue *value);
 void falconPrintVal(FalconVM *vm, FalconValue value);
 

@@ -45,7 +45,7 @@ typedef enum {
 
     /* Jump/loop operations */
     OP_JUMP,          /* Jump an instruction on the VM */
-    OP_JUMP_IF_FALSE, /* Jump an instruction if falsey on the VM */
+    OP_JUMP_IF_FALSE, /* Jump an instruction if falsy on the VM */
     OP_LOOP,          /* Loop backwards instruction */
 
     /* Closures/functions operations */

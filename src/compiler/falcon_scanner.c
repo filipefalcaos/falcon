@@ -89,7 +89,7 @@ static Token makeToken(FalconTokens type, Scanner *scanner) {
 }
 
 /**
- * Makes the error token (FALCON_TK_ERROR) with a message to present to the programmer.
+ * Makes the error token (TK_ERROR) with a message to present to the programmer.
  */
 static Token errorToken(const char *message, Scanner *scanner) {
     Token token;

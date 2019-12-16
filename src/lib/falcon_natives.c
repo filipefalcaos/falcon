@@ -132,6 +132,10 @@ FALCON_NATIVE(falconTypeNative) {
                     typeString = "<string>";
                     typeStringLen = 8;
                     break;
+                case OBJ_LIST:
+                    typeString = "<list>";
+                    typeStringLen = 6;
+                    break;
                 case OBJ_CLOSURE:
                 case OBJ_FUNCTION:
                 case OBJ_NATIVE:
@@ -151,11 +155,11 @@ FALCON_NATIVE(falconTypeNative) {
 
 /**
  * Native Falcon function to convert a given Falcon Value to a number. The conversion is implemented
- * through the "falconIsFalsey" function.
+ * through the "falconIsFalsy" function.
  */
 FALCON_NATIVE(falconBoolNative) {
     CHECK_ARGS(vm, !=, argCount, 1);
-    if (!FALCON_IS_BOOL(*args)) return FALCON_BOOL_VAL(!falconIsFalsey(*args));
+    if (!FALCON_IS_BOOL(*args)) return FALCON_BOOL_VAL(!falconIsFalsy(*args));
     return *args; /* Given value is already a boolean */
 }
 

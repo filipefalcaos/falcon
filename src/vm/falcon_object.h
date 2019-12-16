@@ -11,7 +11,7 @@
 #include "falcon_value.h"
 
 /* Types of objects on Falcon */
-typedef enum { OBJ_STRING, OBJ_UPVALUE, OBJ_CLOSURE, OBJ_FUNCTION, OBJ_NATIVE } ObjType;
+typedef enum { OBJ_STRING, OBJ_UPVALUE, OBJ_CLOSURE, OBJ_FUNCTION, OBJ_NATIVE, OBJ_LIST } ObjType;
 
 /* Object representation */
 struct _Obj {
@@ -63,6 +63,12 @@ typedef struct {
     const char *name;
 } ObjNative;
 
+/* Falcon's list object */
+typedef struct {
+    FalconObj obj;
+    ValueArray *elements;
+} ObjList;
+
 /* Gets a object type from an Falcon Value */
 #define FALCON_OBJ_TYPE(value) (FALCON_AS_OBJ(value)->type)
 
@@ -75,6 +81,7 @@ typedef struct {
 #define FALCON_AS_NATIVE(value)   ((ObjNative *) FALCON_AS_OBJ(value))
 #define FALCON_AS_STRING(value)   ((ObjString *) FALCON_AS_OBJ(value))
 #define FALCON_AS_CSTRING(value)  (((ObjString *) FALCON_AS_OBJ(value))->chars)
+#define FALCON_AS_LIST(value)     ((ObjList *) FALCON_AS_OBJ(value))
 
 /* Object operations */
 const char *falconGetObjName(ObjType type);
@@ -82,6 +89,7 @@ ObjUpvalue *falconUpvalue(FalconVM *vm, FalconValue *slot);
 ObjClosure *falconClosure(FalconVM *vm, ObjFunction *function);
 ObjFunction *falconFunction(FalconVM *vm);
 ObjNative *falconNative(FalconVM *vm, FalconNativeFn function, const char *name);
+ObjList *falconList(FalconVM *vm);
 
 /**
  * Checks if a Value is of an FalconObj type.

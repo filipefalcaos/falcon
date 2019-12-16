@@ -333,7 +333,7 @@ static FalconResultCode run(FalconVM *vm) {
             /* Relational operations */
             case OP_AND: {
                 uint16_t offset = READ_SHORT();
-                if (falconIsFalsey(peek(vm, 0)))
+                if (falconIsFalsy(peek(vm, 0)))
                     frame->pc += offset;
                 else
                     falconPop(vm);
@@ -341,14 +341,14 @@ static FalconResultCode run(FalconVM *vm) {
             }
             case OP_OR: {
                 uint16_t offset = READ_SHORT();
-                if (falconIsFalsey(peek(vm, 0)))
+                if (falconIsFalsy(peek(vm, 0)))
                     falconPop(vm);
                 else
                     frame->pc += offset;
                 break;
             }
             case OP_NOT:
-                vm->stackTop[-1] = FALCON_BOOL_VAL(falconIsFalsey(vm->stackTop[-1]));
+                vm->stackTop[-1] = FALCON_BOOL_VAL(falconIsFalsy(vm->stackTop[-1]));
                 break;
             case OP_EQUAL: {
                 FalconValue b = falconPop(vm);
@@ -454,7 +454,7 @@ static FalconResultCode run(FalconVM *vm) {
             }
             case OP_JUMP_IF_FALSE: {
                 uint16_t offset = READ_SHORT();
-                if (falconIsFalsey(peek(vm, 0))) frame->pc += offset;
+                if (falconIsFalsy(peek(vm, 0))) frame->pc += offset;
                 break;
             }
             case OP_LOOP: {
