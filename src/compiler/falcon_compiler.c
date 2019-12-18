@@ -31,18 +31,18 @@ typedef struct {
 
 /* Precedence levels, from lowest to highest */
 typedef enum {
-    FALCON_PREC_NONE,
-    FALCON_PREC_ASSIGN,  /* 1: "=", "-=", "+=", "*=", "/=", "%=" */
-    FALCON_PREC_TERNARY, /* 2: "?:" */
-    FALCON_PREC_OR,      /* 3: "or" */
-    FALCON_PREC_AND,     /* 4: "and" */
-    FALCON_PREC_EQUAL,   /* 5: "==", "!=" */
-    FALCON_PREC_COMPARE, /* 6: "<", ">", "<=", ">=" */
-    FALCON_PREC_TERM,    /* 7: "+", "-" */
-    FALCON_PREC_FACTOR,  /* 8: "*", "/", "%" */
-    FALCON_PREC_UNARY,   /* 9: "not", "-" */
-    FALCON_PREC_POW,     /* 10: "^" */
-    FALCON_PREC_POSTFIX  /* 11: ".", "()", "[]" */
+    PREC_NONE,       /* No precedence */
+    PREC_ASSIGN,     /* 1: "=", "-=", "+=", "*=", "/=", "%=" */
+    PREC_TERNARY,    /* 2: "?:" */
+    PREC_OR,         /* 3: "or" */
+    PREC_AND,        /* 4: "and" */
+    PREC_EQUAL,      /* 5: "==", "!=" */
+    PREC_COMPARE,    /* 6: "<", ">", "<=", ">=" */
+    PREC_TERM,       /* 7: "+", "-" */
+    PREC_FACTOR,     /* 8: "*", "/", "%" */
+    PREC_UNARY,      /* 9: "not", "-" */
+    PREC_POW,        /* 10: "^" */
+    PREC_CALL_ACCESS /* 11: ".", "()", "[]" */
 } PrecedenceLevels;
 
 /* Program compiler representation */
@@ -549,7 +549,7 @@ static void namedVariable(FalconCompiler *compiler, Token name, bool canAssign) 
 PARSE_RULE(and_) {
     (void) canAssign; /* Unused */
     int jump = emitJump(compiler, OP_AND);
-    parsePrecedence(compiler, FALCON_PREC_AND);
+    parsePrecedence(compiler, PREC_AND);
     patchJump(compiler, jump);
 }
 
@@ -559,7 +559,7 @@ PARSE_RULE(and_) {
 PARSE_RULE(or_) {
     (void) canAssign; /* Unused */
     int jump = emitJump(compiler, OP_OR);
-    parsePrecedence(compiler, FALCON_PREC_OR);
+    parsePrecedence(compiler, PREC_OR);
     patchJump(compiler, jump);
 }
 
@@ -635,6 +635,14 @@ PARSE_RULE(grouping) {
 }
 
 /**
+ * Handles a list literal expression by creating a new Falcon native List and compiling each of
+ * its elements.
+ */
+PARSE_RULE(list) {
+    (void) canAssign; /* Unused */
+}
+
+/**
  * Handles a literal (booleans or null) expression by outputting the proper instruction.
  */
 PARSE_RULE(literal) {
@@ -668,8 +676,8 @@ PARSE_RULE(number) {
  * Handles a exponentiation expression.
  */
 PARSE_RULE(pow_) {
-    (void) canAssign;                           /* Unused */
-    parsePrecedence(compiler, FALCON_PREC_POW); /* Compiles the operand */
+    (void) canAssign;                    /* Unused */
+    parsePrecedence(compiler, PREC_POW); /* Compiles the operand */
     emitByte(compiler, OP_POW);
 }
 
@@ -685,9 +693,11 @@ PARSE_RULE(string) {
 }
 
 /**
- * Handles a variable access.
+ * Handles the subscript (list indexing) operator expression by compiling the index expression.
  */
-PARSE_RULE(variable) { namedVariable(compiler, compiler->parser->previous, canAssign); }
+PARSE_RULE(subscript) {
+    (void) canAssign; /* Unused */
+}
 
 /**
  * Handles the ternary "?:" conditional operator expression.
@@ -696,14 +706,14 @@ PARSE_RULE(ternary) {
     (void) canAssign;                                  /* Unused */
     int ifJump = emitJump(compiler, OP_JUMP_IF_FALSE); /* Jumps if the condition is false */
     emitByte(compiler, OP_POP);                        /* Pops the condition result */
-    parsePrecedence(compiler, FALCON_PREC_TERNARY);    /* Compiles the first branch */
+    parsePrecedence(compiler, PREC_TERNARY);           /* Compiles the first branch */
     consume(compiler, TK_COLON, FALCON_TERNARY_EXPR_ERR);
 
-    int elseJump = emitJump(compiler, OP_JUMP);    /* Jumps the second branch if first was taken */
-    patchJump(compiler, ifJump);                   /* Patches the jump over the first branch */
-    emitByte(compiler, OP_POP);                    /* Pops the condition result */
-    parsePrecedence(compiler, FALCON_PREC_ASSIGN); /* Compiles the second branch */
-    patchJump(compiler, elseJump);                 /* Patches the jump over the second branch */
+    int elseJump = emitJump(compiler, OP_JUMP); /* Jumps the second branch if first was taken */
+    patchJump(compiler, ifJump);                /* Patches the jump over the first branch */
+    emitByte(compiler, OP_POP);                 /* Pops the condition result */
+    parsePrecedence(compiler, PREC_ASSIGN);     /* Compiles the second branch */
+    patchJump(compiler, elseJump);              /* Patches the jump over the second branch */
 }
 
 /**
@@ -713,7 +723,7 @@ PARSE_RULE(ternary) {
 PARSE_RULE(unary) {
     (void) canAssign; /* Unused */
     FalconTokens operatorType = compiler->parser->previous.type;
-    parsePrecedence(compiler, FALCON_PREC_UNARY); /* Compiles the operand */
+    parsePrecedence(compiler, PREC_UNARY); /* Compiles the operand */
 
     switch (operatorType) {
         case TK_MINUS:
@@ -727,77 +737,82 @@ PARSE_RULE(unary) {
     }
 }
 
+/**
+ * Handles a variable access.
+ */
+PARSE_RULE(variable) { namedVariable(compiler, compiler->parser->previous, canAssign); }
+
 #undef PARSE_RULE
 
 /* An array (table) of ParseRules that guides the Pratt parser. The left column represents the
  * prefix function parser; the second column represents the infix function parser; and the third
  * column represents the precedence level */
 #define EMPTY_RULE \
-    { NULL, NULL, FALCON_PREC_NONE }
+    { NULL, NULL, PREC_NONE }
 #define PREFIX_RULE(prefix) \
-    { prefix, NULL, FALCON_PREC_NONE }
+    { prefix, NULL, PREC_NONE }
 #define INFIX_RULE(infix, prec) \
     { NULL, infix, prec }
 #define RULE(prefix, infix, prec) \
     { prefix, infix, prec }
 
 ParseRule rules[] = {
-    RULE(grouping, call, FALCON_PREC_POSTFIX), /* TK_LEFT_PAREN */
-    EMPTY_RULE,                                /* TK_RIGHT_PAREN */
-    EMPTY_RULE,                                /* TK_LEFT_BRACE */
-    EMPTY_RULE,                                /* TK_RIGHT_BRACE */
-    EMPTY_RULE,                                /* TK_LEFT_BRACKET */
-    EMPTY_RULE,                                /* TK_RIGHT_BRACKET */
-    EMPTY_RULE,                                /* TK_COMMA */
-    EMPTY_RULE,                                /* TK_DOT */
-    EMPTY_RULE,                                /* TK_COLON */
-    EMPTY_RULE,                                /* TK_SEMICOLON */
-    EMPTY_RULE,                                /* TK_ARROW */
-    RULE(unary, binary, FALCON_PREC_TERM),     /* TK_MINUS */
-    EMPTY_RULE,                                /* TK_MINUS_EQUAL */
-    INFIX_RULE(binary, FALCON_PREC_TERM),      /* TK_PLUS */
-    EMPTY_RULE,                                /* TK_PLUS_EQUAL */
-    INFIX_RULE(binary, FALCON_PREC_FACTOR),    /* TK_DIV */
-    EMPTY_RULE,                                /* TK_DIV_EQUAL */
-    INFIX_RULE(binary, FALCON_PREC_FACTOR),    /* TK_MOD */
-    EMPTY_RULE,                                /* TK_MOD_EQUAL */
-    INFIX_RULE(binary, FALCON_PREC_FACTOR),    /* TK_MULTIPLY */
-    EMPTY_RULE,                                /* TK_MULTIPLY_EQUAL */
-    INFIX_RULE(pow_, FALCON_PREC_POW),         /* TK_POW */
-    EMPTY_RULE,                                /* TK_POW_EQUAL */
-    PREFIX_RULE(unary),                        /* TK_NOT */
-    INFIX_RULE(binary, FALCON_PREC_EQUAL),     /* TK_NOT_EQUAL */
-    EMPTY_RULE,                                /* TK_EQUAL */
-    INFIX_RULE(binary, FALCON_PREC_EQUAL),     /* TK_EQUAL_EQUAL */
-    INFIX_RULE(binary, FALCON_PREC_COMPARE),   /* TK_GREATER */
-    INFIX_RULE(binary, FALCON_PREC_COMPARE),   /* TK_GREATER_EQUAL */
-    INFIX_RULE(binary, FALCON_PREC_COMPARE),   /* TK_LESS */
-    INFIX_RULE(binary, FALCON_PREC_COMPARE),   /* TK_LESS_EQUAL */
-    INFIX_RULE(and_, FALCON_PREC_AND),         /* TK_AND */
-    INFIX_RULE(or_, FALCON_PREC_OR),           /* TK_OR */
-    INFIX_RULE(ternary, FALCON_PREC_TERNARY),  /* TK_TERNARY */
-    PREFIX_RULE(variable),                     /* TK_IDENTIFIER */
-    PREFIX_RULE(string),                       /* TK_STRING */
-    PREFIX_RULE(number),                       /* TK_NUMBER */
-    EMPTY_RULE,                                /* TK_BREAK */
-    EMPTY_RULE,                                /* TK_CLASS */
-    EMPTY_RULE,                                /* TK_ELSE */
-    PREFIX_RULE(literal),                      /* TK_FALSE */
-    EMPTY_RULE,                                /* TK_FOR */
-    EMPTY_RULE,                                /* TK_FUNCTION */
-    EMPTY_RULE,                                /* TK_IF */
-    EMPTY_RULE,                                /* TK_NEXT */
-    PREFIX_RULE(literal),                      /* TK_NULL */
-    EMPTY_RULE,                                /* TK_RETURN */
-    EMPTY_RULE,                                /* TK_SUPER */
-    EMPTY_RULE,                                /* TK_SWITCH */
-    EMPTY_RULE,                                /* TK_THIS */
-    PREFIX_RULE(literal),                      /* TK_TRUE */
-    EMPTY_RULE,                                /* TK_VAR */
-    EMPTY_RULE,                                /* TK_WHEN */
-    EMPTY_RULE,                                /* TK_WHILE */
-    EMPTY_RULE,                                /* TK_ERROR */
-    EMPTY_RULE                                 /* TK_EOF */
+    RULE(grouping, call, PREC_CALL_ACCESS),  /* TK_LEFT_PAREN */
+    EMPTY_RULE,                              /* TK_RIGHT_PAREN */
+    EMPTY_RULE,                              /* TK_LEFT_BRACE */
+    EMPTY_RULE,                              /* TK_RIGHT_BRACE */
+    RULE(list, subscript, PREC_CALL_ACCESS), /* TK_LEFT_BRACKET */
+    EMPTY_RULE,                              /* TK_RIGHT_BRACKET */
+    EMPTY_RULE,                              /* TK_COMMA */
+    EMPTY_RULE,                              /* TK_DOT */
+    EMPTY_RULE,                              /* TK_COLON */
+    EMPTY_RULE,                              /* TK_SEMICOLON */
+    EMPTY_RULE,                              /* TK_ARROW */
+    RULE(unary, binary, PREC_TERM),          /* TK_MINUS */
+    EMPTY_RULE,                              /* TK_MINUS_EQUAL */
+    INFIX_RULE(binary, PREC_TERM),           /* TK_PLUS */
+    EMPTY_RULE,                              /* TK_PLUS_EQUAL */
+    INFIX_RULE(binary, PREC_FACTOR),         /* TK_DIV */
+    EMPTY_RULE,                              /* TK_DIV_EQUAL */
+    INFIX_RULE(binary, PREC_FACTOR),         /* TK_MOD */
+    EMPTY_RULE,                              /* TK_MOD_EQUAL */
+    INFIX_RULE(binary, PREC_FACTOR),         /* TK_MULTIPLY */
+    EMPTY_RULE,                              /* TK_MULTIPLY_EQUAL */
+    INFIX_RULE(pow_, PREC_POW),              /* TK_POW */
+    EMPTY_RULE,                              /* TK_POW_EQUAL */
+    PREFIX_RULE(unary),                      /* TK_NOT */
+    INFIX_RULE(binary, PREC_EQUAL),          /* TK_NOT_EQUAL */
+    EMPTY_RULE,                              /* TK_EQUAL */
+    INFIX_RULE(binary, PREC_EQUAL),          /* TK_EQUAL_EQUAL */
+    INFIX_RULE(binary, PREC_COMPARE),        /* TK_GREATER */
+    INFIX_RULE(binary, PREC_COMPARE),        /* TK_GREATER_EQUAL */
+    INFIX_RULE(binary, PREC_COMPARE),        /* TK_LESS */
+    INFIX_RULE(binary, PREC_COMPARE),        /* TK_LESS_EQUAL */
+    INFIX_RULE(and_, PREC_AND),              /* TK_AND */
+    INFIX_RULE(or_, PREC_OR),                /* TK_OR */
+    INFIX_RULE(ternary, PREC_TERNARY),       /* TK_TERNARY */
+    PREFIX_RULE(variable),                   /* TK_IDENTIFIER */
+    PREFIX_RULE(string),                     /* TK_STRING */
+    PREFIX_RULE(number),                     /* TK_NUMBER */
+    EMPTY_RULE,                              /* TK_BREAK */
+    EMPTY_RULE,                              /* TK_CLASS */
+    EMPTY_RULE,                              /* TK_ELSE */
+    PREFIX_RULE(literal),                    /* TK_FALSE */
+    EMPTY_RULE,                              /* TK_FOR */
+    EMPTY_RULE,                              /* TK_FUNCTION */
+    EMPTY_RULE,                              /* TK_IF */
+    EMPTY_RULE,                              /* TK_NEXT */
+    PREFIX_RULE(literal),                    /* TK_NULL */
+    EMPTY_RULE,                              /* TK_RETURN */
+    EMPTY_RULE,                              /* TK_SUPER */
+    EMPTY_RULE,                              /* TK_SWITCH */
+    EMPTY_RULE,                              /* TK_THIS */
+    PREFIX_RULE(literal),                    /* TK_TRUE */
+    EMPTY_RULE,                              /* TK_VAR */
+    EMPTY_RULE,                              /* TK_WHEN */
+    EMPTY_RULE,                              /* TK_WHILE */
+    EMPTY_RULE,                              /* TK_ERROR */
+    EMPTY_RULE                               /* TK_EOF */
 };
 
 #undef EMPTY_RULE
@@ -820,7 +835,7 @@ static void parsePrecedence(FalconCompiler *compiler, PrecedenceLevels precedenc
     }
 
     /* Checks if the left side is assignable */
-    bool canAssign = precedence <= FALCON_PREC_TERNARY;
+    bool canAssign = precedence <= PREC_TERNARY;
     prefixRule(compiler, canAssign);
 
     /* Looks for an infix parser for the next token */
@@ -844,7 +859,7 @@ static ParseRule *getParseRule(FalconTokens type) { return &rules[type]; }
  * Compiles an expression by parsing the lowest precedence level, which subsumes all of the higher
  * precedence expressions too.
  */
-static void expression(FalconCompiler *compiler) { parsePrecedence(compiler, FALCON_PREC_ASSIGN); }
+static void expression(FalconCompiler *compiler) { parsePrecedence(compiler, PREC_ASSIGN); }
 
 /**
  * Compiles a block of code by parsing declarations and statements until a closing brace (end of
