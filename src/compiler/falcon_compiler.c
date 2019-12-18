@@ -746,6 +746,8 @@ ParseRule rules[] = {
     EMPTY_RULE,                                /* TK_RIGHT_PAREN */
     EMPTY_RULE,                                /* TK_LEFT_BRACE */
     EMPTY_RULE,                                /* TK_RIGHT_BRACE */
+    EMPTY_RULE,                                /* TK_LEFT_BRACKET */
+    EMPTY_RULE,                                /* TK_RIGHT_BRACKET */
     EMPTY_RULE,                                /* TK_COMMA */
     EMPTY_RULE,                                /* TK_DOT */
     EMPTY_RULE,                                /* TK_COLON */

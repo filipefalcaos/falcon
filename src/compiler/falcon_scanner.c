@@ -315,6 +315,10 @@ Token falconScanToken(Scanner *scanner) {
             return makeToken(TK_LEFT_BRACE, scanner);
         case '}':
             return makeToken(TK_RIGHT_BRACE, scanner);
+        case '[':
+            return makeToken(TK_LEFT_BRACKET, scanner);
+        case ']':
+            return makeToken(TK_RIGHT_BRACKET, scanner);
         case '?':
             return makeToken(TK_TERNARY, scanner);
         case ':':
