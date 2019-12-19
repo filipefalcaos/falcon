@@ -73,7 +73,7 @@ assign -> assign_call? IDENTIFIER subscript? assign_op assign
        | logic_or ;
 
 assign_call -> call "." ;
-subscript   -> "[" args? "]" ;
+subscript   -> "[" expression "]" ;
 assign_op   -> "=" | "+=" | "-=" | "*=" | "/=" | "%=" ;
 
 logic_or   -> logic_and ( "or" logic_and )* ;
@@ -86,7 +86,8 @@ multiplication -> unary ( ( "/" | "*" | "%" ) unary )* ;
 unary          -> ( "not" | "-" ) unary | exponent ;
 exponent       -> "^" exponent | call ;
 
-call    -> primary ( "(" args? ")" | subscript | ( "." IDENTIFIER ) )* ;
+call    -> primary ( "(" args? ")" | list | ( "." IDENTIFIER ) )* ;
+list    -> "[" args? "]" ;
 primary -> "true" | "false" | "null" | "this" | NUMBER | STRING 
         | IDENTIFIER | "(" expr ")" | "super" "." IDENTIFIER ;
 ```

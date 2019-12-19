@@ -31,18 +31,18 @@ typedef struct {
 
 /* Precedence levels, from lowest to highest */
 typedef enum {
-    PREC_NONE,       /* No precedence */
-    PREC_ASSIGN,     /* 1: "=", "-=", "+=", "*=", "/=", "%=" */
-    PREC_TERNARY,    /* 2: "?:" */
-    PREC_OR,         /* 3: "or" */
-    PREC_AND,        /* 4: "and" */
-    PREC_EQUAL,      /* 5: "==", "!=" */
-    PREC_COMPARE,    /* 6: "<", ">", "<=", ">=" */
-    PREC_TERM,       /* 7: "+", "-" */
-    PREC_FACTOR,     /* 8: "*", "/", "%" */
-    PREC_UNARY,      /* 9: "not", "-" */
-    PREC_POW,        /* 10: "^" */
-    PREC_CALL_ACCESS /* 11: ".", "()", "[]" */
+    PREC_NONE,    /* No precedence */
+    PREC_ASSIGN,  /* 1: "=", "-=", "+=", "*=", "/=", "%=" */
+    PREC_TERNARY, /* 2: "?:" */
+    PREC_OR,      /* 3: "or" */
+    PREC_AND,     /* 4: "and" */
+    PREC_EQUAL,   /* 5: "==", "!=" */
+    PREC_COMPARE, /* 6: "<", ">", "<=", ">=" */
+    PREC_TERM,    /* 7: "+", "-" */
+    PREC_FACTOR,  /* 8: "*", "/", "%" */
+    PREC_UNARY,   /* 9: "not", "-" */
+    PREC_POW,     /* 10: "^" */
+    PREC_TOP      /* Highest precedence: function calls, lists, and field accesses */
 } PrecedenceLevels;
 
 /* Program compiler representation */
@@ -757,62 +757,62 @@ PARSE_RULE(variable) { namedVariable(compiler, compiler->parser->previous, canAs
     { prefix, infix, prec }
 
 ParseRule rules[] = {
-    RULE(grouping, call, PREC_CALL_ACCESS),  /* TK_LEFT_PAREN */
-    EMPTY_RULE,                              /* TK_RIGHT_PAREN */
-    EMPTY_RULE,                              /* TK_LEFT_BRACE */
-    EMPTY_RULE,                              /* TK_RIGHT_BRACE */
-    RULE(list, subscript, PREC_CALL_ACCESS), /* TK_LEFT_BRACKET */
-    EMPTY_RULE,                              /* TK_RIGHT_BRACKET */
-    EMPTY_RULE,                              /* TK_COMMA */
-    EMPTY_RULE,                              /* TK_DOT */
-    EMPTY_RULE,                              /* TK_COLON */
-    EMPTY_RULE,                              /* TK_SEMICOLON */
-    EMPTY_RULE,                              /* TK_ARROW */
-    RULE(unary, binary, PREC_TERM),          /* TK_MINUS */
-    EMPTY_RULE,                              /* TK_MINUS_EQUAL */
-    INFIX_RULE(binary, PREC_TERM),           /* TK_PLUS */
-    EMPTY_RULE,                              /* TK_PLUS_EQUAL */
-    INFIX_RULE(binary, PREC_FACTOR),         /* TK_DIV */
-    EMPTY_RULE,                              /* TK_DIV_EQUAL */
-    INFIX_RULE(binary, PREC_FACTOR),         /* TK_MOD */
-    EMPTY_RULE,                              /* TK_MOD_EQUAL */
-    INFIX_RULE(binary, PREC_FACTOR),         /* TK_MULTIPLY */
-    EMPTY_RULE,                              /* TK_MULTIPLY_EQUAL */
-    INFIX_RULE(pow_, PREC_POW),              /* TK_POW */
-    EMPTY_RULE,                              /* TK_POW_EQUAL */
-    PREFIX_RULE(unary),                      /* TK_NOT */
-    INFIX_RULE(binary, PREC_EQUAL),          /* TK_NOT_EQUAL */
-    EMPTY_RULE,                              /* TK_EQUAL */
-    INFIX_RULE(binary, PREC_EQUAL),          /* TK_EQUAL_EQUAL */
-    INFIX_RULE(binary, PREC_COMPARE),        /* TK_GREATER */
-    INFIX_RULE(binary, PREC_COMPARE),        /* TK_GREATER_EQUAL */
-    INFIX_RULE(binary, PREC_COMPARE),        /* TK_LESS */
-    INFIX_RULE(binary, PREC_COMPARE),        /* TK_LESS_EQUAL */
-    INFIX_RULE(and_, PREC_AND),              /* TK_AND */
-    INFIX_RULE(or_, PREC_OR),                /* TK_OR */
-    INFIX_RULE(ternary, PREC_TERNARY),       /* TK_TERNARY */
-    PREFIX_RULE(variable),                   /* TK_IDENTIFIER */
-    PREFIX_RULE(string),                     /* TK_STRING */
-    PREFIX_RULE(number),                     /* TK_NUMBER */
-    EMPTY_RULE,                              /* TK_BREAK */
-    EMPTY_RULE,                              /* TK_CLASS */
-    EMPTY_RULE,                              /* TK_ELSE */
-    PREFIX_RULE(literal),                    /* TK_FALSE */
-    EMPTY_RULE,                              /* TK_FOR */
-    EMPTY_RULE,                              /* TK_FUNCTION */
-    EMPTY_RULE,                              /* TK_IF */
-    EMPTY_RULE,                              /* TK_NEXT */
-    PREFIX_RULE(literal),                    /* TK_NULL */
-    EMPTY_RULE,                              /* TK_RETURN */
-    EMPTY_RULE,                              /* TK_SUPER */
-    EMPTY_RULE,                              /* TK_SWITCH */
-    EMPTY_RULE,                              /* TK_THIS */
-    PREFIX_RULE(literal),                    /* TK_TRUE */
-    EMPTY_RULE,                              /* TK_VAR */
-    EMPTY_RULE,                              /* TK_WHEN */
-    EMPTY_RULE,                              /* TK_WHILE */
-    EMPTY_RULE,                              /* TK_ERROR */
-    EMPTY_RULE                               /* TK_EOF */
+    RULE(grouping, call, PREC_TOP),    /* TK_LEFT_PAREN */
+    EMPTY_RULE,                        /* TK_RIGHT_PAREN */
+    EMPTY_RULE,                        /* TK_LEFT_BRACE */
+    EMPTY_RULE,                        /* TK_RIGHT_BRACE */
+    RULE(list, subscript, PREC_TOP),   /* TK_LEFT_BRACKET */
+    EMPTY_RULE,                        /* TK_RIGHT_BRACKET */
+    EMPTY_RULE,                        /* TK_COMMA */
+    EMPTY_RULE,                        /* TK_DOT */
+    EMPTY_RULE,                        /* TK_COLON */
+    EMPTY_RULE,                        /* TK_SEMICOLON */
+    EMPTY_RULE,                        /* TK_ARROW */
+    RULE(unary, binary, PREC_TERM),    /* TK_MINUS */
+    EMPTY_RULE,                        /* TK_MINUS_EQUAL */
+    INFIX_RULE(binary, PREC_TERM),     /* TK_PLUS */
+    EMPTY_RULE,                        /* TK_PLUS_EQUAL */
+    INFIX_RULE(binary, PREC_FACTOR),   /* TK_DIV */
+    EMPTY_RULE,                        /* TK_DIV_EQUAL */
+    INFIX_RULE(binary, PREC_FACTOR),   /* TK_MOD */
+    EMPTY_RULE,                        /* TK_MOD_EQUAL */
+    INFIX_RULE(binary, PREC_FACTOR),   /* TK_MULTIPLY */
+    EMPTY_RULE,                        /* TK_MULTIPLY_EQUAL */
+    INFIX_RULE(pow_, PREC_POW),        /* TK_POW */
+    EMPTY_RULE,                        /* TK_POW_EQUAL */
+    PREFIX_RULE(unary),                /* TK_NOT */
+    INFIX_RULE(binary, PREC_EQUAL),    /* TK_NOT_EQUAL */
+    EMPTY_RULE,                        /* TK_EQUAL */
+    INFIX_RULE(binary, PREC_EQUAL),    /* TK_EQUAL_EQUAL */
+    INFIX_RULE(binary, PREC_COMPARE),  /* TK_GREATER */
+    INFIX_RULE(binary, PREC_COMPARE),  /* TK_GREATER_EQUAL */
+    INFIX_RULE(binary, PREC_COMPARE),  /* TK_LESS */
+    INFIX_RULE(binary, PREC_COMPARE),  /* TK_LESS_EQUAL */
+    INFIX_RULE(and_, PREC_AND),        /* TK_AND */
+    INFIX_RULE(or_, PREC_OR),          /* TK_OR */
+    INFIX_RULE(ternary, PREC_TERNARY), /* TK_TERNARY */
+    PREFIX_RULE(variable),             /* TK_IDENTIFIER */
+    PREFIX_RULE(string),               /* TK_STRING */
+    PREFIX_RULE(number),               /* TK_NUMBER */
+    EMPTY_RULE,                        /* TK_BREAK */
+    EMPTY_RULE,                        /* TK_CLASS */
+    EMPTY_RULE,                        /* TK_ELSE */
+    PREFIX_RULE(literal),              /* TK_FALSE */
+    EMPTY_RULE,                        /* TK_FOR */
+    EMPTY_RULE,                        /* TK_FUNCTION */
+    EMPTY_RULE,                        /* TK_IF */
+    EMPTY_RULE,                        /* TK_NEXT */
+    PREFIX_RULE(literal),              /* TK_NULL */
+    EMPTY_RULE,                        /* TK_RETURN */
+    EMPTY_RULE,                        /* TK_SUPER */
+    EMPTY_RULE,                        /* TK_SWITCH */
+    EMPTY_RULE,                        /* TK_THIS */
+    PREFIX_RULE(literal),              /* TK_TRUE */
+    EMPTY_RULE,                        /* TK_VAR */
+    EMPTY_RULE,                        /* TK_WHEN */
+    EMPTY_RULE,                        /* TK_WHILE */
+    EMPTY_RULE,                        /* TK_ERROR */
+    EMPTY_RULE                         /* TK_EOF */
 };
 
 #undef EMPTY_RULE
