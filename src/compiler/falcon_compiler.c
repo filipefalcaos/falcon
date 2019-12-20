@@ -465,7 +465,7 @@ static void defineVariable(FalconCompiler *compiler, uint8_t global) {
         return;                               /* Only globals are defined at runtime */
     }
 
-    emitBytes(compiler, OP_DEFINE_GLOBAL, global);
+    emitBytes(compiler, OP_DEF_GLOBAL, global);
 }
 
 /**
@@ -482,7 +482,6 @@ static uint8_t argumentList(FalconCompiler *compiler) {
         } while (match(compiler, TK_COMMA));
     }
 
-    consume(compiler, TK_RIGHT_PAREN, FALCON_CALL_LIST_PAREN_ERR);
     return argCount;
 }
 
@@ -621,6 +620,7 @@ PARSE_RULE(binary) {
 PARSE_RULE(call) {
     (void) canAssign; /* Unused */
     uint8_t argCount = argumentList(compiler);
+    consume(compiler, TK_RIGHT_PAREN, FALCON_CALL_LIST_PAREN_ERR);
     emitBytes(compiler, OP_CALL, argCount);
 }
 
@@ -640,6 +640,9 @@ PARSE_RULE(grouping) {
  */
 PARSE_RULE(list) {
     (void) canAssign; /* Unused */
+    int argCount = argumentList(compiler);
+    consume(compiler, TK_RIGHT_BRACKET, FALCON_LIST_BRACKET_ERR);
+    emitBytes(compiler, OP_LIST, argCount);
 }
 
 /**
@@ -1088,6 +1091,7 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case OP_FALSE_LIT:
         case OP_TRUE_LIT:
         case OP_NULL_LIT:
+        case OP_LIST:
         case OP_NOT:
         case OP_EQUAL:
         case OP_GREATER:
@@ -1107,7 +1111,7 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case OP_TEMP:
             return 0; /* Instructions with no arguments */
 
-        case OP_DEFINE_GLOBAL:
+        case OP_DEF_GLOBAL:
         case OP_GET_GLOBAL:
         case OP_SET_GLOBAL:
         case OP_GET_UPVALUE:

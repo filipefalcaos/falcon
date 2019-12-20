@@ -139,10 +139,10 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
             case OBJ_NATIVE: {
                 FalconNativeFn native = FALCON_AS_NATIVE(callee)->function;
                 FalconValue out =
-                    native(vm, argCount, vm->stackTop - argCount); /* Runs native func */
-                if (FALCON_IS_ERR(out)) return false; /* Checks if a runtime error occurred */
-                vm->stackTop -= argCount + 1;         /* Update the stack to before function call */
-                if (!falconPush(vm, out)) return false; /* Pushes the return value on the stack */
+                    native(vm, argCount, vm->stackTop - argCount); /* Runs native function */
+                if (FALCON_IS_ERR(out)) return false;   /* Checks if a runtime error occurred */
+                vm->stackTop -= argCount + 1;           /* Updates the stack to where it was */
+                if (!falconPush(vm, out)) return false; /* Pushes the return value */
                 return true;
             }
             default:
@@ -207,18 +207,18 @@ static int compareStrings(FalconVM *vm) {
  * string to the stack.
  */
 static void concatenateStrings(FalconVM *vm) {
-    ObjString *b = FALCON_AS_STRING(peek(vm, 0));
-    ObjString *a = FALCON_AS_STRING(peek(vm, 1));
-    ObjString *result = falconConcatStrings(vm, b, a);   /* Concatenates both strings */
-    falconPop(vm);                                             /* Pops string "b" */
-    falconPop(vm);                                             /* Pops string "a" */
-    falconPush(vm, FALCON_OBJ_VAL(result));                    /* Pushes string "result" */
+    ObjString *b = FALCON_AS_STRING(peek(vm, 0));      /* Avoids GC */
+    ObjString *a = FALCON_AS_STRING(peek(vm, 1));      /* Avoids GC */
+    ObjString *result = falconConcatStrings(vm, b, a); /* Concatenates both strings */
+    falconPop(vm);
+    falconPop(vm);
+    falconPush(vm, FALCON_OBJ_VAL(result));                    /* Pushes concatenated string */
     falconTableSet(vm, &vm->strings, result, FALCON_NULL_VAL); /* Interns the string */
 }
 
 /**
  * Loops through all the instructions in a bytecode chunk. Each turn through the loop, it reads and
- * executes the current bytecode instruction.
+ * executes the current instruction.
  */
 static FalconResultCode run(FalconVM *vm) {
     CallFrame *frame = &vm->frames[vm->frameCount - 1]; /* Current call frame */
@@ -303,6 +303,7 @@ static FalconResultCode run(FalconVM *vm) {
         }                                                                                 \
     } while (false)
 
+    /* Main virtual machine loop */
     while (true) {
 #ifdef FALCON_DEBUG_LEVEL_01
         if (vm->stack != vm->stackTop) falconDumpStack(vm);
@@ -329,6 +330,13 @@ static FalconResultCode run(FalconVM *vm) {
             case OP_NULL_LIT:
                 if (!falconPush(vm, FALCON_NULL_VAL)) return FALCON_RUNTIME_ERROR;
                 break;
+
+            /* Lists */
+            case OP_LIST: {
+                ObjList *list = falconList(vm, READ_BYTE());
+                falconPush(vm, FALCON_OBJ_VAL(list));
+                break;
+            }
 
             /* Relational operations */
             case OP_AND: {
@@ -400,7 +408,7 @@ static FalconResultCode run(FalconVM *vm) {
             }
 
             /* Variable operations */
-            case OP_DEFINE_GLOBAL: {
+            case OP_DEF_GLOBAL: {
                 ObjString *name = READ_STRING();
                 falconTableSet(vm, &vm->globals, name, peek(vm, 0));
                 falconPop(vm);
@@ -516,10 +524,7 @@ static FalconResultCode run(FalconVM *vm) {
             case OP_POP_EXPR: {
                 FalconValue result = peek(vm, 0);
                 if (!FALCON_IS_NULL(result)) {
-                    bool isString = FALCON_IS_STRING(result);
-                    if (isString) printf("\"");
-                    falconPrintVal(vm, result);
-                    if (isString) printf("\"");
+                    falconPrintVal(vm, result, true);
                     printf("\n");
                 }
 

@@ -69,10 +69,11 @@ ObjFunction *falconCompile(FalconVM *vm, const char *source);
 
 /* Compilation error messages */
 /* Expressions */
-#define FALCON_GRP_EXPR_ERR     "Expected ')' after expression."
+#define FALCON_GRP_EXPR_ERR     "Expected a ')' after expression."
 #define FALCON_TERNARY_EXPR_ERR "Expected a ':' after first branch of ternary operator."
-#define FALCON_EXPR_ERR         "Expected expression."
+#define FALCON_EXPR_ERR         "Expected an expression."
 #define FALCON_EXPR_STMT_ERR    "Expected a ';' after expression."
+#define FALCON_LIST_BRACKET_ERR "Expected a ']' after list elements."
 
 /* Conditionals and Loops */
 #define FALCON_IF_STMT_ERR       "Expected a '{' after 'if' condition."
@@ -100,9 +101,9 @@ ObjFunction *falconCompile(FalconVM *vm, const char *source);
 
 /* Functions and Blocks */
 #define FALCON_BLOCK_BRACE_ERR      "Expected a '}' after block."
-#define FALCON_CALL_LIST_PAREN_ERR  "Expected a ')' after arguments."
+#define FALCON_CALL_LIST_PAREN_ERR  "Expected a ')' after function arguments."
 #define FALCON_FUNC_NAME_PAREN_ERR  "Expected a '(' after function name."
-#define FALCON_FUNC_LIST_PAREN_ERR  "Expected a ')' after parameters."
+#define FALCON_FUNC_LIST_PAREN_ERR  "Expected a ')' after function parameters."
 #define FALCON_FUNC_BODY_BRACE_ERR  "Expected a '{' before function body."
 #define FALCON_FUNC_NAME_ERR        "Expected a function name."
 #define FALCON_PARAM_NAME_ERR       "Expected a parameter name."

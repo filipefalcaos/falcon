@@ -71,8 +71,10 @@ ObjNative *falconNative(FalconVM *vm, FalconNativeFn function, const char *name)
 /**
  * Allocates a new Falcon list object.
  */
-ObjList *falconList(FalconVM *vm) {
+ObjList *falconList(FalconVM *vm, int size) {
     ObjList *list = FALCON_ALLOCATE_OBJ(vm, ObjList, OBJ_LIST);
-    falconInitValArray(list->elements);
+    list->elements.count = 0;
+    list->elements.capacity = size;
+    list->elements.values = FALCON_ALLOCATE(vm, FalconValue, size);
     return list;
 }

@@ -16,6 +16,9 @@ typedef enum {
     OP_TRUE_LIT,  /* "true" literal */
     OP_NULL_LIT,  /* "null" literal */
 
+    /* Lists */
+    OP_LIST, /* Create a new list */
+
     /* Relational operations */
     OP_AND,     /* 'and' logical operator */
     OP_OR,      /* 'or' logical operator */
@@ -34,7 +37,7 @@ typedef enum {
     OP_POW,      /* "^" operator */
 
     /* Variable operations */
-    OP_DEFINE_GLOBAL, /* Define global variable */
+    OP_DEF_GLOBAL,    /* Define global variable */
     OP_GET_GLOBAL,    /* Get global variable value */
     OP_SET_GLOBAL,    /* Set global variable value */
     OP_GET_UPVALUE,   /* Get upvalue value */

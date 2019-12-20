@@ -273,11 +273,11 @@ FALCON_NATIVE(falconInputNative) {
 FALCON_NATIVE(falconPrintNative) {
     if (argCount > 1) {
         for (int i = 0; i < argCount; i++) {
-            falconPrintVal(vm, args[i]);
+            falconPrintVal(vm, args[i], false);
             if (i < argCount - 1) printf(" "); /* Separator */
         }
     } else {
-        falconPrintVal(vm, *args);
+        falconPrintVal(vm, *args, false);
     }
 
     printf("\n"); /* End */
@@ -296,8 +296,8 @@ FALCON_NATIVE(falconPrintNative) {
  * Defines a new native function for Falcon.
  */
 static void defNative(FalconVM *vm, const char *name, FalconNativeFn function) {
-    falconPush(vm, FALCON_OBJ_VAL(falconCopyString(vm, name, (int) strlen(name))));
-    falconPush(vm, FALCON_OBJ_VAL(falconNative(vm, function, name)));
+    falconPush(vm, FALCON_OBJ_VAL(falconCopyString(vm, name, (int) strlen(name)))); /* Avoids GC */
+    falconPush(vm, FALCON_OBJ_VAL(falconNative(vm, function, name)));               /* Avoids GC */
     falconTableSet(vm, &vm->globals, FALCON_AS_STRING(vm->stack[0]), vm->stack[1]);
     falconPop(vm);
     falconPop(vm);

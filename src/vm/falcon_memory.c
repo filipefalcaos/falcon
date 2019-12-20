@@ -103,7 +103,7 @@ void falconFreeObj(FalconVM *vm, FalconObj *object) {
         }
         case OBJ_LIST: {
             ObjList *list = (ObjList *) object;
-            FALCON_FREE_ARRAY(vm, FalconValue, list->elements->values, list->elements->capacity);
+            FALCON_FREE_ARRAY(vm, FalconValue, list->elements.values, list->elements.capacity);
             FALCON_FREE(vm, ObjList, object);
             break;
         }

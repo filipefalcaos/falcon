@@ -61,6 +61,6 @@ void falconWriteValArray(FalconVM *vm, ValueArray *valueArray, FalconValue value
 bool falconValEqual(FalconValue a, FalconValue b);
 bool falconIsFalsy(FalconValue value);
 char *falconValToString(FalconVM *vm, FalconValue *value);
-void falconPrintVal(FalconVM *vm, FalconValue value);
+void falconPrintVal(FalconVM *vm, FalconValue value, bool printQuotes);
 
 #endif // FALCON_VALUE_H

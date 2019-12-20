@@ -45,9 +45,7 @@ static int constantInstruction(const char *name, FalconVM *vm, BytecodeChunk *by
 
     /* Prints the constant */
     printf("%-16s %4d ", name, constant);
-    printf("'");
-    falconPrintVal(vm, value);
-    printf("'");
+    falconPrintVal(vm, value, true);
     printf("\n");
     return offset + 2;
 }
@@ -62,9 +60,7 @@ static int constantInstruction16(const char *name, FalconVM *vm, BytecodeChunk *
 
     /* Prints the constant */
     printf("%-16s %4d ", name, constant);
-    printf("'");
-    falconPrintVal(vm, value);
-    printf("'");
+    falconPrintVal(vm, value, true);
     printf("\n");
     return offset + 3;
 }
@@ -76,7 +72,7 @@ static int closureInstruction(const char *name, FalconVM *vm, BytecodeChunk *byt
     offset++;
     uint8_t constant = bytecode->code[offset++];
     printf("%-16s %4d ", name, constant);
-    falconPrintVal(vm, bytecode->constants.values[constant]);
+    falconPrintVal(vm, bytecode->constants.values[constant], false);
     printf("\n");
 
     ObjFunction *function = FALCON_AS_FUNCTION(bytecode->constants.values[constant]);
@@ -114,6 +110,8 @@ int falconDumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
             return simpleInstruction("TRUE_LIT", offset);
         case OP_NULL_LIT:
             return simpleInstruction("NULL_LIT", offset);
+        case OP_LIST:
+            return byteInstruction("NEW_LIST", bytecode, offset);
         case OP_AND:
             return simpleInstruction("AND", offset);
         case OP_OR:
@@ -140,7 +138,7 @@ int falconDumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
             return simpleInstruction("MULTIPLY", offset);
         case OP_POW:
             return simpleInstruction("POW", offset);
-        case OP_DEFINE_GLOBAL:
+        case OP_DEF_GLOBAL:
             return constantInstruction("DEFINE_GLOBAL", vm, bytecode, offset);
         case OP_GET_GLOBAL:
             return constantInstruction("GET_GLOBAL", vm, bytecode, offset);
@@ -199,7 +197,7 @@ void falconDumpStack(FalconVM *vm) {
     printf("Stack:  ");
     for (FalconValue *slot = vm->stack; slot < vm->stackTop; slot++) {
         printf("[ ");
-        falconPrintVal(vm, *slot);
+        falconPrintVal(vm, *slot, false);
         printf(" ] ");
     }
     printf("\n");

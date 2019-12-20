@@ -66,7 +66,7 @@ typedef struct {
 /* Falcon's list object */
 typedef struct {
     FalconObj obj;
-    ValueArray *elements;
+    ValueArray elements;
 } ObjList;
 
 /* Gets a object type from an Falcon Value */
@@ -90,7 +90,7 @@ ObjUpvalue *falconUpvalue(FalconVM *vm, FalconValue *slot);
 ObjClosure *falconClosure(FalconVM *vm, ObjFunction *function);
 ObjFunction *falconFunction(FalconVM *vm);
 ObjNative *falconNative(FalconVM *vm, FalconNativeFn function, const char *name);
-ObjList *falconList(FalconVM *vm);
+ObjList *falconList(FalconVM *vm, int size);
 
 /**
  * Checks if a Value is of an FalconObj type.

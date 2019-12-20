@@ -117,7 +117,7 @@ static void blackenObject(FalconVM *vm, FalconObj *object) {
         }
         case OBJ_LIST: {
             ObjList *list = (ObjList *) object;
-            markArray(vm, list->elements);
+            markArray(vm, &list->elements);
             break;
         }
         case OBJ_UPVALUE:

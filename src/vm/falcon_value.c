@@ -70,7 +70,7 @@ bool falconIsFalsy(FalconValue value) {
     return FALCON_IS_NULL(value) || (FALCON_IS_BOOL(value) && !FALCON_AS_BOOL(value)) ||
            (FALCON_IS_NUM(value) && FALCON_AS_NUM(value) == 0) ||
            (FALCON_IS_STRING(value) && FALCON_AS_STRING(value)->length == 0) ||
-           (FALCON_IS_LIST(value) && FALCON_AS_LIST(value)->elements->count == 0);
+           (FALCON_IS_LIST(value) && FALCON_AS_LIST(value)->elements.count == 0);
 }
 
 /* String conversion constants */
@@ -105,8 +105,6 @@ char *falconValToString(FalconVM *vm, FalconValue *value) {
             break;
         case VAL_OBJ:
             switch (FALCON_OBJ_TYPE(*value)) {
-                case OBJ_STRING:
-                    return FALCON_AS_CSTRING(*value);
                 case OBJ_CLOSURE: {
                     ObjClosure *closure = FALCON_AS_CLOSURE(*value);
                     FUNCTION_TO_STR(vm, closure->function);
@@ -125,7 +123,7 @@ char *falconValToString(FalconVM *vm, FalconValue *value) {
                 }
                 case OBJ_LIST:
                     (void) *value; /* TODO: implement list to string conversion */
-                    break;
+                    return "[]";
                 default:
                     break;
             }
@@ -143,7 +141,14 @@ char *falconValToString(FalconVM *vm, FalconValue *value) {
 /**
  * Prints a single Falcon Value.
  */
-void falconPrintVal(FalconVM *vm, FalconValue value) {
+void falconPrintVal(FalconVM *vm, FalconValue value, bool printQuotes) {
+    if (FALCON_IS_STRING(value)) {
+        if (printQuotes) printf("\"");
+        printf("%s", FALCON_AS_CSTRING(value));
+        if (printQuotes) printf("\"");
+        return;
+    }
+
     switch (value.type) {
         case VAL_NUM:
             printf("%g", FALCON_AS_NUM(value));
