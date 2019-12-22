@@ -37,13 +37,13 @@ void falconFreeBytecode(FalconVM *vm, BytecodeChunk *bytecode) {
 void falconWriteBytecode(FalconVM *vm, BytecodeChunk *bytecode, uint8_t byte, int line) {
     if (bytecode->capacity < bytecode->count + 1) { /* Checks if should increase */
         int oldCapacity = bytecode->capacity;
-        bytecode->capacity = FALCON_INCREASE_CAPACITY(oldCapacity); /* Increase the capacity */
+        bytecode->capacity = FALCON_INCREASE_CAPACITY(oldCapacity); /* Increases the capacity */
         bytecode->code =
             FALCON_INCREASE_ARRAY(vm, bytecode->code, uint8_t, oldCapacity,
-                                  bytecode->capacity); /* Increase the bytecode chunk */
+                                  bytecode->capacity); /* Increases the bytecode chunk */
     }
 
-    bytecode->code[bytecode->count] = byte; /* Set byte */
+    bytecode->code[bytecode->count] = byte; /* Sets the byte */
     bytecode->count++;
 
     /* Checks if still the same line */
