@@ -139,31 +139,69 @@ char *falconValToString(FalconVM *vm, FalconValue *value) {
 #undef FUNCTION_TO_STR
 
 /**
+ * Prints a given ObjFunction.
+ */
+void printFunction(ObjFunction *function) {
+    if (function->name == NULL) {
+        printf("%s", FALCON_SCRIPT);
+    } else {
+        printf("<fn %s>", function->name->chars);
+    }
+}
+
+/**
  * Prints a single Falcon Value.
  */
 void falconPrintVal(FalconVM *vm, FalconValue value, bool printQuotes) {
-    if (FALCON_IS_STRING(value)) {
-        if (printQuotes) printf("\"");
-        printf("%s", FALCON_AS_CSTRING(value));
-        if (printQuotes) printf("\"");
-        return;
-    } else if (FALCON_IS_LIST(value)) {
-        ObjList *list = FALCON_AS_LIST(value);
-        printf("[");
-        for (int i = 0; i < list->elements.count; i++) {
-            falconPrintVal(vm, list->elements.values[i], printQuotes);
-            if (i != list->elements.count - 1) printf(", ");
-        }
-        printf("]");
-        return;
-    }
-
     switch (value.type) {
+        case VAL_BOOL:
+            printf("%s", FALCON_AS_BOOL(value) ? "true" : "false");
+            break;
+        case VAL_NULL:
+            printf("null");
+            break;
         case VAL_NUM:
             printf("%g", FALCON_AS_NUM(value));
             break;
+        case VAL_OBJ:
+            switch (FALCON_OBJ_TYPE(value)) {
+                case OBJ_CLOSURE: {
+                    ObjClosure *closure = FALCON_AS_CLOSURE(value);
+                    printFunction(closure->function);
+                    break;
+                }
+                case OBJ_FUNCTION: {
+                    ObjFunction *function = FALCON_AS_FUNCTION(value);
+                    printFunction(function);
+                    break;
+                }
+                case OBJ_NATIVE: {
+                    ObjNative *native = FALCON_AS_NATIVE(value);
+                    printf("<native fn %s>", native->name);
+                    break;
+                }
+                case OBJ_STRING: {
+                    if (printQuotes) printf("\"");
+                    printf("%s", FALCON_AS_CSTRING(value));
+                    if (printQuotes) printf("\"");
+                    break;
+                }
+                case OBJ_LIST: {
+                    ObjList *list = FALCON_AS_LIST(value);
+                    printf("[");
+
+                    for (int i = 0; i < list->elements.count; i++) {
+                        falconPrintVal(vm, list->elements.values[i], printQuotes);
+                        if (i != list->elements.count - 1) printf(", ");
+                    }
+
+                    printf("]");
+                    break;
+                }
+                default:
+                    break;
+            }
         default:
-            printf("%s", falconValToString(vm, &value));
             break;
     }
 }
