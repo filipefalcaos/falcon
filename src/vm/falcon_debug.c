@@ -111,7 +111,9 @@ int falconDumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
         case OP_NULL_LIT:
             return simpleInstruction("NULL_LIT", offset);
         case OP_LIST:
-            return byteInstruction("NEW_LIST", bytecode, offset);
+            return byteInstruction("LIST", bytecode, offset);
+        case OP_PUSH_LIST:
+            return simpleInstruction("PUSH_LIST", offset);
         case OP_AND:
             return simpleInstruction("AND", offset);
         case OP_OR:

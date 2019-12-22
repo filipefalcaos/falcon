@@ -337,6 +337,13 @@ static FalconResultCode run(FalconVM *vm) {
                 falconPush(vm, FALCON_OBJ_VAL(list));
                 break;
             }
+            case OP_PUSH_LIST: {
+                FalconValue element = peek(vm, 0); /* Avoids GC */
+                ObjList *list = FALCON_AS_LIST(peek(vm, 1));
+                falconWriteValArray(vm, &list->elements, element);
+                falconPop(vm);
+                break;
+            }
 
             /* Relational operations */
             case OP_AND: {

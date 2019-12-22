@@ -147,6 +147,15 @@ void falconPrintVal(FalconVM *vm, FalconValue value, bool printQuotes) {
         printf("%s", FALCON_AS_CSTRING(value));
         if (printQuotes) printf("\"");
         return;
+    } else if (FALCON_IS_LIST(value)) {
+        ObjList *list = FALCON_AS_LIST(value);
+        printf("[");
+        for (int i = 0; i < list->elements.count; i++) {
+            falconPrintVal(vm, list->elements.values[i], printQuotes);
+            if (i != list->elements.count - 1) printf(", ");
+        }
+        printf("]");
+        return;
     }
 
     switch (value.type) {

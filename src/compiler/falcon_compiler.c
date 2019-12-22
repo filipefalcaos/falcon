@@ -640,9 +640,16 @@ PARSE_RULE(grouping) {
  */
 PARSE_RULE(list) {
     (void) canAssign; /* Unused */
-    int argCount = argumentList(compiler);
+    emitBytes(compiler, OP_LIST, FALCON_MIN_LIST); /* Creates a new list with default size */
+
+    if (!check(compiler->parser, TK_RIGHT_PAREN)) {
+        do {
+            expression(compiler);
+            emitByte(compiler, OP_PUSH_LIST);
+        } while (match(compiler, TK_COMMA));
+    }
+
     consume(compiler, TK_RIGHT_BRACKET, FALCON_LIST_BRACKET_ERR);
-    emitBytes(compiler, OP_LIST, argCount);
 }
 
 /**
@@ -1091,7 +1098,7 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case OP_FALSE_LIT:
         case OP_TRUE_LIT:
         case OP_NULL_LIT:
-        case OP_LIST:
+        case OP_PUSH_LIST:
         case OP_NOT:
         case OP_EQUAL:
         case OP_GREATER:
@@ -1111,6 +1118,7 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case OP_TEMP:
             return 0; /* Instructions with no arguments */
 
+        case OP_LIST:
         case OP_DEF_GLOBAL:
         case OP_GET_GLOBAL:
         case OP_SET_GLOBAL:

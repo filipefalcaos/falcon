@@ -17,7 +17,8 @@ typedef enum {
     OP_NULL_LIT,  /* "null" literal */
 
     /* Lists */
-    OP_LIST, /* Create a new list */
+    OP_LIST,      /* Create a new list */
+    OP_PUSH_LIST, /* Push a value to a list */
 
     /* Relational operations */
     OP_AND,     /* 'and' logical operator */
