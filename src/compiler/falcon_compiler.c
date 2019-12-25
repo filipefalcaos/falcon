@@ -563,6 +563,15 @@ PARSE_RULE(or_) {
 }
 
 /**
+ * Handles a exponentiation expression.
+ */
+PARSE_RULE(pow_) {
+    (void) canAssign;                    /* Unused */
+    parsePrecedence(compiler, PREC_POW); /* Compiles the operand */
+    emitByte(compiler, OP_POW);
+}
+
+/**
  * Handles a binary (infix) expression, by compiling the right operand of the expression (the left
  * one was already compiled). Then, emits the bytecode instruction that performs the binary
  * operation.
@@ -683,15 +692,6 @@ PARSE_RULE(number) {
 }
 
 /**
- * Handles a exponentiation expression.
- */
-PARSE_RULE(pow_) {
-    (void) canAssign;                    /* Unused */
-    parsePrecedence(compiler, PREC_POW); /* Compiles the operand */
-    emitByte(compiler, OP_POW);
-}
-
-/**
  * Handles a string expression by creating a string object, wrapping it in a Value, and then
  * adding it to the constants table.
  */
@@ -707,6 +707,9 @@ PARSE_RULE(string) {
  */
 PARSE_RULE(subscript) {
     (void) canAssign; /* Unused */
+    expression(compiler);
+    consume(compiler, TK_RIGHT_BRACKET, FALCON_SUB_BRACKET_ERR);
+    emitByte(compiler, OP_INDEX_LIST);
 }
 
 /**
@@ -1099,6 +1102,7 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case OP_TRUE_LIT:
         case OP_NULL_LIT:
         case OP_PUSH_LIST:
+        case OP_INDEX_LIST:
         case OP_NOT:
         case OP_EQUAL:
         case OP_GREATER:

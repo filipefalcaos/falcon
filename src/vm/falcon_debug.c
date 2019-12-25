@@ -114,6 +114,8 @@ int falconDumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
             return byteInstruction("LIST", bytecode, offset);
         case OP_PUSH_LIST:
             return simpleInstruction("PUSH_LIST", offset);
+        case OP_INDEX_LIST:
+            return simpleInstruction("INDEX_LIST", offset);
         case OP_AND:
             return simpleInstruction("AND", offset);
         case OP_OR:

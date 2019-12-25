@@ -344,6 +344,12 @@ static FalconResultCode run(FalconVM *vm) {
                 falconPop(vm);
                 break;
             }
+            case OP_INDEX_LIST: {
+                int index = (int) FALCON_AS_NUM(falconPop(vm));
+                ObjList *list = FALCON_AS_LIST(falconPop(vm));
+                falconPush(vm, list->elements.values[index]);
+                break;
+            }
 
             /* Relational operations */
             case OP_AND: {

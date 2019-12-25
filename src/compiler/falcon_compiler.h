@@ -74,6 +74,7 @@ ObjFunction *falconCompile(FalconVM *vm, const char *source);
 #define FALCON_EXPR_ERR         "Expected an expression."
 #define FALCON_EXPR_STMT_ERR    "Expected a ';' after expression."
 #define FALCON_LIST_BRACKET_ERR "Expected a ']' after list elements."
+#define FALCON_SUB_BRACKET_ERR  "Expected a ']' after subscript expression."
 
 /* Conditionals and Loops */
 #define FALCON_IF_STMT_ERR       "Expected a '{' after 'if' condition."
