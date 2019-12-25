@@ -651,7 +651,7 @@ PARSE_RULE(list) {
     (void) canAssign; /* Unused */
     emitBytes(compiler, OP_LIST, FALCON_MIN_LIST); /* Creates a new list with default size */
 
-    if (!check(compiler->parser, TK_RIGHT_PAREN)) {
+    if (!check(compiler->parser, TK_RIGHT_BRACKET)) {
         do {
             expression(compiler);
             emitByte(compiler, OP_PUSH_LIST);
