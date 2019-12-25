@@ -96,5 +96,8 @@ FalconResultCode falconInterpret(FalconVM *vm, const char *source);
 #define FALCON_OPR_NOT_NUM_ERR     "Operand must be a number."
 #define FALCON_OPR_NOT_NUM_STR_ERR "Operands must be two numbers or two strings."
 #define FALCON_DIV_ZERO_ERR        "Cannot perform a division by zero."
+#define FALCON_INDEX_NOT_NUM_ERR   "List index must be a number."
+#define FALCON_INDEX_NOT_LIST_ERR  "Indexed value must be a list."
+#define FALCON_BOUNDS_ERR          "List index out of bounds."
 
 #endif // FALCON_VM_H

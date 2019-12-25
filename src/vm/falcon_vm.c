@@ -345,10 +345,35 @@ static FalconResultCode run(FalconVM *vm) {
                 break;
             }
             case OP_INDEX_LIST: {
-                int index = (int) FALCON_AS_NUM(falconPop(vm));
-                ObjList *list = FALCON_AS_LIST(falconPop(vm));
-                falconPush(vm, list->elements.values[index]);
-                break;
+                FalconValue index = falconPop(vm);
+                FalconValue subscript = falconPop(vm);
+
+                /* Checks if index is a number */
+                if (!FALCON_IS_NUM(index)) {
+                    falconVMError(vm, FALCON_INDEX_NOT_NUM_ERR);
+                    return FALCON_RUNTIME_ERROR;
+                }
+
+                /* Checks if subscript is a list */
+                if (!FALCON_IS_LIST(subscript)) {
+                    falconVMError(vm, FALCON_INDEX_NOT_LIST_ERR);
+                    return FALCON_RUNTIME_ERROR;
+                }
+
+                /* Index and subscript are valid */
+                int indexNum = (int) FALCON_AS_NUM(index);
+                ObjList *list = FALCON_AS_LIST(subscript);
+
+                /* Handles element access */
+                if (indexNum < 0) indexNum = list->elements.count + indexNum;
+                if (indexNum >= 0 && indexNum < list->elements.count) {
+                    falconPush(vm, list->elements.values[indexNum]);
+                    break;
+                }
+
+                /* Out of bounds index */
+                falconVMError(vm, FALCON_BOUNDS_ERR);
+                return FALCON_RUNTIME_ERROR;
             }
 
             /* Relational operations */
