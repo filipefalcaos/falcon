@@ -11,9 +11,8 @@
 #include "../vm/falcon_object.h"
 #include "falcon_scanner.h"
 
-/* Function types:
- * - TYPE_FUNCTION represents an user-defined function
- * - TYPE_SCRIPT represents the top-level (global scope) code */
+/* Function types: (i) TYPE_FUNCTION represents an user-defined function; and (ii) TYPE_SCRIPT
+ * represents the top-level (global scope) code */
 typedef enum { TYPE_FUNCTION, TYPE_SCRIPT } FunctionType;
 
 /* Local variable representation */

@@ -119,7 +119,7 @@ static void emitBytes(FalconCompiler *compiler, uint8_t byte_1, uint8_t byte_2) 
 }
 
 /**
- * Emits a new 'loop back' instruction which jumps backwards by a given offset.
+ * Emits a new "loop back" instruction which jumps backwards by a given offset.
  */
 static void emitLoop(FalconCompiler *compiler, int loopStart) {
     emitByte(compiler, LOOP_BACK);
