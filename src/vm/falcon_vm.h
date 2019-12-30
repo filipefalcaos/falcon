@@ -16,8 +16,8 @@
 /* Call frame representation */
 typedef struct {
     ObjClosure *closure; /* Running closure */
-    uint8_t *pc;               /* Function's program counter */
-    FalconValue *slots;        /* Function's stack pointer */
+    uint8_t *pc;         /* Function's program counter */
+    FalconValue *slots;  /* Function's stack pointer */
 } CallFrame;
 
 /* Falcon's virtual machine representation */
@@ -65,16 +65,15 @@ struct FalconVM {
      * that triggers the next garbage collection */
     size_t bytesAllocated;
     size_t nextGC;
-
 };
 
 /* Interpretation result codes */
 typedef enum { FALCON_OK, FALCON_COMPILE_ERROR, FALCON_RUNTIME_ERROR } FalconResultCode;
 
 /* Virtual machine operations */
-void falconVMError(FalconVM *vm, const char *format, ...);
 void falconInitVM(FalconVM *vm);
 void falconFreeVM(FalconVM *vm);
+void resetVMStack(FalconVM *vm);
 bool falconPush(FalconVM *vm, FalconValue value);
 FalconValue falconPop(FalconVM *vm);
 FalconResultCode falconInterpret(FalconVM *vm, const char *source);
@@ -96,5 +95,8 @@ FalconResultCode falconInterpret(FalconVM *vm, const char *source);
 #define FALCON_OPR_NOT_NUM_ERR     "Operand must be a number."
 #define FALCON_OPR_NOT_NUM_STR_ERR "Operands must be two numbers or two strings."
 #define FALCON_DIV_ZERO_ERR        "Cannot perform a division by zero."
+#define FALCON_INDEX_NOT_NUM_ERR   "List index must be a number."
+#define FALCON_INDEX_NOT_LIST_ERR  "Indexed value must be a list."
+#define FALCON_BOUNDS_ERR          "List index out of bounds."
 
 #endif // FALCON_VM_H

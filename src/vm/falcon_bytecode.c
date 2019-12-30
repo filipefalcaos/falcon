@@ -37,13 +37,13 @@ void falconFreeBytecode(FalconVM *vm, BytecodeChunk *bytecode) {
 void falconWriteBytecode(FalconVM *vm, BytecodeChunk *bytecode, uint8_t byte, int line) {
     if (bytecode->capacity < bytecode->count + 1) { /* Checks if should increase */
         int oldCapacity = bytecode->capacity;
-        bytecode->capacity = FALCON_INCREASE_CAPACITY(oldCapacity); /* Increase the capacity */
+        bytecode->capacity = FALCON_INCREASE_CAPACITY(oldCapacity); /* Increases the capacity */
         bytecode->code =
             FALCON_INCREASE_ARRAY(vm, bytecode->code, uint8_t, oldCapacity,
-                                  bytecode->capacity); /* Increase the bytecode chunk */
+                                  bytecode->capacity); /* Increases the bytecode chunk */
     }
 
-    bytecode->code[bytecode->count] = byte; /* Set byte */
+    bytecode->code[bytecode->count] = byte; /* Sets the byte */
     bytecode->count++;
 
     /* Checks if still the same line */
@@ -92,9 +92,9 @@ int falconGetLine(BytecodeChunk *bytecode, int instruction) {
  * Adds a new constant to a bytecode chunk.
  */
 int falconAddConstant(FalconVM *vm, BytecodeChunk *bytecode, FalconValue value) {
-    falconPush(vm, value); /* Adds to stack to avoid being garbage collected */
-    falconWriteValArray(vm, &bytecode->constants, value);
-    falconPop(vm); /* Removes from the stack */
+    falconPush(vm, value);                                /* Avoids GC */
+    falconWriteValArray(vm, &bytecode->constants, value); /* Adds the constant */
+    falconPop(vm);
     return bytecode->constants.count - 1;
 }
 
@@ -102,7 +102,7 @@ int falconAddConstant(FalconVM *vm, BytecodeChunk *bytecode, FalconValue value) 
  * Writes a 2 bytes constant to the bytecode chunk.
  */
 void falconWriteConstant(FalconVM *vm, BytecodeChunk *bytecode, uint16_t index, int line) {
-    falconWriteBytecode(vm, bytecode, OP_CONSTANT, line);
+    falconWriteBytecode(vm, bytecode, LOAD_CONST, line);
     falconWriteBytecode(vm, bytecode, (uint8_t)(index & 0xffu), line);
     falconWriteBytecode(vm, bytecode, (uint8_t)((uint16_t)(index >> 8u) & 0xffu), line);
 }

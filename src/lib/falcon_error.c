@@ -8,25 +8,36 @@
 #include "falcon_io.h"
 #include "falcon_math.h"
 
-/* Stack trace limits */
-#define FALCON_MAX_STACK_TRACE 20
-
 /**
  * Presents a compiler time error to the programmer.
  */
-void falconCompileError(FalconVM *vm, Scanner *scanner, Token *token, const char *message) {
+static void falconCompileError(FalconVM *vm, Scanner *scanner, Token *token, const char *message) {
+    int offset = 0;
     uint32_t tkLine = token->line;
     uint32_t tkColumn = token->column;
     const char *fileName = vm->fileName;
     const char *sourceLine = falconGetSourceFromLine(scanner);
 
-    fprintf(stderr, "%s:%d:%d => ", fileName, tkLine, tkColumn); /* Prints file and line */
-    fprintf(stderr, "CompilerError: %s\n", message);             /* Prints error message */
+    /* Prints the file, the line, the error message, and the source line */
+    fprintf(stderr, "%s:%d:%d => ", fileName, tkLine, tkColumn);
+    fprintf(stderr, "CompilerError: %s\n", message);
     fprintf(stderr, "%d | ", tkLine);
-    falconPrintUntil(stderr, sourceLine, '\n'); /* Prints source line */
+    falconPrintUntil(stderr, sourceLine, '\n');
+
+    /* Prints error indicator */
+    if (token->type == TK_EOF) offset = 1;
     fprintf(stderr, "\n");
-    fprintf(stderr, "%*c^\n", tkColumn + falconGetDigits(tkLine) + 2,
-            ' '); /* Prints error indicator */
+    fprintf(stderr, "%*c^\n", tkColumn + falconGetDigits(tkLine) + 2 + offset, ' ');
+}
+
+/**
+ * Presents a syntax/compiler error to the programmer.
+ */
+void falconCompilerError(FalconCompiler *compiler, Token *token, const char *message) {
+    if (compiler->parser->panicMode) return; /* Checks and sets error recovery */
+    compiler->parser->panicMode = true;
+    falconCompileError(compiler->vm, compiler->scanner, token, message); /* Presents the error */
+    compiler->parser->hadError = true;
 }
 
 /**
@@ -37,8 +48,7 @@ static void printCallFrames(FalconVM *vm, int initial, int final) {
         CallFrame *currentFrame = &vm->frames[i];
         ObjFunction *currentFunction = currentFrame->closure->function;
         size_t currentInstruction = currentFrame->pc - currentFunction->bytecode.code - 1;
-        int currentLine =
-            falconGetLine(&currentFrame->closure->function->bytecode, (int) currentInstruction);
+        int currentLine = falconGetLine(&currentFunction->bytecode, (int) currentInstruction);
 
         /* Prints line and function name */
         fprintf(stderr, "    [Line %d] in ", currentLine);
@@ -60,13 +70,24 @@ void falconRuntimeError(FalconVM *vm, const char *format, va_list args) {
 
     /* Prints a stack trace */
     fprintf(stderr, "Stack trace (last call first):\n");
-    if (vm->frameCount > FALCON_MAX_STACK_TRACE) {
-        printCallFrames(vm, vm->frameCount - 1, vm->frameCount - (FALCON_MAX_STACK_TRACE / 2));
+    if (vm->frameCount > FALCON_MAX_TRACE) {
+        printCallFrames(vm, vm->frameCount - 1, vm->frameCount - (FALCON_MAX_TRACE / 2));
         fprintf(stderr, "    ...\n");
-        printCallFrames(vm, (FALCON_MAX_STACK_TRACE / 2) - 1, 0);
+        printCallFrames(vm, (FALCON_MAX_TRACE / 2) - 1, 0);
         fprintf(stderr, "%d call frames not listed. Run with option \"--debug\" to see all.\n",
-                vm->frameCount - FALCON_MAX_STACK_TRACE);
+                vm->frameCount - FALCON_MAX_TRACE);
     } else {
         printCallFrames(vm, vm->frameCount - 1, 0);
     }
+}
+
+/**
+ * Presents a runtime error to the programmer and resets the VM stack.
+ */
+void falconVMError(FalconVM *vm, const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    falconRuntimeError(vm, format, args); /* Presents the error */
+    va_end(args);
+    resetVMStack(vm); /* Resets the stack due to error */
 }

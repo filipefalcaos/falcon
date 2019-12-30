@@ -41,11 +41,13 @@ void falconPrintUsage();
     "Call " FALCON_HELP_FUNC ", " FALCON_LIC_FUNC " or " FALCON_AUTHORS_FUNC \
     " for more information."
 
-/* Limits */
+/* Values and limits */
+#define FALCON_MIN_LIST   10
 #define FALCON_REPL_MAX   500
 #define FALCON_MAX_BYTE   (UINT8_MAX + 1) /* 256 */
 #define FALCON_FRAMES_MAX 1000
 #define FALCON_STACK_MAX  (FALCON_FRAMES_MAX * FALCON_MAX_BYTE) /* 256000 */
+#define FALCON_MAX_TRACE 20
 
 /* Error codes */
 #define FALCON_ERR_USAGE    1

@@ -11,9 +11,13 @@
  * Gets the name (string) of a given Falcon Object type.
  */
 const char *falconGetObjName(ObjType type) {
-    const char *objectTypeNames[] = {"OBJ_STRING", "OBJ_UPVALUE",
-                                     "OBJ_CLOSURE", "OBJ_FUNCTION",
-                                     "OBJ_NATIVE"};
+    const char *objectTypeNames[] = {
+        "OBJ_STRING",
+        "OBJ_UPVALUE",
+        "OBJ_CLOSURE",
+        "OBJ_FUNCTION",
+        "OBJ_NATIVE"
+    };
     return objectTypeNames[type];
 }
 
@@ -66,4 +70,15 @@ ObjNative *falconNative(FalconVM *vm, FalconNativeFn function, const char *name)
     native->function = function;
     native->name = name;
     return native;
+}
+
+/**
+ * Allocates a new Falcon list object.
+ */
+ObjList *falconList(FalconVM *vm, int size) {
+    ObjList *list = FALCON_ALLOCATE_OBJ(vm, ObjList, OBJ_LIST);
+    list->elements.count = 0;
+    list->elements.capacity = size;
+    list->elements.values = FALCON_ALLOCATE(vm, FalconValue, size);
+    return list;
 }

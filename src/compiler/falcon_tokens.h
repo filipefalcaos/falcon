@@ -15,6 +15,8 @@ typedef enum {
     TK_RIGHT_PAREN,
     TK_LEFT_BRACE,
     TK_RIGHT_BRACE,
+    TK_LEFT_BRACKET,
+    TK_RIGHT_BRACKET,
     TK_COMMA,
     TK_DOT,
     TK_COLON,

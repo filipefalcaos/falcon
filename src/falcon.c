@@ -63,7 +63,7 @@ void falconPrintAuthors() { printf("Falcon authors: %s\n", FALCON_AUTHORS); }
 /**
  * Prints Falcon's MIT license.
  */
-void falconPrintLicense() {  printf("%s\n%s\n", FALCON_COPYRIGHT, FALCON_MORE_INFO); }
+void falconPrintLicense() { printf("%s\n%s\n", FALCON_COPYRIGHT, FALCON_MORE_INFO); }
 
 /**
  * Prints Falcon's interpreter usage details.

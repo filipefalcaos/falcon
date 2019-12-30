@@ -11,7 +11,7 @@ production should appear at least once. The postfix `?` is used for an optional 
 The grammar starts with the first rule that matches an Falcon program:
 
 ```
-program -> declaration* EOF ;
+program -> decl* EOF ;
 ```
 
 ### Declarations
@@ -19,16 +19,16 @@ program -> declaration* EOF ;
 A program starts with a series of declarations:
 
 ```
-declaration -> class_declaration 
-            | function_declaration 
-            | variable_declaration 
-            | statement ;
+decl -> class_decl 
+     | function_decl 
+     | variable_decl 
+     | stmt ;
 
-class_declaration    -> "class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}" ;
-function_declaration -> "fn" function ;
-variable_declaration -> "var" declaration_list ";" ;
-declaration_list     -> single_declaration ( "," single_declaration )* ;
-single_declaration   -> IDENTIFIER ( "=" expression )? ;
+class_decl    -> "class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}" ;
+function_decl -> "fn" function ;
+variable_decl -> "var" decl_list ";" ;
+decl_list     -> single_decl ( "," single_decl )* ;
+single_decl   -> IDENTIFIER ( "=" expr )? ;
 ```
 
 ### Statements
@@ -36,27 +36,27 @@ single_declaration   -> IDENTIFIER ( "=" expression )? ;
 The remaining statement rules are:
 
 ```
-statement -> expression_statement 
-          | for_statement
-          | while_statement
-          | if_statement
-          | switch_statement
-          | break_statement
-          | next_statement
-          | return_statement
-          | block ;
+stmt -> expr_stmt 
+     | for_stmt
+     | while_stmt
+     | if_stmt
+     | switch_stmt
+     | break_stmt
+     | next_stmt
+     | return_stmt
+     | block ;
 
-expression_statement -> expression ";" ;
-for_statement        -> "for" single_declaration "," expression "," expression block ;
-while_statement      -> "while" expression block ;
-if_statement         -> ( "if" | "unless" ) expression block ( "else" ( block | if_statement ) )? ;
-switch_statement     -> "switch" expression "{" switch_case* else_case? "}" ;
-switch_case          -> "when" expression "->" statement* ;
-else_case            -> "else" "->" statement* ;
-break_statement      -> "break" ";"
-next_statement       -> "next" ";" ;
-return_statement     -> "return" expression? ";" ;
-block                -> "{" declaration* "}" ;
+expr_stmt   -> expr ";" ;
+for_stmt    -> "for" single_decl "," expr "," expr block ;
+while_stmt  -> "while" expr block ;
+if_stmt     -> "if" expr block ( "else" ( block | if_stmt ) )? ;
+switch_stmt -> "switch" expr "{" switch_case* else_case? "}" ;
+switch_case -> "when" expr "->" stmt* ;
+else_case   -> "else" "->" stmt* ;
+break_stmt  -> "break" ";" ;
+next_stmt   -> "next" ";" ;
+return_stmt -> "return" expr? ";" ;
+block       -> "{" decl* "}" ;
 ```
 
 Note that `block` is a statement rule, but is also used as a non-terminal in another rule for function bodies. This 
@@ -68,9 +68,13 @@ Falcon expressions produce values by using unary and binary operators with diffe
 precedence levels are explicit in the grammar by setting separate rules:
 
 ```
-expression -> assignment ;
-assignment -> ( call "." )? IDENTIFIER ( "=" | "+=" | "-=" | "*=" | "/=" | "%=" ) assignment
-           | logic_or;
+expr   -> assign ;
+assign -> assign_call? IDENTIFIER subscript? assign_op assign 
+       | logic_or ;
+
+assign_call -> call "." ;
+subscript   -> "[" expression "]" ;
+assign_op   -> "=" | "+=" | "-=" | "*=" | "/=" | "%=" ;
 
 logic_or   -> logic_and ( "or" logic_and )* ;
 logic_and  -> equality ( "and" equality )* ;
@@ -79,13 +83,13 @@ comparison -> addition ( ( ">" | ">=" | "<" | "<=" ) addition )* ;
 
 addition       -> multiplication ( ( "-" | "+" ) multiplication )* ;
 multiplication -> unary ( ( "/" | "*" | "%" ) unary )* ;
+unary          -> ( "not" | "-" ) unary | exponent ;
+exponent       -> "^" exponent | call ;
 
-unary    -> ( "not" | "-" ) unary | exponent ;
-exponent -> "^" exponent | call ;
-call     -> primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
-primary  -> "true" | "false" | "null" | "this" 
-         | NUMBER | STRING | IDENTIFIER | "(" expression ")"
-         | "super" "." IDENTIFIER ;
+call    -> primary ( "(" args? ")" | list | ( "." IDENTIFIER ) )* ;
+list    -> "[" args? "]" ;
+primary -> "true" | "false" | "null" | "this" | NUMBER | STRING 
+        | IDENTIFIER | "(" expr ")" | "super" "." IDENTIFIER ;
 ```
 
 ### Recurrent rules
@@ -93,15 +97,15 @@ primary  -> "true" | "false" | "null" | "this"
 Some recurrent rules not defined in the sections above are:
 
 ```
-function   -> IDENTIFIER "(" parameters? ")" block ;
-parameters -> IDENTIFIER ( "," IDENTIFIER )* ;
-arguments  -> expression ( "," expression )* ;
+function -> IDENTIFIER "(" params? ")" block ;
+params   -> IDENTIFIER ( "," IDENTIFIER )* ;
+args     -> expr ( "," expr )* ;
 ```
 
 ## Lexical Grammar
 
 ```
-NUMBER     -> DIGIT+ ( "." DIGIT+ )? ;
+NUMBER     -> DIGIT+ ( '.' DIGIT+ )? ;
 STRING     -> '"' non_double_quote* '"' ;
 IDENTIFIER -> ALPHA ( ALPHA | DIGIT )* ;
 ALPHA      -> 'a' ... 'z' | 'A' ... 'Z' | '_' ;

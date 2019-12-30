@@ -39,15 +39,14 @@ static int jumpInstruction(const char *name, int sign, BytecodeChunk *bytecode, 
 /**
  * Displays a constant instruction (8 bits).
  */
-static int constantInstruction(const char *name, FalconVM *vm, BytecodeChunk *bytecode, int offset) {
+static int constantInstruction(const char *name, FalconVM *vm, BytecodeChunk *bytecode,
+                               int offset) {
     uint8_t constant = bytecode->code[offset + 1];
     FalconValue value = bytecode->constants.values[constant];
 
     /* Prints the constant */
     printf("%-16s %4d ", name, constant);
-    printf("'");
-    falconPrintVal(vm, value);
-    printf("'");
+    falconPrintVal(vm, value, true);
     printf("\n");
     return offset + 2;
 }
@@ -62,9 +61,7 @@ static int constantInstruction16(const char *name, FalconVM *vm, BytecodeChunk *
 
     /* Prints the constant */
     printf("%-16s %4d ", name, constant);
-    printf("'");
-    falconPrintVal(vm, value);
-    printf("'");
+    falconPrintVal(vm, value, true);
     printf("\n");
     return offset + 3;
 }
@@ -76,7 +73,7 @@ static int closureInstruction(const char *name, FalconVM *vm, BytecodeChunk *byt
     offset++;
     uint8_t constant = bytecode->code[offset++];
     printf("%-16s %4d ", name, constant);
-    falconPrintVal(vm, bytecode->constants.values[constant]);
+    falconPrintVal(vm, bytecode->constants.values[constant], false);
     printf("\n");
 
     ObjFunction *function = FALCON_AS_FUNCTION(bytecode->constants.values[constant]);
@@ -106,76 +103,84 @@ int falconDumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
 
     uint8_t instruction = bytecode->code[offset]; /* Current instruction */
     switch (instruction) {                        /* Verifies the instruction type */
-        case OP_CONSTANT:
-            return constantInstruction16("CONSTANT", vm, bytecode, offset);
-        case OP_FALSE_LIT:
-            return simpleInstruction("FALSE_LIT", offset);
-        case OP_TRUE_LIT:
-            return simpleInstruction("TRUE_LIT", offset);
-        case OP_NULL_LIT:
-            return simpleInstruction("NULL_LIT", offset);
-        case OP_AND:
-            return simpleInstruction("AND", offset);
-        case OP_OR:
-            return simpleInstruction("OR", offset);
-        case OP_NOT:
-            return simpleInstruction("NOT", offset);
-        case OP_EQUAL:
-            return simpleInstruction("EQUAL", offset);
-        case OP_GREATER:
-            return simpleInstruction("GREATER", offset);
-        case OP_LESS:
-            return simpleInstruction("LESS", offset);
-        case OP_ADD:
-            return simpleInstruction("ADD", offset);
-        case OP_SUBTRACT:
-            return simpleInstruction("SUBTRACT", offset);
-        case OP_NEGATE:
-            return simpleInstruction("NEGATE", offset);
-        case OP_DIVIDE:
-            return simpleInstruction("DIVIDE", offset);
-        case OP_MOD:
-            return simpleInstruction("MOD", offset);
-        case OP_MULTIPLY:
-            return simpleInstruction("MULTIPLY", offset);
-        case OP_POW:
-            return simpleInstruction("POW", offset);
-        case OP_DEFINE_GLOBAL:
-            return constantInstruction("DEFINE_GLOBAL", vm, bytecode, offset);
-        case OP_GET_GLOBAL:
+        case LOAD_CONST:
+            return constantInstruction16("LOAD_CONST", vm, bytecode, offset);
+        case LOAD_FALSE:
+            return simpleInstruction("LOAD_FALSE", offset);
+        case LOAD_TRUE:
+            return simpleInstruction("LOAD_TRUE", offset);
+        case LOAD_NULL:
+            return simpleInstruction("LOAD_NULL", offset);
+        case DEF_LIST:
+            return byteInstruction("DEF_LIST", bytecode, offset);
+        case PUSH_LIST:
+            return simpleInstruction("PUSH_LIST", offset);
+        case GET_IDX_LIST:
+            return simpleInstruction("GET_IDX_LIST", offset);
+        case SET_IDX_LIST:
+            return simpleInstruction("SET_IDX_LIST", offset);
+        case BIN_AND:
+            return simpleInstruction("BIN_AND", offset);
+        case BIN_OR:
+            return simpleInstruction("BIN_OR", offset);
+        case UN_NOT:
+            return simpleInstruction("UN_NOT", offset);
+        case BIN_EQUAL:
+            return simpleInstruction("BIN_EQUAL", offset);
+        case BIN_GREATER:
+            return simpleInstruction("BIN_GREATER", offset);
+        case BIN_LESS:
+            return simpleInstruction("BIN_LESS", offset);
+        case BIN_ADD:
+            return simpleInstruction("BIN_ADD", offset);
+        case BIN_SUB:
+            return simpleInstruction("BIN_SUB", offset);
+        case UN_NEG:
+            return simpleInstruction("UN_NEG", offset);
+        case BIN_DIV:
+            return simpleInstruction("BIN_DIV", offset);
+        case BIN_MOD:
+            return simpleInstruction("BIN_MOD", offset);
+        case BIN_MULT:
+            return simpleInstruction("BIN_MULT", offset);
+        case BIN_POW:
+            return simpleInstruction("BIN_POW", offset);
+        case DEF_GLOBAL:
+            return constantInstruction("DEF_GLOBAL", vm, bytecode, offset);
+        case GET_GLOBAL:
             return constantInstruction("GET_GLOBAL", vm, bytecode, offset);
-        case OP_SET_GLOBAL:
+        case SET_GLOBAL:
             return constantInstruction("SET_GLOBAL", vm, bytecode, offset);
-        case OP_GET_UPVALUE:
+        case GET_UPVALUE:
             return byteInstruction("GET_UPVALUE", bytecode, offset);
-        case OP_SET_UPVALUE:
+        case SET_UPVALUE:
             return byteInstruction("SET_UPVALUE", bytecode, offset);
-        case OP_CLOSE_UPVALUE:
-            return simpleInstruction("CLOSE_UPVALUE", offset);
-        case OP_GET_LOCAL:
+        case CLS_UPVALUE:
+            return simpleInstruction("CLS_UPVALUE", offset);
+        case GET_LOCAL:
             return byteInstruction("GET_LOCAL", bytecode, offset);
-        case OP_SET_LOCAL:
+        case SET_LOCAL:
             return byteInstruction("SET_LOCAL", bytecode, offset);
-        case OP_JUMP:
-            return jumpInstruction("JUMP", 1, bytecode, offset);
-        case OP_JUMP_IF_FALSE:
+        case JUMP_FWR:
+            return jumpInstruction("JUMP_FWR", 1, bytecode, offset);
+        case JUMP_IF_FALSE:
             return jumpInstruction("JUMP_IF_FALSE", 1, bytecode, offset);
-        case OP_LOOP:
-            return jumpInstruction("LOOP", -1, bytecode, offset);
-        case OP_CLOSURE:
-            return closureInstruction("CLOSURE", vm, bytecode, offset);
-        case OP_CALL:
-            return byteInstruction("CALL", bytecode, offset);
-        case OP_RETURN:
-            return simpleInstruction("RETURN", offset);
-        case OP_DUP:
-            return simpleInstruction("DUP", offset);
-        case OP_POP:
-            return simpleInstruction("POP", offset);
-        case OP_POP_EXPR:
-            return simpleInstruction("POP_EXPR", offset);
-        case OP_TEMP:
-            return simpleInstruction("TEMP", offset); /* Should not be reachable */
+        case LOOP_BACK:
+            return jumpInstruction("LOOP_BACK", -1, bytecode, offset);
+        case FN_CLOSURE:
+            return closureInstruction("FN_CLOSURE", vm, bytecode, offset);
+        case FN_CALL:
+            return byteInstruction("FN_CALL", bytecode, offset);
+        case FN_RETURN:
+            return simpleInstruction("FN_RETURN", offset);
+        case DUP_TOP:
+            return simpleInstruction("DUP_TOP", offset);
+        case POP_TOP:
+            return simpleInstruction("POP_TOP", offset);
+        case POP_TOP_EXPR:
+            return simpleInstruction("POP_TOP_EXPR", offset);
+        case TEMP_MARK:
+            return simpleInstruction("TEMP_MARK", offset); /* Should not be reachable */
         default:
             printf("Unknown opcode %d\n", instruction);
             return offset + 1;
@@ -199,7 +204,7 @@ void falconDumpStack(FalconVM *vm) {
     printf("Stack:  ");
     for (FalconValue *slot = vm->stack; slot < vm->stackTop; slot++) {
         printf("[ ");
-        falconPrintVal(vm, *slot);
+        falconPrintVal(vm, *slot, false);
         printf(" ] ");
     }
     printf("\n");
@@ -229,9 +234,7 @@ void falconGCStatus(const char *status) { printf("== Garbage Collector %s ==\n",
 /**
  * Displays debug information on the "marking" of a Falcon Object for garbage collection.
  */
-void falconDumpMark(FalconObj *object) {
-    printf("Object at address %p marked\n", (void *) object);
-}
+void falconDumpMark(FalconObj *object) { printf("Object at address %p marked\n", (void *) object); }
 
 /**
  * Displays debug information on the "blacken" of a Falcon Object for garbage collection.

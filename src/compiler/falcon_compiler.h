@@ -11,9 +11,8 @@
 #include "../vm/falcon_object.h"
 #include "falcon_scanner.h"
 
-/* Function types:
- * - TYPE_FUNCTION represents an user-defined function
- * - TYPE_SCRIPT represents the top-level (global scope) code */
+/* Function types: (i) TYPE_FUNCTION represents an user-defined function; and (ii) TYPE_SCRIPT
+ * represents the top-level (global scope) code */
 typedef enum { TYPE_FUNCTION, TYPE_SCRIPT } FunctionType;
 
 /* Local variable representation */
@@ -64,15 +63,39 @@ typedef struct sCompiler {
 
 } FunctionCompiler;
 
+/* Parser representation */
+typedef struct {
+    Token current;  /* The last "lexed" token */
+    Token previous; /* The last consumed token */
+    bool hadError;  /* Whether a syntax/compile error occurred or not */
+    bool panicMode; /* Whether the parser is in error recovery (Panic Mode) or not */
+} Parser;
+
+/* Program compiler representation */
+typedef struct {
+    FalconVM *vm;                /* Falcon's virtual machine instance */
+    Parser *parser;              /* Falcon's parser instance */
+    Scanner *scanner;            /* Falcon's scanner instance */
+    FunctionCompiler *fCompiler; /* The compiler for the currently compiling function */
+} FalconCompiler;
+
 /* Compiler operations */
 ObjFunction *falconCompile(FalconVM *vm, const char *source);
 
+/* Compilation flags */
+#define FALCON_ERROR_STATE      (-1)
+#define FALCON_UNDEFINED_SCOPE  FALCON_ERROR_STATE
+#define FALCON_UNRESOLVED_LOCAL FALCON_ERROR_STATE
+#define FALCON_GLOBAL_SCOPE     0
+
 /* Compilation error messages */
 /* Expressions */
-#define FALCON_GRP_EXPR_ERR     "Expected ')' after expression."
+#define FALCON_GRP_EXPR_ERR     "Expected a ')' after expression."
 #define FALCON_TERNARY_EXPR_ERR "Expected a ':' after first branch of ternary operator."
-#define FALCON_EXPR_ERR         "Expected expression."
+#define FALCON_EXPR_ERR         "Expected an expression."
 #define FALCON_EXPR_STMT_ERR    "Expected a ';' after expression."
+#define FALCON_LIST_BRACKET_ERR "Expected a ']' after list elements."
+#define FALCON_SUB_BRACKET_ERR  "Expected a ']' after subscript expression."
 
 /* Conditionals and Loops */
 #define FALCON_IF_STMT_ERR       "Expected a '{' after 'if' condition."
@@ -100,9 +123,9 @@ ObjFunction *falconCompile(FalconVM *vm, const char *source);
 
 /* Functions and Blocks */
 #define FALCON_BLOCK_BRACE_ERR      "Expected a '}' after block."
-#define FALCON_CALL_LIST_PAREN_ERR  "Expected a ')' after arguments."
+#define FALCON_CALL_LIST_PAREN_ERR  "Expected a ')' after function arguments."
 #define FALCON_FUNC_NAME_PAREN_ERR  "Expected a '(' after function name."
-#define FALCON_FUNC_LIST_PAREN_ERR  "Expected a ')' after parameters."
+#define FALCON_FUNC_LIST_PAREN_ERR  "Expected a ')' after function parameters."
 #define FALCON_FUNC_BODY_BRACE_ERR  "Expected a '{' before function body."
 #define FALCON_FUNC_NAME_ERR        "Expected a function name."
 #define FALCON_PARAM_NAME_ERR       "Expected a parameter name."

@@ -8,6 +8,7 @@
 #include "falcon_io.h"
 #include "falcon_math.h"
 #include "falcon_string.h"
+#include "falcon_error.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -132,6 +133,10 @@ FALCON_NATIVE(falconTypeNative) {
                     typeString = "<string>";
                     typeStringLen = 8;
                     break;
+                case OBJ_LIST:
+                    typeString = "<list>";
+                    typeStringLen = 6;
+                    break;
                 case OBJ_CLOSURE:
                 case OBJ_FUNCTION:
                 case OBJ_NATIVE:
@@ -151,11 +156,11 @@ FALCON_NATIVE(falconTypeNative) {
 
 /**
  * Native Falcon function to convert a given Falcon Value to a number. The conversion is implemented
- * through the "falconIsFalsey" function.
+ * through the "falconIsFalsy" function.
  */
 FALCON_NATIVE(falconBoolNative) {
     CHECK_ARGS(vm, !=, argCount, 1);
-    if (!FALCON_IS_BOOL(*args)) return FALCON_BOOL_VAL(!falconIsFalsey(*args));
+    if (!FALCON_IS_BOOL(*args)) return FALCON_BOOL_VAL(!falconIsFalsy(*args));
     return *args; /* Given value is already a boolean */
 }
 
@@ -200,6 +205,15 @@ FALCON_NATIVE(falconStrNative) {
     }
 
     return *args; /* Given value is already a string */
+}
+
+/**
+ * Native function to get the length of a Falcon Value (lists only).
+ */
+FALCON_NATIVE(falconLenNative) {
+    CHECK_ARGS(vm, !=, argCount, 1);
+    CHECK_TYPE(FALCON_IS_LIST, "list", *args, vm, 1);
+    return FALCON_NUM_VAL(FALCON_AS_LIST(*args)->elements.count); /* Returns list length */
 }
 
 /*
@@ -269,11 +283,11 @@ FALCON_NATIVE(falconInputNative) {
 FALCON_NATIVE(falconPrintNative) {
     if (argCount > 1) {
         for (int i = 0; i < argCount; i++) {
-            falconPrintVal(vm, args[i]);
+            falconPrintVal(vm, args[i], false);
             if (i < argCount - 1) printf(" "); /* Separator */
         }
     } else {
-        falconPrintVal(vm, *args);
+        falconPrintVal(vm, *args, false);
     }
 
     printf("\n"); /* End */
@@ -292,8 +306,8 @@ FALCON_NATIVE(falconPrintNative) {
  * Defines a new native function for Falcon.
  */
 static void defNative(FalconVM *vm, const char *name, FalconNativeFn function) {
-    falconPush(vm, FALCON_OBJ_VAL(falconCopyString(vm, name, (int) strlen(name))));
-    falconPush(vm, FALCON_OBJ_VAL(falconNative(vm, function, name)));
+    falconPush(vm, FALCON_OBJ_VAL(falconCopyString(vm, name, (int) strlen(name)))); /* Avoids GC */
+    falconPush(vm, FALCON_OBJ_VAL(falconNative(vm, function, name)));               /* Avoids GC */
     falconTableSet(vm, &vm->globals, FALCON_AS_STRING(vm->stack[0]), vm->stack[1]);
     falconPop(vm);
     falconPop(vm);
@@ -314,6 +328,7 @@ void falconDefNatives(FalconVM *vm) {
         { .function = falconBoolNative, .name = "bool" },
         { .function = falconNumNative, .name = "num" },
         { .function = falconStrNative, .name = "str" },
+        { .function = falconLenNative, .name = "len" },
         { .function = falconAbsNative, .name = "abs" },
         { .function = falconSqrtNative, .name = "sqrt" },
         { .function = falconPowNative, .name = "pow" },
