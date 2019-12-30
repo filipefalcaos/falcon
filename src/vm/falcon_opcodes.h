@@ -11,59 +11,59 @@
 typedef enum {
 
     /* Constants and literals */
-    OP_CONSTANT,  /* 2 bytes constant */
-    OP_FALSE_LIT, /* "false" literal */
-    OP_TRUE_LIT,  /* "true" literal */
-    OP_NULL_LIT,  /* "null" literal */
+    LOAD_CONST, /* 2 bytes constant */
+    LOAD_FALSE, /* "false" literal */
+    LOAD_TRUE,  /* "true" literal */
+    LOAD_NULL,  /* "null" literal */
 
     /* Lists */
-    OP_LIST,      /* Create a new list */
-    OP_PUSH_LIST, /* Push a value to a list */
-    OP_GET_LIST,  /* Get a list element by index */
-    OP_SET_LIST,  /* Set a list element by index */
+    DEF_LIST,     /* Create a new list */
+    PUSH_LIST,    /* Push a value to the end of a list */
+    GET_IDX_LIST, /* Get a list element by index */
+    SET_IDX_LIST, /* Set a list element by index */
 
     /* Relational operations */
-    OP_AND,     /* 'and' logical operator */
-    OP_OR,      /* 'or' logical operator */
-    OP_NOT,     /* "!" operator */
-    OP_EQUAL,   /* "==" operator */
-    OP_GREATER, /* ">" operator */
-    OP_LESS,    /* "<" operator */
+    BIN_AND,     /* 'and' logical operator */
+    BIN_OR,      /* 'or' logical operator */
+    UN_NOT,     /* "!" operator */
+    BIN_EQUAL,   /* "==" operator */
+    BIN_GREATER, /* ">" operator */
+    BIN_LESS,    /* "<" operator */
 
     /* Arithmetic operations */
-    OP_ADD,      /* "+" operator */
-    OP_SUBTRACT, /* "-" binary operator */
-    OP_NEGATE,   /* "-" unary operator */
-    OP_DIVIDE,   /* "/" operator */
-    OP_MOD,      /* "%" operator */
-    OP_MULTIPLY, /* "*" operator */
-    OP_POW,      /* "^" operator */
+    BIN_ADD,  /* "+" operator */
+    BIN_SUB,  /* "-" binary operator */
+    UN_NEG,   /* "-" unary operator */
+    BIN_DIV,  /* "/" operator */
+    BIN_MOD,  /* "%" operator */
+    BIN_MULT, /* "*" operator */
+    BIN_POW,  /* "^" operator */
 
     /* Variable operations */
-    OP_DEF_GLOBAL,    /* Define global variable */
-    OP_GET_GLOBAL,    /* Get global variable value */
-    OP_SET_GLOBAL,    /* Set global variable value */
-    OP_GET_UPVALUE,   /* Get upvalue value */
-    OP_SET_UPVALUE,   /* Set upvalue value */
-    OP_CLOSE_UPVALUE, /* Close upvalue */
-    OP_GET_LOCAL,     /* Get local variable value */
-    OP_SET_LOCAL,     /* Set local variable value */
+    DEF_GLOBAL,  /* Define global variable */
+    GET_GLOBAL,  /* Get global variable value */
+    SET_GLOBAL,  /* Set global variable value */
+    GET_UPVALUE, /* Get upvalue value */
+    SET_UPVALUE, /* Set upvalue value */
+    CLS_UPVALUE, /* Close upvalue */
+    GET_LOCAL,   /* Get local variable value */
+    SET_LOCAL,   /* Set local variable value */
 
     /* Jump/loop operations */
-    OP_JUMP,          /* Jump an instruction on the VM */
-    OP_JUMP_IF_FALSE, /* Jump an instruction if falsy on the VM */
-    OP_LOOP,          /* Loop backwards instruction */
+    JUMP_FWR,      /* Jump an instruction on the VM */
+    JUMP_IF_FALSE, /* Jump an instruction if falsy on the VM */
+    LOOP_BACK,     /* Loop backwards instruction */
 
     /* Closures/functions operations */
-    OP_CLOSURE, /* Closure declaration */
-    OP_CALL,    /* Perform a function call */
-    OP_RETURN,  /* "return" statement */
+    FN_CLOSURE, /* Closure declaration */
+    FN_CALL,    /* Perform a function call */
+    FN_RETURN,  /* "return" statement */
 
     /* VM operations */
-    OP_DUP,      /* Duplicate the top of the VM stack */
-    OP_POP,      /* Pop from the VM stack */
-    OP_POP_EXPR, /* Pop and print expression value */
-    OP_TEMP      /* Mark a temporary value */
+    DUP_TOP,      /* Duplicate the top of the VM stack */
+    POP_TOP,      /* Pop from the VM stack */
+    POP_TOP_EXPR, /* Pop and print expression value */
+    TEMP_MARK     /* Mark a temporary value */
 
 } FalconOpCodes;
 
