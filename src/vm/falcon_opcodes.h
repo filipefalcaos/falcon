@@ -17,9 +17,10 @@ typedef enum {
     OP_NULL_LIT,  /* "null" literal */
 
     /* Lists */
-    OP_LIST,       /* Create a new list */
-    OP_PUSH_LIST,  /* Push a value to a list */
-    OP_INDEX_LIST, /* Access a list element by index */
+    OP_LIST,      /* Create a new list */
+    OP_PUSH_LIST, /* Push a value to a list */
+    OP_GET_LIST,  /* Get a list element by index */
+    OP_SET_LIST,  /* Set a list element by index */
 
     /* Relational operations */
     OP_AND,     /* 'and' logical operator */

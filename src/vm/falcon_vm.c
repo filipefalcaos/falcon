@@ -235,7 +235,7 @@ static FalconResultCode run(FalconVM *vm) {
 #define READ_CONSTANT() CURR_CONSTANTS().values[READ_BYTE()]
 #define READ_STRING()   FALCON_AS_STRING(READ_CONSTANT())
 
-/* Checks if the two elements at the top of the Falcon VM's stack are numerical Values. If not, a
+/* Checks if the two values at the top of the Falcon VM's stack are numerical Values. If not, a
  * runtime error is returned */
 #define ASSERT_TOP2_NUM(vm)                                               \
     do {                                                                  \
@@ -245,8 +245,8 @@ static FalconResultCode run(FalconVM *vm) {
         }                                                                 \
     } while (false)
 
-/* Checks if the element at the top of the Falcon VM's stack is a numerical Value. If not, a
- * runtime error is returned */
+/* Checks if the value at the top of the Falcon VM's stack is a numerical Value. If not, a runtime
+ * error is returned */
 #define ASSERT_TOP_NUM(vm)                             \
     do {                                               \
         if (!FALCON_IS_NUM(peek(vm, 0))) {             \
@@ -255,7 +255,7 @@ static FalconResultCode run(FalconVM *vm) {
         }                                              \
     } while (false)
 
-/* Checks if the element at the top of the Falcon VM's stack is not zero. If not, a runtime error
+/* Checks if the value at the top of the Falcon VM's stack is not zero. If not, a runtime error
  * is returned */
 #define ASSERT_TOP_NOT_0(vm)                        \
     do {                                            \
@@ -263,6 +263,21 @@ static FalconResultCode run(FalconVM *vm) {
             falconVMError(vm, FALCON_DIV_ZERO_ERR); \
             return FALCON_RUNTIME_ERROR;            \
         }                                           \
+    } while (false)
+
+/* Checks if two given elements make a valid subscript expression (i.e., 'index' should be a
+ * numerical value and 'subscript' should be a list). */
+#define ASSERT_SUBSCRIPT(vm, index, subscript)            \
+    do {                                                  \
+        if (!FALCON_IS_NUM(index)) {                      \
+            falconVMError(vm, FALCON_INDEX_NOT_NUM_ERR);  \
+            return FALCON_RUNTIME_ERROR;                  \
+        }                                                 \
+                                                          \
+        if (!FALCON_IS_LIST(subscript)) {                 \
+            falconVMError(vm, FALCON_INDEX_NOT_LIST_ERR); \
+            return FALCON_RUNTIME_ERROR;                  \
+        }                                                 \
     } while (false)
 
 /* Performs a binary operation of the 'op' operator on the two elements on the top of the Falcon
@@ -344,21 +359,10 @@ static FalconResultCode run(FalconVM *vm) {
                 falconPop(vm);
                 break;
             }
-            case OP_INDEX_LIST: {
+            case OP_GET_LIST: {
                 FalconValue index = falconPop(vm);
                 FalconValue subscript = falconPop(vm);
-
-                /* Checks if index is a number */
-                if (!FALCON_IS_NUM(index)) {
-                    falconVMError(vm, FALCON_INDEX_NOT_NUM_ERR);
-                    return FALCON_RUNTIME_ERROR;
-                }
-
-                /* Checks if subscript is a list */
-                if (!FALCON_IS_LIST(subscript)) {
-                    falconVMError(vm, FALCON_INDEX_NOT_LIST_ERR);
-                    return FALCON_RUNTIME_ERROR;
-                }
+                ASSERT_SUBSCRIPT(vm, index, subscript);
 
                 /* Index and subscript are valid */
                 int indexNum = (int) FALCON_AS_NUM(index);
@@ -368,6 +372,28 @@ static FalconResultCode run(FalconVM *vm) {
                 if (indexNum < 0) indexNum = list->elements.count + indexNum;
                 if (indexNum >= 0 && indexNum < list->elements.count) {
                     falconPush(vm, list->elements.values[indexNum]);
+                    break;
+                }
+
+                /* Out of bounds index */
+                falconVMError(vm, FALCON_BOUNDS_ERR);
+                return FALCON_RUNTIME_ERROR;
+            }
+            case OP_SET_LIST: {
+                FalconValue value = falconPop(vm);
+                FalconValue index = falconPop(vm);
+                FalconValue subscript = falconPop(vm);
+                ASSERT_SUBSCRIPT(vm, index, subscript);
+
+                /* Index and subscript are valid */
+                int indexNum = (int) FALCON_AS_NUM(index);
+                ObjList *list = FALCON_AS_LIST(subscript);
+
+                /* Handles element assignment */
+                if (indexNum < 0) indexNum = list->elements.count + indexNum;
+                if (indexNum >= 0 && indexNum < list->elements.count) {
+                    list->elements.values[indexNum] = value;
+                    falconPush(vm, value);
                     break;
                 }
 

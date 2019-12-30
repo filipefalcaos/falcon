@@ -706,10 +706,16 @@ PARSE_RULE(string) {
  * Handles the subscript (list indexing) operator expression by compiling the index expression.
  */
 PARSE_RULE(subscript) {
-    (void) canAssign; /* Unused */
-    expression(compiler);
+    expression(compiler); /* Compiles the subscript index */
     consume(compiler, TK_RIGHT_BRACKET, FALCON_SUB_BRACKET_ERR);
-    emitByte(compiler, OP_INDEX_LIST);
+
+    /* Compiles subscript assignments or access */
+    if (canAssign && match(compiler, TK_EQUAL)) { /* a[i] = ... */
+        expression(compiler);
+        emitByte(compiler, OP_SET_LIST);
+    } else { /* Access subscript */
+        emitByte(compiler, OP_GET_LIST);
+    }
 }
 
 /**
@@ -1102,7 +1108,8 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case OP_TRUE_LIT:
         case OP_NULL_LIT:
         case OP_PUSH_LIST:
-        case OP_INDEX_LIST:
+        case OP_GET_LIST:
+        case OP_SET_LIST:
         case OP_NOT:
         case OP_EQUAL:
         case OP_GREATER:
