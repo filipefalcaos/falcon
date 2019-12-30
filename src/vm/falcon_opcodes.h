@@ -25,7 +25,7 @@ typedef enum {
     /* Relational operations */
     BIN_AND,     /* 'and' logical operator */
     BIN_OR,      /* 'or' logical operator */
-    UN_NOT,     /* "!" operator */
+    UN_NOT,      /* "!" operator */
     BIN_EQUAL,   /* "==" operator */
     BIN_GREATER, /* ">" operator */
     BIN_LESS,    /* "<" operator */

@@ -11,7 +11,6 @@
 #include "../lib/falcon_natives.h"
 #include "../lib/falcon_string.h"
 #include "falcon_memory.h"
-#include <stdarg.h>
 #include <stdio.h>
 
 #ifdef FALCON_DEBUG_LEVEL_01
@@ -21,21 +20,10 @@
 /**
  * Resets the virtual machine stack.
  */
-static void resetVMStack(FalconVM *vm) {
+void resetVMStack(FalconVM *vm) {
     vm->stackTop = vm->stack;
     vm->openUpvalues = NULL;
     vm->frameCount = 0;
-}
-
-/**
- * Presents a runtime error to the programmer and resets the VM stack.
- */
-void falconVMError(FalconVM *vm, const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    falconRuntimeError(vm, format, args); /* Presents the error */
-    va_end(args);
-    resetVMStack(vm); /* Resets the stack due to error */
 }
 
 /**
@@ -171,7 +159,7 @@ static ObjUpvalue *captureUpvalue(FalconVM *vm, FalconValue *local) {
         return upvalue;
 
     ObjUpvalue *createdUpvalue = falconUpvalue(vm, local); /* Creates a new upvalue */
-    createdUpvalue->next = upvalue;                                 /* Adds to the list */
+    createdUpvalue->next = upvalue;                        /* Adds to the list */
 
     if (prevUpvalue == NULL) {
         vm->openUpvalues = createdUpvalue;
@@ -228,7 +216,7 @@ static FalconResultCode run(FalconVM *vm) {
 
 /* Reads the next 8 bits (byte) or 16 bits (2 bytes) */
 #define READ_BYTE()  (*frame->pc++)
-#define READ_SHORT() (frame->pc += 2, ((uint16_t) (frame->pc[-2] << 8u) | frame->pc[-1]))
+#define READ_SHORT() (frame->pc += 2, ((uint16_t)(frame->pc[-2] << 8u) | frame->pc[-1]))
 
 /* Reads the next byte from the bytecode, treats the resulting number as an index, and looks up the
  * corresponding location in the chunk’s constant table */
@@ -332,8 +320,7 @@ static FalconResultCode run(FalconVM *vm) {
             /* Constants and literals */
             case LOAD_CONST: {
                 uint16_t index = READ_BYTE() | (uint16_t)(READ_BYTE() << 8u);
-                if (!falconPush(vm, CURR_CONSTANTS().values[index]))
-                    return FALCON_RUNTIME_ERROR;
+                if (!falconPush(vm, CURR_CONSTANTS().values[index])) return FALCON_RUNTIME_ERROR;
                 break;
             }
             case LOAD_FALSE:

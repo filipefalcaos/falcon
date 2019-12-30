@@ -64,8 +64,30 @@ typedef struct sCompiler {
 
 } FunctionCompiler;
 
+/* Parser representation */
+typedef struct {
+    Token current;  /* The last "lexed" token */
+    Token previous; /* The last consumed token */
+    bool hadError;  /* Whether a syntax/compile error occurred or not */
+    bool panicMode; /* Whether the parser is in error recovery (Panic Mode) or not */
+} Parser;
+
+/* Program compiler representation */
+typedef struct {
+    FalconVM *vm;                /* Falcon's virtual machine instance */
+    Parser *parser;              /* Falcon's parser instance */
+    Scanner *scanner;            /* Falcon's scanner instance */
+    FunctionCompiler *fCompiler; /* The compiler for the currently compiling function */
+} FalconCompiler;
+
 /* Compiler operations */
 ObjFunction *falconCompile(FalconVM *vm, const char *source);
+
+/* Compilation flags */
+#define FALCON_ERROR_STATE      (-1)
+#define FALCON_UNDEFINED_SCOPE  FALCON_ERROR_STATE
+#define FALCON_UNRESOLVED_LOCAL FALCON_ERROR_STATE
+#define FALCON_GLOBAL_SCOPE     0
 
 /* Compilation error messages */
 /* Expressions */

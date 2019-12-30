@@ -8,6 +8,7 @@
 #include "falcon_io.h"
 #include "falcon_math.h"
 #include "falcon_string.h"
+#include "falcon_error.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

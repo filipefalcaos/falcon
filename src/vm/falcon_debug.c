@@ -39,7 +39,8 @@ static int jumpInstruction(const char *name, int sign, BytecodeChunk *bytecode, 
 /**
  * Displays a constant instruction (8 bits).
  */
-static int constantInstruction(const char *name, FalconVM *vm, BytecodeChunk *bytecode, int offset) {
+static int constantInstruction(const char *name, FalconVM *vm, BytecodeChunk *bytecode,
+                               int offset) {
     uint8_t constant = bytecode->code[offset + 1];
     FalconValue value = bytecode->constants.values[constant];
 
@@ -233,9 +234,7 @@ void falconGCStatus(const char *status) { printf("== Garbage Collector %s ==\n",
 /**
  * Displays debug information on the "marking" of a Falcon Object for garbage collection.
  */
-void falconDumpMark(FalconObj *object) {
-    printf("Object at address %p marked\n", (void *) object);
-}
+void falconDumpMark(FalconObj *object) { printf("Object at address %p marked\n", (void *) object); }
 
 /**
  * Displays debug information on the "blacken" of a Falcon Object for garbage collection.

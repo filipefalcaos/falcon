@@ -135,7 +135,7 @@ static void preProcessSource(Scanner *scanner) {
  * and the remaining characters must match exactly.
  */
 static FalconTokens checkKeyword(int start, int length, const char *rest, FalconTokens type,
-                                    Scanner *scanner) {
+                                 Scanner *scanner) {
     if (scanner->current - scanner->start == start + length &&
         memcmp(scanner->start + start, rest, (size_t) length) == 0)
         return type;
@@ -343,21 +343,18 @@ Token falconScanToken(Scanner *scanner) {
         case '%':
             return makeToken(match('=', scanner) ? TK_MOD_EQUAL : TK_MOD, scanner);
         case '*':
-            return makeToken(match('=', scanner) ? TK_MULTIPLY_EQUAL : TK_MULTIPLY,
-                             scanner);
+            return makeToken(match('=', scanner) ? TK_MULTIPLY_EQUAL : TK_MULTIPLY, scanner);
         case '^':
             return makeToken(match('=', scanner) ? TK_POW_EQUAL : TK_POW, scanner);
         case '!':
             if (match('=', scanner)) /* Logical not operator is "not" instead of "!" */
                 return makeToken(TK_NOT_EQUAL, scanner);
         case '=':
-            return makeToken(match('=', scanner) ? TK_EQUAL_EQUAL : TK_EQUAL,
-                             scanner);
+            return makeToken(match('=', scanner) ? TK_EQUAL_EQUAL : TK_EQUAL, scanner);
         case '<':
             return makeToken(match('=', scanner) ? TK_LESS_EQUAL : TK_LESS, scanner);
         case '>':
-            return makeToken(match('=', scanner) ? TK_GREATER_EQUAL : TK_GREATER,
-                             scanner);
+            return makeToken(match('=', scanner) ? TK_GREATER_EQUAL : TK_GREATER, scanner);
         case '"':
             return string(scanner);
         default:

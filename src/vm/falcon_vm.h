@@ -16,8 +16,8 @@
 /* Call frame representation */
 typedef struct {
     ObjClosure *closure; /* Running closure */
-    uint8_t *pc;               /* Function's program counter */
-    FalconValue *slots;        /* Function's stack pointer */
+    uint8_t *pc;         /* Function's program counter */
+    FalconValue *slots;  /* Function's stack pointer */
 } CallFrame;
 
 /* Falcon's virtual machine representation */
@@ -65,16 +65,15 @@ struct FalconVM {
      * that triggers the next garbage collection */
     size_t bytesAllocated;
     size_t nextGC;
-
 };
 
 /* Interpretation result codes */
 typedef enum { FALCON_OK, FALCON_COMPILE_ERROR, FALCON_RUNTIME_ERROR } FalconResultCode;
 
 /* Virtual machine operations */
-void falconVMError(FalconVM *vm, const char *format, ...);
 void falconInitVM(FalconVM *vm);
 void falconFreeVM(FalconVM *vm);
+void resetVMStack(FalconVM *vm);
 bool falconPush(FalconVM *vm, FalconValue value);
 FalconValue falconPop(FalconVM *vm);
 FalconResultCode falconInterpret(FalconVM *vm, const char *source);
