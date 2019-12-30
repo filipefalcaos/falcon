@@ -207,6 +207,15 @@ FALCON_NATIVE(falconStrNative) {
     return *args; /* Given value is already a string */
 }
 
+/**
+ * Native function to get the length of a Falcon Value (lists only).
+ */
+FALCON_NATIVE(falconLenNative) {
+    CHECK_ARGS(vm, !=, argCount, 1);
+    CHECK_TYPE(FALCON_IS_LIST, "list", *args, vm, 1);
+    return FALCON_NUM_VAL(FALCON_AS_LIST(*args)->elements.count); /* Returns list length */
+}
+
 /*
  * ================================================================================================
  * ===================================== Math native functions ====================================
@@ -319,6 +328,7 @@ void falconDefNatives(FalconVM *vm) {
         { .function = falconBoolNative, .name = "bool" },
         { .function = falconNumNative, .name = "num" },
         { .function = falconStrNative, .name = "str" },
+        { .function = falconLenNative, .name = "len" },
         { .function = falconAbsNative, .name = "abs" },
         { .function = falconSqrtNative, .name = "sqrt" },
         { .function = falconPowNative, .name = "pow" },
