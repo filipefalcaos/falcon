@@ -673,9 +673,9 @@ PARSE_RULE(subscript) {
     /* Compiles subscript assignments or access */
     if (canAssign && match(compiler, TK_EQUAL)) { /* a[i] = ... */
         expression(compiler);
-        emitByte(compiler, SET_IDX_LIST);
+        emitByte(compiler, SET_SUBSCRIPT);
     } else { /* Access subscript */
-        emitByte(compiler, GET_IDX_LIST);
+        emitByte(compiler, GET_SUBSCRIPT);
     }
 }
 
@@ -1068,8 +1068,8 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case LOAD_TRUE:
         case LOAD_NULL:
         case PUSH_LIST:
-        case GET_IDX_LIST:
-        case SET_IDX_LIST:
+        case GET_SUBSCRIPT:
+        case SET_SUBSCRIPT:
         case UN_NOT:
         case BIN_EQUAL:
         case BIN_GREATER:

@@ -253,21 +253,6 @@ static FalconResultCode run(FalconVM *vm) {
         }                                           \
     } while (false)
 
-/* Checks if two given elements make a valid subscript expression (i.e., 'index' should be a
- * numerical value and 'subscript' should be a list). */
-#define ASSERT_SUBSCRIPT(vm, index, subscript)            \
-    do {                                                  \
-        if (!FALCON_IS_NUM(index)) {                      \
-            falconVMError(vm, FALCON_INDEX_NOT_NUM_ERR);  \
-            return FALCON_RUNTIME_ERROR;                  \
-        }                                                 \
-                                                          \
-        if (!FALCON_IS_LIST(subscript)) {                 \
-            falconVMError(vm, FALCON_INDEX_NOT_LIST_ERR); \
-            return FALCON_RUNTIME_ERROR;                  \
-        }                                                 \
-    } while (false)
-
 /* Performs a binary operation of the 'op' operator on the two elements on the top of the Falcon
  * VM's stack. Then, sets the result on the top of the stack */
 #define BINARY_OP(vm, op, valueType)                  \
@@ -346,31 +331,54 @@ static FalconResultCode run(FalconVM *vm) {
                 falconPop(vm);
                 break;
             }
-            case GET_IDX_LIST: {
-                FalconValue index = falconPop(vm);
+            case GET_SUBSCRIPT: {
+                ASSERT_TOP_NUM(vm);
+                int index = (int) FALCON_AS_NUM(falconPop(vm));
                 FalconValue subscript = falconPop(vm);
-                ASSERT_SUBSCRIPT(vm, index, subscript);
 
-                /* Index and subscript are valid */
-                int indexNum = (int) FALCON_AS_NUM(index);
-                ObjList *list = FALCON_AS_LIST(subscript);
-
-                /* Handles element access */
-                if (indexNum < 0) indexNum = list->elements.count + indexNum;
-                if (indexNum >= 0 && indexNum < list->elements.count) {
-                    falconPush(vm, list->elements.values[indexNum]);
-                    break;
+                if (!FALCON_IS_OBJ(subscript)) { /* Checks if subscript is an object */
+                    falconVMError(vm, FALCON_INDEX_ERR);
+                    return FALCON_RUNTIME_ERROR;
                 }
 
-                /* Out of bounds index */
-                falconVMError(vm, FALCON_BOUNDS_ERR);
-                return FALCON_RUNTIME_ERROR;
+                switch (FALCON_AS_OBJ(subscript)->type) { /* Handles the subscript types */
+                    case OBJ_LIST: {
+                        ObjList *list = FALCON_AS_LIST(subscript);
+                        if (index < 0) index = list->elements.count + index;
+                        if (index >= 0 && index < list->elements.count) {
+                            falconPush(vm, list->elements.values[index]);
+                            break;
+                        }
+
+                        /* Out of bounds index */
+                        falconVMError(vm, FALCON_LIST_BOUNDS_ERR);
+                        return FALCON_RUNTIME_ERROR;
+                    }
+                    case OBJ_STRING: {
+                        ObjString *string = FALCON_AS_STRING(subscript);
+                        if (index < 0) index = (int) string->length + index;
+                        if (index >= 0 && index < string->length) {
+                            falconPush(vm, FALCON_OBJ_VAL(
+                                falconCopyString(vm, &string->chars[index], 1)));
+                            break;
+                        }
+
+                        /* Out of bounds index */
+                        falconVMError(vm, FALCON_LIST_BOUNDS_ERR);
+                        return FALCON_RUNTIME_ERROR;
+                    }
+                    default: /* Only lists and strings can be subscript */
+                        falconVMError(vm, FALCON_INDEX_ERR);
+                        return FALCON_RUNTIME_ERROR;
+                }
+
+                break;
             }
-            case SET_IDX_LIST: {
+            case SET_SUBSCRIPT: {
                 FalconValue value = falconPop(vm);
                 FalconValue index = falconPop(vm);
                 FalconValue subscript = falconPop(vm);
-                ASSERT_SUBSCRIPT(vm, index, subscript);
+//                ASSERT_SUBSCRIPT(vm, index, subscript);
 
                 /* Index and subscript are valid */
                 int indexNum = (int) FALCON_AS_NUM(index);
@@ -385,7 +393,7 @@ static FalconResultCode run(FalconVM *vm) {
                 }
 
                 /* Out of bounds index */
-                falconVMError(vm, FALCON_BOUNDS_ERR);
+                falconVMError(vm, FALCON_LIST_BOUNDS_ERR);
                 return FALCON_RUNTIME_ERROR;
             }
 

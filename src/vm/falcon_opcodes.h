@@ -17,10 +17,10 @@ typedef enum {
     LOAD_NULL,  /* "null" literal */
 
     /* Lists */
-    DEF_LIST,     /* Create a new list */
-    PUSH_LIST,    /* Push a value to the end of a list */
-    GET_IDX_LIST, /* Get a list element by index */
-    SET_IDX_LIST, /* Set a list element by index */
+    DEF_LIST,      /* Create a new list */
+    PUSH_LIST,     /* Push a value to the end of a list */
+    GET_SUBSCRIPT, /* Get a list element by index */
+    SET_SUBSCRIPT, /* Set a list element by index */
 
     /* Relational operations */
     BIN_AND,     /* 'and' logical operator */

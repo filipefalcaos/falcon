@@ -115,10 +115,10 @@ int falconDumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
             return byteInstruction("DEF_LIST", bytecode, offset);
         case PUSH_LIST:
             return simpleInstruction("PUSH_LIST", offset);
-        case GET_IDX_LIST:
-            return simpleInstruction("GET_IDX_LIST", offset);
-        case SET_IDX_LIST:
-            return simpleInstruction("SET_IDX_LIST", offset);
+        case GET_SUBSCRIPT:
+            return simpleInstruction("GET_SUBSCRIPT", offset);
+        case SET_SUBSCRIPT:
+            return simpleInstruction("SET_SUBSCRIPT", offset);
         case BIN_AND:
             return simpleInstruction("BIN_AND", offset);
         case BIN_OR:
