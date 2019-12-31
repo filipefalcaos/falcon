@@ -15,7 +15,7 @@
 #include <time.h>
 
 /* Checks the validity of a given argument count */
-#define CHECK_ARGS(vm, op, argCount, expectedCount)                        \
+#define ASSERT_ARGS_COUNT(vm, op, argCount, expectedCount)                 \
     do {                                                                   \
         if (argCount op expectedCount) {                                   \
             falconVMError(vm, VM_ARGS_COUNT_ERR, expectedCount, argCount); \
@@ -25,7 +25,7 @@
 
 /* Checks if a given value "value" of a given type "type" at a given position "pos" is a value of
  * the requested type */
-#define CHECK_TYPE(type, typeName, value, vm, pos)              \
+#define ASSERT_ARG_TYPE(type, typeName, value, vm, pos)              \
     do {                                                        \
         if (!type(value)) {                                     \
             falconVMError(vm, VM_ARGS_TYPE_ERR, pos, typeName); \
@@ -47,7 +47,7 @@
  */
 FALCON_NATIVE(authors) {
     (void) args; /* Unused */
-    CHECK_ARGS(vm, !=, argCount, 0);
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 0);
     falconPrintAuthors();
     return NULL_VAL;
 }
@@ -57,7 +57,7 @@ FALCON_NATIVE(authors) {
  */
 FALCON_NATIVE(license) {
     (void) args; /* Unused */
-    CHECK_ARGS(vm, !=, argCount, 0);
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 0);
     falconPrintLicense();
     return NULL_VAL;
 }
@@ -67,7 +67,7 @@ FALCON_NATIVE(license) {
  */
 FALCON_NATIVE(help) {
     (void) args; /* Unused */
-    CHECK_ARGS(vm, !=, argCount, 0);
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 0);
     falconPrintUsage();
     return NULL_VAL;
 }
@@ -76,8 +76,8 @@ FALCON_NATIVE(help) {
  * Native Falcon function to exit the running process with a given exit code.
  */
 FALCON_NATIVE(exit_) {
-    CHECK_ARGS(vm, !=, argCount, 1);
-    CHECK_TYPE(IS_NUM, "number", *args, vm, 1);
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
+    ASSERT_ARG_TYPE(IS_NUM, "number", *args, vm, 1);
     exit((int) AS_NUM(*args)); /* Exits the process */
 }
 
@@ -86,7 +86,7 @@ FALCON_NATIVE(exit_) {
  */
 FALCON_NATIVE(clock_) {
     (void) args; /* Unused */
-    CHECK_ARGS(vm, !=, argCount, 0);
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 0);
     return NUM_VAL((double) clock() / CLOCKS_PER_SEC);
 }
 
@@ -95,7 +95,7 @@ FALCON_NATIVE(clock_) {
  */
 FALCON_NATIVE(time_) {
     (void) args; /* Unused */
-    CHECK_ARGS(vm, !=, argCount, 0);
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 0);
     return NUM_VAL((double) time(NULL));
 }
 
@@ -109,7 +109,7 @@ FALCON_NATIVE(time_) {
  * Native Falcon function to get the type of a given Falcon Value, as a string.
  */
 FALCON_NATIVE(type) {
-    CHECK_ARGS(vm, !=, argCount, 1);
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
     char *typeString = NULL;
     size_t typeStringLen = 0;
 
@@ -159,7 +159,7 @@ FALCON_NATIVE(type) {
  * through the "isFalsy" function.
  */
 FALCON_NATIVE(bool_) {
-    CHECK_ARGS(vm, !=, argCount, 1);
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
     if (!IS_BOOL(*args)) return BOOL_VAL(!isFalsy(*args));
     return *args; /* Given value is already a boolean */
 }
@@ -168,7 +168,7 @@ FALCON_NATIVE(bool_) {
  * Native Falcon function to convert a given Falcon Value to a number.
  */
 FALCON_NATIVE(num) {
-    CHECK_ARGS(vm, !=, argCount, 1);
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
     if (!IS_NUM(*args)) {
         if (!IS_STRING(*args) && !IS_BOOL(*args)) {
             falconVMError(vm, VM_ARGS_TYPE_ERR, 1, "string, boolean, or number");
@@ -198,7 +198,7 @@ FALCON_NATIVE(num) {
  * through the "valueToString" function.
  */
 FALCON_NATIVE(str) {
-    CHECK_ARGS(vm, !=, argCount, 1);
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
     if (!IS_STRING(*args)) {
         char *string = valueToString(vm, args); /* Converts value to a string */
         return OBJ_VAL(copyString(vm, string, strlen(string)));
@@ -211,9 +211,19 @@ FALCON_NATIVE(str) {
  * Native function to get the length of a Falcon Value (lists only).
  */
 FALCON_NATIVE(len) {
-    CHECK_ARGS(vm, !=, argCount, 1);
-    CHECK_TYPE(IS_LIST, "list", *args, vm, 1);
-    return NUM_VAL(AS_LIST(*args)->elements.count); /* Returns list length */
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
+    ASSERT_ARG_TYPE(IS_OBJ, "list or string", *args, vm, 1);
+
+    /* Handles the subscript types */
+    switch (AS_OBJ(*args)->type) {
+        case OBJ_LIST:
+            return NUM_VAL(AS_LIST(*args)->elements.count); /* Returns the list length */
+        case OBJ_STRING:
+            return NUM_VAL(AS_STRING(*args)->length); /* Returns the string length */
+        default:
+            falconVMError(vm, VM_ARGS_TYPE_ERR, 1, "list or string");
+            return ERR_VAL;
+    }
 }
 
 /*
@@ -226,8 +236,8 @@ FALCON_NATIVE(len) {
  * Native Falcon function to get the absolute value of a given Falcon Value.
  */
 FALCON_NATIVE(abs_) {
-    CHECK_ARGS(vm, !=, argCount, 1);
-    CHECK_TYPE(IS_NUM, "number", *args, vm, 1);
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
+    ASSERT_ARG_TYPE(IS_NUM, "number", *args, vm, 1);
     double absValue = fabs(AS_NUM(*args)); /* Gets the abs value */
     return NUM_VAL(absValue);
 }
@@ -236,8 +246,8 @@ FALCON_NATIVE(abs_) {
  * Native Falcon function to get the square root of a given Falcon Value.
  */
 FALCON_NATIVE(sqrt_) {
-    CHECK_ARGS(vm, !=, argCount, 1);
-    CHECK_TYPE(IS_NUM, "number", *args, vm, 1);
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
+    ASSERT_ARG_TYPE(IS_NUM, "number", *args, vm, 1);
     double sqrtValue = sqrt(AS_NUM(*args)); /* Gets the sqrt value */
     return NUM_VAL(sqrtValue);
 }
@@ -246,9 +256,9 @@ FALCON_NATIVE(sqrt_) {
  * Native Falcon function to get the value of a number "x" to the power of a number "y".
  */
 FALCON_NATIVE(pow_) {
-    CHECK_ARGS(vm, !=, argCount, 2);
-    CHECK_TYPE(IS_NUM, "number", args[0], vm, 1);
-    CHECK_TYPE(IS_NUM, "number", args[1], vm, 2);
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 2);
+    ASSERT_ARG_TYPE(IS_NUM, "number", args[0], vm, 1);
+    ASSERT_ARG_TYPE(IS_NUM, "number", args[1], vm, 2);
 
     double powValue = pow(AS_NUM(args[0]), AS_NUM(args[1])); /* Gets the pow value */
     return NUM_VAL(powValue);
@@ -265,10 +275,10 @@ FALCON_NATIVE(pow_) {
  * Value.
  */
 FALCON_NATIVE(input) {
-    CHECK_ARGS(vm, >, argCount, 1);
+    ASSERT_ARGS_COUNT(vm, >, argCount, 1);
     if (argCount == 1) {
         FalconValue prompt = *args;
-        CHECK_TYPE(IS_STRING, "string", prompt, vm, 1); /* Checks if is valid */
+        ASSERT_ARG_TYPE(IS_STRING, "string", prompt, vm, 1); /* Checks if is valid */
         printf("%s", AS_CSTRING(prompt));               /* Prints the prompt */
     }
 
@@ -293,8 +303,8 @@ FALCON_NATIVE(print) {
     return NULL_VAL;
 }
 
-#undef CHECK_ARGS
-#undef CHECK_TYPE
+#undef ASSERT_ARGS_COUNT
+#undef ASSERT_ARG_TYPE
 #undef FALCON_NATIVE
 
 /*

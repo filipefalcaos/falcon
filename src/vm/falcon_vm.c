@@ -346,7 +346,8 @@ static FalconResultCode run(FalconVM *vm) {
                     return FALCON_RUNTIME_ERROR;
                 }
 
-                switch (AS_OBJ(subscript)->type) { /* Handles the subscript types */
+                /* Handles the subscript types */
+                switch (AS_OBJ(subscript)->type) {
                     case OBJ_LIST: {
                         ObjList *list = AS_LIST(subscript);
                         if (index < 0) index = list->elements.count + index;
