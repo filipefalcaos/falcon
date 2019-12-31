@@ -45,7 +45,7 @@
 /**
  * Native Falcon function to print Falcon's authors.
  */
-FALCON_NATIVE(falconAuthorsNative) {
+FALCON_NATIVE(authors) {
     (void) args; /* Unused */
     CHECK_ARGS(vm, !=, argCount, 0);
     falconPrintAuthors();
@@ -55,7 +55,7 @@ FALCON_NATIVE(falconAuthorsNative) {
 /**
  * Native Falcon function to print Falcon's MIT license.
  */
-FALCON_NATIVE(falconLicenseNative) {
+FALCON_NATIVE(license) {
     (void) args; /* Unused */
     CHECK_ARGS(vm, !=, argCount, 0);
     falconPrintLicense();
@@ -65,7 +65,7 @@ FALCON_NATIVE(falconLicenseNative) {
 /**
  * Native Falcon function to print interpreter usage details.
  */
-FALCON_NATIVE(falconHelpNative) {
+FALCON_NATIVE(help) {
     (void) args; /* Unused */
     CHECK_ARGS(vm, !=, argCount, 0);
     falconPrintUsage();
@@ -75,7 +75,7 @@ FALCON_NATIVE(falconHelpNative) {
 /**
  * Native Falcon function to exit the running process with a given exit code.
  */
-FALCON_NATIVE(falconExitNative) {
+FALCON_NATIVE(exit_) {
     CHECK_ARGS(vm, !=, argCount, 1);
     CHECK_TYPE(FALCON_IS_NUM, "number", *args, vm, 1);
     exit((int) FALCON_AS_NUM(*args)); /* Exits the process */
@@ -84,7 +84,7 @@ FALCON_NATIVE(falconExitNative) {
 /**
  * Native Falcon function to compute the elapsed time since the program started running, in seconds.
  */
-FALCON_NATIVE(falconClockNative) {
+FALCON_NATIVE(clock_) {
     (void) args; /* Unused */
     CHECK_ARGS(vm, !=, argCount, 0);
     return FALCON_NUM_VAL((double) clock() / CLOCKS_PER_SEC);
@@ -93,7 +93,7 @@ FALCON_NATIVE(falconClockNative) {
 /**
  * Native Falcon function to compute the UNIX timestamp, in seconds.
  */
-FALCON_NATIVE(falconTimeNative) {
+FALCON_NATIVE(time_) {
     (void) args; /* Unused */
     CHECK_ARGS(vm, !=, argCount, 0);
     return FALCON_NUM_VAL((double) time(NULL));
@@ -108,7 +108,7 @@ FALCON_NATIVE(falconTimeNative) {
 /**
  * Native Falcon function to get the type of a given Falcon Value, as a string.
  */
-FALCON_NATIVE(falconTypeNative) {
+FALCON_NATIVE(type) {
     CHECK_ARGS(vm, !=, argCount, 1);
     char *typeString = NULL;
     size_t typeStringLen = 0;
@@ -158,7 +158,7 @@ FALCON_NATIVE(falconTypeNative) {
  * Native Falcon function to convert a given Falcon Value to a number. The conversion is implemented
  * through the "falconIsFalsy" function.
  */
-FALCON_NATIVE(falconBoolNative) {
+FALCON_NATIVE(bool_) {
     CHECK_ARGS(vm, !=, argCount, 1);
     if (!FALCON_IS_BOOL(*args)) return FALCON_BOOL_VAL(!falconIsFalsy(*args));
     return *args; /* Given value is already a boolean */
@@ -167,7 +167,7 @@ FALCON_NATIVE(falconBoolNative) {
 /**
  * Native Falcon function to convert a given Falcon Value to a number.
  */
-FALCON_NATIVE(falconNumNative) {
+FALCON_NATIVE(num) {
     CHECK_ARGS(vm, !=, argCount, 1);
     if (!FALCON_IS_NUM(*args)) {
         if (!FALCON_IS_STRING(*args) && !FALCON_IS_BOOL(*args)) {
@@ -197,7 +197,7 @@ FALCON_NATIVE(falconNumNative) {
  * Native Falcon function to convert a given Falcon Value to a string. The conversion is implemented
  * through the "falconValToString" function.
  */
-FALCON_NATIVE(falconStrNative) {
+FALCON_NATIVE(str) {
     CHECK_ARGS(vm, !=, argCount, 1);
     if (!FALCON_IS_STRING(*args)) {
         char *string = falconValToString(vm, args); /* Converts value to a string */
@@ -210,7 +210,7 @@ FALCON_NATIVE(falconStrNative) {
 /**
  * Native function to get the length of a Falcon Value (lists only).
  */
-FALCON_NATIVE(falconLenNative) {
+FALCON_NATIVE(len) {
     CHECK_ARGS(vm, !=, argCount, 1);
     CHECK_TYPE(FALCON_IS_LIST, "list", *args, vm, 1);
     return FALCON_NUM_VAL(FALCON_AS_LIST(*args)->elements.count); /* Returns list length */
@@ -225,7 +225,7 @@ FALCON_NATIVE(falconLenNative) {
 /**
  * Native Falcon function to get the absolute value of a given Falcon Value.
  */
-FALCON_NATIVE(falconAbsNative) {
+FALCON_NATIVE(abs_) {
     CHECK_ARGS(vm, !=, argCount, 1);
     CHECK_TYPE(FALCON_IS_NUM, "number", *args, vm, 1);
     double absValue = falconAbs(FALCON_AS_NUM(*args)); /* Gets the abs value */
@@ -235,7 +235,7 @@ FALCON_NATIVE(falconAbsNative) {
 /**
  * Native Falcon function to get the square root of a given Falcon Value.
  */
-FALCON_NATIVE(falconSqrtNative) {
+FALCON_NATIVE(sqrt_) {
     CHECK_ARGS(vm, !=, argCount, 1);
     CHECK_TYPE(FALCON_IS_NUM, "number", *args, vm, 1);
     double sqrtValue = falconSqrt(FALCON_AS_NUM(*args)); /* Gets the sqrt value */
@@ -245,7 +245,7 @@ FALCON_NATIVE(falconSqrtNative) {
 /**
  * Native Falcon function to get the value of a number "x" to the power of a number "y".
  */
-FALCON_NATIVE(falconPowNative) {
+FALCON_NATIVE(pow_) {
     CHECK_ARGS(vm, !=, argCount, 2);
     CHECK_TYPE(FALCON_IS_NUM, "number", args[0], vm, 1);
     CHECK_TYPE(FALCON_IS_NUM, "number", args[1], vm, 2);
@@ -265,7 +265,7 @@ FALCON_NATIVE(falconPowNative) {
  * Native Falcon function to prompt the user for an input and return the given input as an Falcon
  * Value.
  */
-FALCON_NATIVE(falconInputNative) {
+FALCON_NATIVE(input) {
     CHECK_ARGS(vm, >, argCount, 1);
     if (argCount == 1) {
         FalconValue prompt = *args;
@@ -280,7 +280,7 @@ FALCON_NATIVE(falconInputNative) {
 /**
  * Native Falcon function to print (with a new line) a given Falcon value.
  */
-FALCON_NATIVE(falconPrintNative) {
+FALCON_NATIVE(print) {
     if (argCount > 1) {
         for (int i = 0; i < argCount; i++) {
             falconPrintVal(vm, args[i], false);
@@ -295,6 +295,8 @@ FALCON_NATIVE(falconPrintNative) {
 }
 
 #undef CHECK_ARGS
+#undef CHECK_TYPE
+#undef FALCON_NATIVE
 
 /*
  * ================================================================================================
@@ -318,22 +320,22 @@ static void defNative(FalconVM *vm, const char *name, FalconNativeFn function) {
  */
 void falconDefNatives(FalconVM *vm) {
     const ObjNative nativeFunctions[] = { /* Native functions implementations */
-        { .function = falconAuthorsNative, .name = "authors" },
-        { .function = falconLicenseNative, .name = "license" },
-        { .function = falconHelpNative, .name = "help" },
-        { .function = falconExitNative, .name = "exit" },
-        { .function = falconClockNative, .name = "clock" },
-        { .function = falconTimeNative, .name = "time" },
-        { .function = falconTypeNative, .name = "type" },
-        { .function = falconBoolNative, .name = "bool" },
-        { .function = falconNumNative, .name = "num" },
-        { .function = falconStrNative, .name = "str" },
-        { .function = falconLenNative, .name = "len" },
-        { .function = falconAbsNative, .name = "abs" },
-        { .function = falconSqrtNative, .name = "sqrt" },
-        { .function = falconPowNative, .name = "pow" },
-        { .function = falconInputNative, .name = "input" },
-        { .function = falconPrintNative, .name = "print" }
+        { .function = authors, .name = "authors" },
+        { .function = license, .name = "license" },
+        { .function = help, .name = "help" },
+        { .function = exit_, .name = "exit" },
+        { .function = clock_, .name = "clock" },
+        { .function = time_, .name = "time" },
+        { .function = type, .name = "type" },
+        { .function = bool_, .name = "bool" },
+        { .function = num, .name = "num" },
+        { .function = str, .name = "str" },
+        { .function = len, .name = "len" },
+        { .function = abs_, .name = "abs" },
+        { .function = sqrt_, .name = "sqrt" },
+        { .function = pow_, .name = "pow" },
+        { .function = input, .name = "input" },
+        { .function = print, .name = "print" }
     };
 
     /* Define listed native functions */
