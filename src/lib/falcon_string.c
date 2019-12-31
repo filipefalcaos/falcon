@@ -47,7 +47,7 @@ ObjString *copyString(FalconVM *vm, const char *chars, size_t length) {
     str->chars[length] = '\0';
     str->hash = hash;
 
-    VMPush(vm, OBJ_VAL(str));                    /* Avoids GC */
+    VMPush(vm, OBJ_VAL(str));                  /* Avoids GC */
     tableSet(vm, &vm->strings, str, NULL_VAL); /* Interns the string */
     VMPop(vm);
     return str;

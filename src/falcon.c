@@ -79,7 +79,7 @@ void falconPrintUsage() {
  * Interprets a Falcon source file.
  */
 static void runFile(FalconVM *vm) {
-    char *source = readFile(vm, vm->fileName);           /* Gets the source content */
+    char *source = readFile(vm, vm->fileName);                 /* Gets the source content */
     FalconResultCode resultCode = falconInterpret(vm, source); /* Interprets the source code */
     free(source);
     if (resultCode == FALCON_COMPILE_ERROR) exit(FALCON_ERR_COMPILER);

@@ -15,22 +15,22 @@
 #include <time.h>
 
 /* Checks the validity of a given argument count */
-#define CHECK_ARGS(vm, op, argCount, expectedCount)                            \
-    do {                                                                       \
-        if (argCount op expectedCount) {                                       \
+#define CHECK_ARGS(vm, op, argCount, expectedCount)                        \
+    do {                                                                   \
+        if (argCount op expectedCount) {                                   \
             falconVMError(vm, VM_ARGS_COUNT_ERR, expectedCount, argCount); \
-            return ERR_VAL;                                             \
-        }                                                                      \
+            return ERR_VAL;                                                \
+        }                                                                  \
     } while (false)
 
 /* Checks if a given value "value" of a given type "type" at a given position "pos" is a value of
  * the requested type */
-#define CHECK_TYPE(type, typeName, value, vm, pos)                  \
-    do {                                                            \
-        if (!type(value)) {                                         \
+#define CHECK_TYPE(type, typeName, value, vm, pos)              \
+    do {                                                        \
+        if (!type(value)) {                                     \
             falconVMError(vm, VM_ARGS_TYPE_ERR, pos, typeName); \
-            return ERR_VAL;                                  \
-        }                                                           \
+            return ERR_VAL;                                     \
+        }                                                       \
     } while (false)
 
 /* Defines a common interface to all Falcon native functions */

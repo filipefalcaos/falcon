@@ -659,7 +659,7 @@ PARSE_RULE(string) {
     (void) canAssign; /* Unused */
     Parser *parser = compiler->parser;
     emitConstant(compiler, OBJ_VAL(copyString(compiler->vm, parser->previous.start + 1,
-                                                     parser->previous.length - 2)));
+                                              parser->previous.length - 2)));
 }
 
 /**

@@ -47,7 +47,7 @@ void falconPrintUsage();
 #define FALCON_MAX_BYTE   (UINT8_MAX + 1) /* 256 */
 #define FALCON_FRAMES_MAX 1000
 #define FALCON_STACK_MAX  (FALCON_FRAMES_MAX * FALCON_MAX_BYTE) /* 256000 */
-#define FALCON_MAX_TRACE 20
+#define FALCON_MAX_TRACE  20
 
 /* Error codes */
 #define FALCON_ERR_USAGE    1

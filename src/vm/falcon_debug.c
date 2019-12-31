@@ -192,7 +192,7 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
  */
 void dumpBytecode(FalconVM *vm, BytecodeChunk *bytecode, const char *name) {
     printf("== %s ==\n", name);
-    for (int offset = 0; offset < bytecode->count;) {         /* Loop through the instructions */
+    for (int offset = 0; offset < bytecode->count;) {   /* Loop through the instructions */
         offset = dumpInstruction(vm, bytecode, offset); /* Disassemble instruction */
     }
 }
@@ -239,9 +239,7 @@ void dumpMark(FalconObj *object) { printf("Object at address %p marked\n", (void
 /**
  * Displays debug information on the "blacken" of a Falcon Object for garbage collection.
  */
-void dumpBlacken(FalconObj *object) {
-    printf("Object at address %p blackened\n", (void *) object);
-}
+void dumpBlacken(FalconObj *object) { printf("Object at address %p blackened\n", (void *) object); }
 
 /**
  * Display the number of collected bytes after a garbage collection process, and the number of
