@@ -330,22 +330,20 @@ Token scanToken(Scanner *scanner) {
         case '.':
             return makeToken(TK_DOT, scanner);
         case '-':
-            if (match('=', scanner))
-                return makeToken(TK_MINUS_EQUAL, scanner);
-            else if (match('>', scanner))
+            if (match('>', scanner))
                 return makeToken(TK_ARROW, scanner);
             else
                 return makeToken(TK_MINUS, scanner);
         case '+':
-            return makeToken(match('=', scanner) ? TK_PLUS_EQUAL : TK_PLUS, scanner);
+            return makeToken(TK_PLUS, scanner);
         case '/':
-            return makeToken(match('=', scanner) ? TK_DIV_EQUAL : TK_DIV, scanner);
+            return makeToken(TK_DIV, scanner);
         case '%':
-            return makeToken(match('=', scanner) ? TK_MOD_EQUAL : TK_MOD, scanner);
+            return makeToken(TK_MOD, scanner);
         case '*':
-            return makeToken(match('=', scanner) ? TK_MULTIPLY_EQUAL : TK_MULTIPLY, scanner);
+            return makeToken(TK_MULTIPLY, scanner);
         case '^':
-            return makeToken(match('=', scanner) ? TK_POW_EQUAL : TK_POW, scanner);
+            return makeToken(TK_POW, scanner);
         case '!':
             if (match('=', scanner)) /* Logical not operator is "not" instead of "!" */
                 return makeToken(TK_NOT_EQUAL, scanner);

@@ -18,7 +18,7 @@
 /* Precedence levels, from lowest to highest */
 typedef enum {
     PREC_NONE,    /* No precedence */
-    PREC_ASSIGN,  /* 1: "=", "-=", "+=", "*=", "/=", "%=" */
+    PREC_ASSIGN,  /* 1: "=" */
     PREC_TERNARY, /* 2: "?:" */
     PREC_OR,      /* 3: "or" */
     PREC_AND,     /* 4: "and" */
@@ -446,18 +446,6 @@ static uint8_t argumentList(FalconCompiler *compiler) {
 }
 
 /**
- * Emits the instructions for a given compound assignment, which provide a shorter syntax for
- * assigning the result of an arithmetic operator.
- */
-static void compoundAssignment(FalconCompiler *compiler, uint8_t getOpcode, uint8_t setOpcode,
-                               int arg, uint8_t opcode) {
-    emitBytes(compiler, getOpcode, (uint8_t) arg);
-    expression(compiler);
-    emitByte(compiler, opcode);
-    emitBytes(compiler, setOpcode, (uint8_t) arg);
-}
-
-/**
  * Gets the index of a variable in the constants table and emits the the bytecode to perform the
  * load of the global/local variable.
  */
@@ -482,18 +470,6 @@ static void namedVariable(FalconCompiler *compiler, Token name, bool canAssign) 
     if (canAssign && match(compiler, TK_EQUAL)) { /* a = ... */
         expression(compiler);
         emitBytes(compiler, setOpcode, (uint8_t) arg);
-    } else if (canAssign && match(compiler, TK_MINUS_EQUAL)) { /* a -= ... */
-        compoundAssignment(compiler, getOpcode, setOpcode, arg, BIN_SUB);
-    } else if (canAssign && match(compiler, TK_PLUS_EQUAL)) { /* a += ... */
-        compoundAssignment(compiler, getOpcode, setOpcode, arg, BIN_ADD);
-    } else if (canAssign && match(compiler, TK_DIV_EQUAL)) { /* a /= ... */
-        compoundAssignment(compiler, getOpcode, setOpcode, arg, BIN_DIV);
-    } else if (canAssign && match(compiler, TK_MOD_EQUAL)) { /* a %= ... */
-        compoundAssignment(compiler, getOpcode, setOpcode, arg, BIN_MOD);
-    } else if (canAssign && match(compiler, TK_MULTIPLY_EQUAL)) { /* a *= ... */
-        compoundAssignment(compiler, getOpcode, setOpcode, arg, BIN_MULT);
-    } else if (canAssign && match(compiler, TK_POW_EQUAL)) { /* a ^= ... */
-        compoundAssignment(compiler, getOpcode, setOpcode, arg, BIN_POW);
     } else { /* Access variable */
         emitBytes(compiler, getOpcode, (uint8_t) arg);
     }
@@ -748,17 +724,11 @@ ParseRule rules[] = {
     EMPTY_RULE,                        /* TK_SEMICOLON */
     EMPTY_RULE,                        /* TK_ARROW */
     RULE(unary, binary, PREC_TERM),    /* TK_MINUS */
-    EMPTY_RULE,                        /* TK_MINUS_EQUAL */
     INFIX_RULE(binary, PREC_TERM),     /* TK_PLUS */
-    EMPTY_RULE,                        /* TK_PLUS_EQUAL */
     INFIX_RULE(binary, PREC_FACTOR),   /* TK_DIV */
-    EMPTY_RULE,                        /* TK_DIV_EQUAL */
     INFIX_RULE(binary, PREC_FACTOR),   /* TK_MOD */
-    EMPTY_RULE,                        /* TK_MOD_EQUAL */
     INFIX_RULE(binary, PREC_FACTOR),   /* TK_MULTIPLY */
-    EMPTY_RULE,                        /* TK_MULTIPLY_EQUAL */
     INFIX_RULE(pow_, PREC_POW),        /* TK_POW */
-    EMPTY_RULE,                        /* TK_POW_EQUAL */
     PREFIX_RULE(unary),                /* TK_NOT */
     INFIX_RULE(binary, PREC_EQUAL),    /* TK_NOT_EQUAL */
     EMPTY_RULE,                        /* TK_EQUAL */
