@@ -97,6 +97,7 @@ FalconResultCode falconInterpret(FalconVM *vm, const char *source);
 #define FALCON_DIV_ZERO_ERR        "Cannot perform a division by zero."
 #define FALCON_INDEX_NOT_NUM_ERR   "List index must be a number."
 #define FALCON_INDEX_ERR           "Indexed value must be a list or a string."
+#define FALCON_INDEX_ASSG_ERR      "Only lists support subscript assignment."
 #define FALCON_LIST_BOUNDS_ERR     "List index out of bounds."
 #define FALCON_STRING_BOUNDS_ERR   "String index out of bounds."
 

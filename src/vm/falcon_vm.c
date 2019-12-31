@@ -27,15 +27,6 @@ void resetVMStack(FalconVM *vm) {
 }
 
 /**
- * Presents a runtime error when a global variable is undefined.
- */
-static FalconResultCode undefinedVariableError(FalconVM *vm, ObjString *name, bool delete) {
-    if (delete) falconTableDelete(&vm->globals, name);
-    falconVMError(vm, FALCON_UNDEF_VAR_ERR, name->chars);
-    return FALCON_RUNTIME_ERROR;
-}
-
-/**
  * Initializes the Falcon's virtual machine.
  */
 void falconInitVM(FalconVM *vm) {
@@ -233,27 +224,27 @@ static FalconResultCode run(FalconVM *vm) {
         }                                                                 \
     } while (false)
 
-/* Checks if the value at the top of the Falcon VM's stack is a numerical Value. If not, a runtime
- * error is returned */
-#define ASSERT_TOP_NUM(vm)                             \
-    do {                                               \
-        if (!FALCON_IS_NUM(peek(vm, 0))) {             \
-            falconVMError(vm, FALCON_OPR_NOT_NUM_ERR); \
-            return FALCON_RUNTIME_ERROR;               \
-        }                                              \
+/* Checks if the value at the given position "pos" of the Falcon VM's stack is a numerical Value.
+ * If not, a runtime error is returned */
+#define ASSERT_NUM(vm, pos, error)           \
+    do {                                     \
+        if (!FALCON_IS_NUM(peek(vm, pos))) { \
+            falconVMError(vm, error);        \
+            return FALCON_RUNTIME_ERROR;     \
+        }                                    \
     } while (false)
 
-/* Checks if the value at the top of the Falcon VM's stack is not zero. If not, a runtime error
- * is returned */
-#define ASSERT_TOP_NOT_0(vm)                        \
+/* Checks if the value at the given position "pos" of the Falcon VM's stack is not zero. If not, a
+ * runtime error is returned */
+#define ASSERT_NOT_0(vm, pos)                       \
     do {                                            \
-        if (FALCON_AS_NUM(peek(vm, 0)) == 0) {      \
+        if (FALCON_AS_NUM(peek(vm, pos)) == 0) {    \
             falconVMError(vm, FALCON_DIV_ZERO_ERR); \
             return FALCON_RUNTIME_ERROR;            \
         }                                           \
     } while (false)
 
-/* Performs a binary operation of the 'op' operator on the two elements on the top of the Falcon
+/* Performs a binary operation of the "op" operator on the two elements on the top of the Falcon
  * VM's stack. Then, sets the result on the top of the stack */
 #define BINARY_OP(vm, op, valueType)                  \
     do {                                              \
@@ -268,14 +259,14 @@ static FalconResultCode run(FalconVM *vm) {
 #define DIVISION_OP(vm, op, type)                    \
     do {                                             \
         ASSERT_TOP2_NUM(vm);                         \
-        ASSERT_TOP_NOT_0(vm);                        \
+        ASSERT_NOT_0(vm, 0);                         \
         type b = FALCON_AS_NUM(falconPop(vm));       \
         type a = FALCON_AS_NUM((vm)->stackTop[-1]);  \
         (vm)->stackTop[-1] = FALCON_NUM_VAL(a op b); \
     } while (false)
 
-/* Performs a greater/less (GL) comparison operation of the 'op' operator on the two elements on the
- * top of the Falcon VM's stack. Then, sets the result on the top of the stack */
+/* Performs a greater/less (GL) comparison operation of the "op" operator on the two elements on
+ * the top of the Falcon VM's stack. Then, sets the result on the top of the stack */
 #define GL_COMPARE(vm, op)                                                                \
     do {                                                                                  \
         if (FALCON_IS_STRING(peek(vm, 0)) && FALCON_IS_STRING(peek(vm, 1))) {             \
@@ -289,6 +280,21 @@ static FalconResultCode run(FalconVM *vm) {
             falconVMError(vm, FALCON_OPR_NOT_NUM_STR_ERR);                                \
             return FALCON_RUNTIME_ERROR;                                                  \
         }                                                                                 \
+    } while (false)
+
+/* Presents a runtime error when trying to access an index that is out of bounds */
+#define OUT_OF_BOUNDS_ERR(vm, error) \
+    do {                             \
+        falconVMError(vm, error);    \
+        return FALCON_RUNTIME_ERROR; \
+    } while (false)
+
+/* Presents a runtime error when a global variable is undefined */
+#define UNDEF_VAR_ERR(vm, name, delete)                         \
+    do {                                                        \
+        if (delete) falconTableDelete(&(vm)->globals, name);    \
+        falconVMError(vm, FALCON_UNDEF_VAR_ERR, (name)->chars); \
+        return FALCON_RUNTIME_ERROR;                            \
     } while (false)
 
     /* Main virtual machine loop */
@@ -332,7 +338,7 @@ static FalconResultCode run(FalconVM *vm) {
                 break;
             }
             case GET_SUBSCRIPT: {
-                ASSERT_TOP_NUM(vm);
+                ASSERT_NUM(vm, 0, FALCON_INDEX_NOT_NUM_ERR); /* Checks if index is valid */
                 int index = (int) FALCON_AS_NUM(falconPop(vm));
                 FalconValue subscript = falconPop(vm);
 
@@ -350,9 +356,7 @@ static FalconResultCode run(FalconVM *vm) {
                             break;
                         }
 
-                        /* Out of bounds index */
-                        falconVMError(vm, FALCON_LIST_BOUNDS_ERR);
-                        return FALCON_RUNTIME_ERROR;
+                        OUT_OF_BOUNDS_ERR(vm, FALCON_LIST_BOUNDS_ERR); /* Out of bounds index */
                     }
                     case OBJ_STRING: {
                         ObjString *string = FALCON_AS_STRING(subscript);
@@ -363,9 +367,7 @@ static FalconResultCode run(FalconVM *vm) {
                             break;
                         }
 
-                        /* Out of bounds index */
-                        falconVMError(vm, FALCON_LIST_BOUNDS_ERR);
-                        return FALCON_RUNTIME_ERROR;
+                        OUT_OF_BOUNDS_ERR(vm, FALCON_STRING_BOUNDS_ERR); /* Out of bounds index */
                     }
                     default: /* Only lists and strings can be subscript */
                         falconVMError(vm, FALCON_INDEX_ERR);
@@ -375,26 +377,35 @@ static FalconResultCode run(FalconVM *vm) {
                 break;
             }
             case SET_SUBSCRIPT: {
+                ASSERT_NUM(vm, 1, FALCON_INDEX_NOT_NUM_ERR); /* Checks if index is valid */
                 FalconValue value = falconPop(vm);
-                FalconValue index = falconPop(vm);
+                int index = (int) FALCON_AS_NUM(falconPop(vm));
                 FalconValue subscript = falconPop(vm);
-//                ASSERT_SUBSCRIPT(vm, index, subscript);
 
-                /* Index and subscript are valid */
-                int indexNum = (int) FALCON_AS_NUM(index);
-                ObjList *list = FALCON_AS_LIST(subscript);
-
-                /* Handles element assignment */
-                if (indexNum < 0) indexNum = list->elements.count + indexNum;
-                if (indexNum >= 0 && indexNum < list->elements.count) {
-                    list->elements.values[indexNum] = value;
-                    falconPush(vm, value);
-                    break;
+                if (!FALCON_IS_OBJ(subscript)) { /* Checks if subscript is an object */
+                    falconVMError(vm, FALCON_INDEX_ERR);
+                    return FALCON_RUNTIME_ERROR;
                 }
 
-                /* Out of bounds index */
-                falconVMError(vm, FALCON_LIST_BOUNDS_ERR);
-                return FALCON_RUNTIME_ERROR;
+                switch (FALCON_AS_OBJ(subscript)->type) { /* Handles the subscript types */
+                    case OBJ_LIST: {
+                        ObjList *list = FALCON_AS_LIST(subscript);
+                        if (index < 0) index = list->elements.count + index;
+                        if (index >= 0 && index < list->elements.count) {
+                            list->elements.values[index] = value;
+                            falconPush(vm, value);
+                            break;
+                        }
+
+                        OUT_OF_BOUNDS_ERR(vm, FALCON_LIST_BOUNDS_ERR); /* Out of bounds index */
+                    }
+                    default: /* Only lists support subscript assignment */
+                        falconVMError(vm, FALCON_INDEX_ASSG_ERR);
+                        return FALCON_RUNTIME_ERROR;
+
+                }
+
+                break;
             }
 
             /* Relational operations */
@@ -446,7 +457,7 @@ static FalconResultCode run(FalconVM *vm) {
                 BINARY_OP(vm, -, FALCON_NUM_VAL);
                 break;
             case UN_NEG:
-                ASSERT_TOP_NUM(vm);
+                ASSERT_NUM(vm, 0, FALCON_OPR_NOT_NUM_ERR);
                 vm->stackTop[-1] = FALCON_NUM_VAL(-FALCON_AS_NUM(vm->stackTop[-1]));
                 break;
             case BIN_MULT:
@@ -477,14 +488,14 @@ static FalconResultCode run(FalconVM *vm) {
                 ObjString *name = READ_STRING();
                 FalconValue value;
                 if (!falconTableGet(&vm->globals, name, &value)) /* Checks if undefined */
-                    return undefinedVariableError(vm, name, false);
+                    UNDEF_VAR_ERR(vm, name, false);
                 if (!falconPush(vm, value)) return FALCON_RUNTIME_ERROR;
                 break;
             }
             case SET_GLOBAL: {
                 ObjString *name = READ_STRING();
                 if (falconTableSet(vm, &vm->globals, name, peek(vm, 0))) /* Checks if undefined */
-                    return undefinedVariableError(vm, name, true);
+                    UNDEF_VAR_ERR(vm, name, true);
                 break;
             }
             case GET_UPVALUE: {
@@ -606,8 +617,8 @@ static FalconResultCode run(FalconVM *vm) {
 #undef READ_CONSTANT
 #undef READ_STRING
 #undef ASSERT_TOP2_NUM
-#undef ASSERT_TOP_NUM
-#undef ASSERT_TOP_NOT_0
+#undef ASSERT_NUM
+#undef ASSERT_NOT_0
 #undef ASSERT_SUBSCRIPT
 #undef BINARY_OP
 #undef DIVISION_OP
