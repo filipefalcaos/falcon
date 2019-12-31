@@ -12,9 +12,9 @@
 #include "../vm/falcon_vm.h"
 
 /* String operations */
-ObjString *falconMakeString(FalconVM *vm, size_t length);
-ObjString *falconCopyString(FalconVM *vm, const char *chars, size_t length);
-int falconCompareStrings(const ObjString *str1, const ObjString *str2);
-ObjString *falconConcatStrings(FalconVM *vm, const ObjString *s1, const ObjString *s2);
+ObjString *makeString(FalconVM *vm, size_t length);
+ObjString *copyString(FalconVM *vm, const char *chars, size_t length);
+int cmpStrings(const ObjString *str1, const ObjString *str2);
+ObjString *concatStrings(FalconVM *vm, const ObjString *str1, const ObjString *str2);
 
 #endif // FALCON_STRING_H

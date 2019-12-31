@@ -46,7 +46,7 @@ static int constantInstruction(const char *name, FalconVM *vm, BytecodeChunk *by
 
     /* Prints the constant */
     printf("%-16s %4d ", name, constant);
-    falconPrintVal(vm, value, true);
+    printValue(vm, value, true);
     printf("\n");
     return offset + 2;
 }
@@ -61,7 +61,7 @@ static int constantInstruction16(const char *name, FalconVM *vm, BytecodeChunk *
 
     /* Prints the constant */
     printf("%-16s %4d ", name, constant);
-    falconPrintVal(vm, value, true);
+    printValue(vm, value, true);
     printf("\n");
     return offset + 3;
 }
@@ -73,10 +73,10 @@ static int closureInstruction(const char *name, FalconVM *vm, BytecodeChunk *byt
     offset++;
     uint8_t constant = bytecode->code[offset++];
     printf("%-16s %4d ", name, constant);
-    falconPrintVal(vm, bytecode->constants.values[constant], false);
+    printValue(vm, bytecode->constants.values[constant], false);
     printf("\n");
 
-    ObjFunction *function = FALCON_AS_FUNCTION(bytecode->constants.values[constant]);
+    ObjFunction *function = AS_FUNCTION(bytecode->constants.values[constant]);
     for (int i = 0; i < function->upvalueCount; i++) {
         int isLocal = bytecode->code[offset++];
         int index = bytecode->code[offset++];
@@ -90,12 +90,12 @@ static int closureInstruction(const char *name, FalconVM *vm, BytecodeChunk *byt
 /**
  * Displays a single instruction in a bytecode chunk.
  */
-int falconDumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
+int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
     printf("%04d ", offset); /* Prints offset info */
-    int sourceLine = falconGetLine(bytecode, offset);
+    int sourceLine = getLine(bytecode, offset);
 
     /* Prints line info */
-    if (offset > 0 && sourceLine == falconGetLine(bytecode, offset - 1)) {
+    if (offset > 0 && sourceLine == getLine(bytecode, offset - 1)) {
         printf("   | ");
     } else {
         printf("%4d ", sourceLine);
@@ -190,21 +190,21 @@ int falconDumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
 /**
  * Displays a complete bytecode chunk.
  */
-void falconDumpBytecode(FalconVM *vm, BytecodeChunk *bytecode, const char *name) {
+void dumpBytecode(FalconVM *vm, BytecodeChunk *bytecode, const char *name) {
     printf("== %s ==\n", name);
     for (int offset = 0; offset < bytecode->count;) {         /* Loop through the instructions */
-        offset = falconDumpInstruction(vm, bytecode, offset); /* Disassemble instruction */
+        offset = dumpInstruction(vm, bytecode, offset); /* Disassemble instruction */
     }
 }
 
 /**
  * Displays the Falcon's virtual machine stack.
  */
-void falconDumpStack(FalconVM *vm) {
+void dumpStack(FalconVM *vm) {
     printf("Stack:  ");
     for (FalconValue *slot = vm->stack; slot < vm->stackTop; slot++) {
         printf("[ ");
-        falconPrintVal(vm, *slot, false);
+        printValue(vm, *slot, false);
         printf(" ] ");
     }
     printf("\n");
@@ -213,33 +213,33 @@ void falconDumpStack(FalconVM *vm) {
 /**
  * Displays debug information on the allocation of a Falcon Object on the heap.
  */
-void falconDumpAllocation(FalconObj *object, size_t size, ObjType type) {
-    printf("Allocated %ld bytes for type \"%s\" at address %p\n", size, falconGetObjName(type),
+void dumpAllocation(FalconObj *object, size_t size, ObjType type) {
+    printf("Allocated %ld bytes for type \"%s\" at address %p\n", size, getObjName(type),
            (void *) object);
 }
 
 /**
  * Displays debug information on the free of a Falcon Object on the heap.
  */
-void falconDumpFree(FalconObj *object) {
-    printf("Freed object from type \"%s\" at address %p\n", falconGetObjName(object->type),
+void dumpFree(FalconObj *object) {
+    printf("Freed object from type \"%s\" at address %p\n", getObjName(object->type),
            (void *) object);
 }
 
 /**
  * Displays the current status of the garbage collector.
  */
-void falconGCStatus(const char *status) { printf("== Garbage Collector %s ==\n", status); }
+void dumpGCStatus(const char *status) { printf("== Garbage Collector %s ==\n", status); }
 
 /**
  * Displays debug information on the "marking" of a Falcon Object for garbage collection.
  */
-void falconDumpMark(FalconObj *object) { printf("Object at address %p marked\n", (void *) object); }
+void dumpMark(FalconObj *object) { printf("Object at address %p marked\n", (void *) object); }
 
 /**
  * Displays debug information on the "blacken" of a Falcon Object for garbage collection.
  */
-void falconDumpBlacken(FalconObj *object) {
+void dumpBlacken(FalconObj *object) {
     printf("Object at address %p blackened\n", (void *) object);
 }
 
@@ -247,7 +247,7 @@ void falconDumpBlacken(FalconObj *object) {
  * Display the number of collected bytes after a garbage collection process, and the number of
  * bytes required for the next garbage collector activation.
  */
-void falconDumpGC(FalconVM *vm, size_t bytesAllocated) {
+void dumpGC(FalconVM *vm, size_t bytesAllocated) {
     printf("Collected %ld bytes (from %ld to %ld)\n", bytesAllocated - vm->bytesAllocated,
            bytesAllocated, vm->bytesAllocated);
     printf("Next GC at %ld bytes\n", vm->nextGC);

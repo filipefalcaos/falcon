@@ -11,7 +11,7 @@
 /**
  * Initializes the scanner with the first character of the first source code line.
  */
-void falconInitScanner(const char *source, Scanner *scanner) {
+void initScanner(const char *source, Scanner *scanner) {
     scanner->start = source;
     scanner->current = source;
     scanner->lineContent = source;
@@ -22,7 +22,7 @@ void falconInitScanner(const char *source, Scanner *scanner) {
 /**
  * Gets the current line in the scanner.
  */
-const char *falconGetSourceFromLine(Scanner *scanner) { return scanner->lineContent; }
+const char *getSourceFromLine(Scanner *scanner) { return scanner->lineContent; }
 
 /**
  * Check if a character is a valid alpha.
@@ -288,7 +288,7 @@ static Token string(Scanner *scanner) {
     }
 
     if (reachedEOF(scanner)) /* Checks if is an unterminated string */
-        return errorToken(FALCON_UNTERMINATED_STR_ERR, scanner);
+        return errorToken(SCAN_UNTERMINATED_STR_ERR, scanner);
 
     advance(scanner);
     return makeToken(TK_STRING, scanner);
@@ -297,7 +297,7 @@ static Token string(Scanner *scanner) {
 /**
  * Main scanner function. Scans and returns the next token in the source code.
  */
-Token falconScanToken(Scanner *scanner) {
+Token scanToken(Scanner *scanner) {
     preProcessSource(scanner);         /* Handles unnecessary characters */
     scanner->start = scanner->current; /* Sets the start point to the last token */
     if (reachedEOF(scanner)) return makeToken(TK_EOF, scanner);
@@ -358,6 +358,6 @@ Token falconScanToken(Scanner *scanner) {
         case '"':
             return string(scanner);
         default:
-            return errorToken(FALCON_UNEXPECTED_TK_ERR, scanner);
+            return errorToken(SCAN_UNEXPECTED_TK_ERR, scanner);
     }
 }

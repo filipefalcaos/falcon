@@ -62,8 +62,6 @@ add_executable(
     src/lib/falcon_natives.c
     src/lib/falcon_table.h
     src/lib/falcon_table.c
-    src/lib/falcon_math.h
-    src/lib/falcon_math.c
     src/lib/falcon_io.h
     src/lib/falcon_io.c
     src/lib/falcon_string.h

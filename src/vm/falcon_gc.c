@@ -32,7 +32,7 @@ static void markObject(FalconVM *vm, FalconObj *object) {
         return; /* Strings and native functions contain no references to trace */
 
 #ifdef FALCON_DEBUG_LEVEL_02
-    falconDumpMark(object);
+    dumpMark(object);
 #endif
 
     if (vm->grayCapacity < vm->grayCount + 1) {
@@ -59,14 +59,14 @@ static void markCompilerRoots(FalconVM *vm) {
  * Marks a Falcon Value for garbage collection.
  */
 static void markValue(FalconVM *vm, FalconValue value) {
-    if (!FALCON_IS_OBJ(value)) return; /* Num, bool, and null are not dynamically allocated */
-    markObject(vm, FALCON_AS_OBJ(value));
+    if (!IS_OBJ(value)) return; /* Num, bool, and null are not dynamically allocated */
+    markObject(vm, AS_OBJ(value));
 }
 
 /**
  * Marks every key/value pair in the hashtable for garbage collection.
  */
-static void markTable(FalconVM *vm, FalconTable *table) {
+static void markTable(FalconVM *vm, Table *table) {
     for (int i = 0; i < table->capacity; i++) {
         Entry *entry = &table->entries[i];
         markObject(vm, (FalconObj *) entry->key);
@@ -99,7 +99,7 @@ static void markUpvalues(FalconVM *vm, ObjClosure *closure) {
  */
 static void blackenObject(FalconVM *vm, FalconObj *object) {
 #ifdef FALCON_DEBUG_LEVEL_02
-    falconDumpBlacken(object);
+    dumpBlacken(object);
 #endif
 
     switch (object->type) {
@@ -164,11 +164,11 @@ static void traceReferences(FalconVM *vm) {
 /**
  * Removes every key/value pair of "white" objects in the hashtable for garbage collection.
  */
-static void removeWhitesTable(FalconTable *table) {
+static void removeWhitesTable(Table *table) {
     for (int i = 0; i < table->capacity; i++) {
         Entry *current = &table->entries[i];
         if (current->key != NULL && !current->key->obj.isMarked) /* Is a "white" object? */
-            falconTableDelete(table, current->key); /* Removes key/value pair from the table */
+            tableDelete(table, current->key); /* Removes key/value pair from the table */
     }
 }
 
@@ -212,7 +212,7 @@ static void sweep(FalconVM *vm) {
  */
 void falconRunGC(FalconVM *vm) {
 #ifdef FALCON_DEBUG_LEVEL_02
-    falconGCStatus("Start");
+    dumpGCStatus("Start");
     size_t bytesAllocated = vm->bytesAllocated;
 #endif
 
@@ -223,7 +223,7 @@ void falconRunGC(FalconVM *vm) {
     vm->nextGC = vm->bytesAllocated * HEAP_GROW_FACTOR; /* Adjust the next GC threshold */
 
 #ifdef FALCON_DEBUG_LEVEL_02
-    falconDumpGC(vm, bytesAllocated);
-    falconGCStatus("End");
+    dumpGC(vm, bytesAllocated);
+    dumpGCStatus("End");
 #endif
 }

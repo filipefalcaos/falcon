@@ -11,12 +11,12 @@
 /**
  * Reads the content of an input file.
  */
-char *falconReadFile(FalconVM *vm, const char *path) {
+char *readFile(FalconVM *vm, const char *path) {
     char *buffer;
     FILE *file = fopen(path, "rb"); /* Opens the input file */
 
     if (file == NULL) { /* Failed to open the file? */
-        fprintf(stderr, "%s \"%s\"\n", FALCON_OPEN_ERR, path);
+        fprintf(stderr, "%s \"%s\"\n", IO_OPEN_FILE_ERR, path);
         exit(FALCON_ERR_OS);
     }
 
@@ -29,7 +29,7 @@ char *falconReadFile(FalconVM *vm, const char *path) {
         fread(buffer, sizeof(char), fileSize, file); /* Reads the file in a single batch */
 
     if (bytesRead < fileSize) { /* Failed to read the entire file? */
-        fprintf(stderr, "%s \"%s\"\n", FALCON_READ_ERR, path);
+        fprintf(stderr, "%s \"%s\"\n", IO_READ_FILE_ERR, path);
         exit(FALCON_ERR_OS);
     }
 
@@ -44,7 +44,7 @@ char *falconReadFile(FalconVM *vm, const char *path) {
 /**
  * Reads an input string from the standard input dynamically allocating memory.
  */
-char *falconReadStrStdin(FalconVM *vm) {
+char *readStrStdin(FalconVM *vm) {
     uint64_t currentSize = 0;
     uint64_t initialLength = STR_INITIAL_ALLOC;             /* Initial allocation size */
     char *input = FALCON_ALLOCATE(vm, char, initialLength); /* Allocates initial space */
@@ -72,7 +72,7 @@ char *falconReadStrStdin(FalconVM *vm) {
 /**
  * Prints a string character by character until a specified character is found.
  */
-void falconPrintUntil(FILE *file, const char *str, char delimiter) {
+void printUntil(FILE *file, const char *str, char delimiter) {
     for (int i = 0; str[i] != '\0'; i++) {
         if (str[i] == delimiter) break;
         fprintf(file, "%c", str[i]);

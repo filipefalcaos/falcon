@@ -13,6 +13,6 @@
 void falconDefNatives(FalconVM *vm);
 
 /* Native functions errors */
-#define FALCON_CONV_STR_NUM_ERR "Could not convert string to number."
+#define FALCON_CONV_STR_NUM_ERR "Could not convert string to number." // TODO: Move
 
 #endif // FALCON_NATIVES_H

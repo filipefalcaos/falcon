@@ -26,7 +26,7 @@ static uint32_t hashString(const unsigned char *key, size_t length) {
  * Creates a new ObjString by claiming ownership of the given string. In this case, the
  * characters of a ObjString can be freed when no longer needed.
  */
-ObjString *falconMakeString(FalconVM *vm, size_t length) {
+ObjString *makeString(FalconVM *vm, size_t length) {
     ObjString *str =
         (ObjString *) falconAllocateObj(vm, sizeof(ObjString) + length + 1, OBJ_STRING);
     str->length = length;
@@ -37,20 +37,19 @@ ObjString *falconMakeString(FalconVM *vm, size_t length) {
  * Copies and allocates a given string to the heap. This way, every ObjString reliably owns
  * its character array and can free it.
  */
-ObjString *falconCopyString(FalconVM *vm, const char *chars, size_t length) {
+ObjString *copyString(FalconVM *vm, const char *chars, size_t length) {
     uint32_t hash = hashString((const unsigned char *) chars, length);
-    ObjString *interned =
-        falconTableFindStr(&vm->strings, chars, length, hash); /* Checks if interned */
+    ObjString *interned = tableFindStr(&vm->strings, chars, length, hash); /* Checks if interned */
     if (interned != NULL) return interned;
 
-    ObjString *str = falconMakeString(vm, length);
+    ObjString *str = makeString(vm, length);
     memcpy(str->chars, chars, length);
     str->chars[length] = '\0';
     str->hash = hash;
 
-    falconPush(vm, FALCON_OBJ_VAL(str));                    /* Avoids GC */
-    falconTableSet(vm, &vm->strings, str, FALCON_NULL_VAL); /* Interns the string */
-    falconPop(vm);
+    VMPush(vm, OBJ_VAL(str));                    /* Avoids GC */
+    tableSet(vm, &vm->strings, str, NULL_VAL); /* Interns the string */
+    VMPop(vm);
     return str;
 }
 
@@ -58,7 +57,7 @@ ObjString *falconCopyString(FalconVM *vm, const char *chars, size_t length) {
  * Compares two given Falcon strings. If the two strings are equal, returns 0. If the first string
  * is lexicographically smaller, returns a negative integer. Otherwise, returns a positive one.
  */
-int falconCompareStrings(const ObjString *str1, const ObjString *str2) {
+int cmpStrings(const ObjString *str1, const ObjString *str2) {
     const unsigned char *s1 = (const unsigned char *) str1->chars;
     const unsigned char *s2 = (const unsigned char *) str2->chars;
     while ((*s1 && *s2) && (*s1 == *s2)) {
@@ -71,11 +70,11 @@ int falconCompareStrings(const ObjString *str1, const ObjString *str2) {
 /**
  * Concatenates two given Falcon strings.
  */
-ObjString *falconConcatStrings(FalconVM *vm, const ObjString *s1, const ObjString *s2) {
-    size_t length = s2->length + s1->length;
-    ObjString *result = falconMakeString(vm, length);
-    memcpy(result->chars, s2->chars, s2->length);
-    memcpy(result->chars + s2->length, s1->chars, s1->length);
+ObjString *concatStrings(FalconVM *vm, const ObjString *str1, const ObjString *str2) {
+    size_t length = str2->length + str1->length;
+    ObjString *result = makeString(vm, length);
+    memcpy(result->chars, str2->chars, str2->length);
+    memcpy(result->chars + str2->length, str1->chars, str1->length);
     result->chars[length] = '\0';
     result->hash = hashString((const unsigned char *) result->chars, length);
     return result;

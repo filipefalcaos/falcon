@@ -6,7 +6,7 @@
 
 #include "falcon_error.h"
 #include "falcon_io.h"
-#include "falcon_math.h"
+#include <math.h>
 
 /**
  * Presents a compiler time error to the programmer.
@@ -16,18 +16,18 @@ static void falconCompileError(FalconVM *vm, Scanner *scanner, Token *token, con
     uint32_t tkLine = token->line;
     uint32_t tkColumn = token->column;
     const char *fileName = vm->fileName;
-    const char *sourceLine = falconGetSourceFromLine(scanner);
+    const char *sourceLine = getSourceFromLine(scanner);
 
     /* Prints the file, the line, the error message, and the source line */
     fprintf(stderr, "%s:%d:%d => ", fileName, tkLine, tkColumn);
     fprintf(stderr, "CompilerError: %s\n", message);
     fprintf(stderr, "%d | ", tkLine);
-    falconPrintUntil(stderr, sourceLine, '\n');
+    printUntil(stderr, sourceLine, '\n');
 
     /* Prints error indicator */
     if (token->type == TK_EOF) offset = 1;
     fprintf(stderr, "\n");
-    fprintf(stderr, "%*c^\n", tkColumn + falconGetDigits(tkLine) + 2 + offset, ' ');
+    fprintf(stderr, "%*c^\n", tkColumn + (int) floor(log10(tkLine) + 1) + 2 + offset, ' ');
 }
 
 /**
@@ -48,7 +48,7 @@ static void printCallFrames(FalconVM *vm, int initial, int final) {
         CallFrame *currentFrame = &vm->frames[i];
         ObjFunction *currentFunction = currentFrame->closure->function;
         size_t currentInstruction = currentFrame->pc - currentFunction->bytecode.code - 1;
-        int currentLine = falconGetLine(&currentFunction->bytecode, (int) currentInstruction);
+        int currentLine = getLine(&currentFunction->bytecode, (int) currentInstruction);
 
         /* Prints line and function name */
         fprintf(stderr, "    [Line %d] in ", currentLine);

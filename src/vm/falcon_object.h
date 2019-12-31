@@ -70,22 +70,22 @@ typedef struct {
 } ObjList;
 
 /* Gets a object type from an Falcon Value */
-#define FALCON_OBJ_TYPE(value) (FALCON_AS_OBJ(value)->type)
+#define OBJ_TYPE(value) (AS_OBJ(value)->type)
 
 /* Checks if a Value is an FalconObj type */
-#define FALCON_IS_STRING(value) falconIsObjType(value, OBJ_STRING)
-#define FALCON_IS_LIST(value)   falconIsObjType(value, OBJ_LIST)
+#define IS_STRING(value) isObjType(value, OBJ_STRING)
+#define IS_LIST(value)   isObjType(value, OBJ_LIST)
 
 /* Gets the object value from a Falcon Value */
-#define FALCON_AS_CLOSURE(value)  ((ObjClosure *) FALCON_AS_OBJ(value))
-#define FALCON_AS_FUNCTION(value) ((ObjFunction *) FALCON_AS_OBJ(value))
-#define FALCON_AS_NATIVE(value)   ((ObjNative *) FALCON_AS_OBJ(value))
-#define FALCON_AS_STRING(value)   ((ObjString *) FALCON_AS_OBJ(value))
-#define FALCON_AS_CSTRING(value)  (((ObjString *) FALCON_AS_OBJ(value))->chars)
-#define FALCON_AS_LIST(value)     ((ObjList *) FALCON_AS_OBJ(value))
+#define AS_CLOSURE(value)  ((ObjClosure *) AS_OBJ(value))
+#define AS_FUNCTION(value) ((ObjFunction *) AS_OBJ(value))
+#define AS_NATIVE(value)   ((ObjNative *) AS_OBJ(value))
+#define AS_STRING(value)   ((ObjString *) AS_OBJ(value))
+#define AS_CSTRING(value)  (((ObjString *) AS_OBJ(value))->chars)
+#define AS_LIST(value)     ((ObjList *) AS_OBJ(value))
 
 /* Object operations */
-const char *falconGetObjName(ObjType type);
+const char *getObjName(ObjType type);
 ObjUpvalue *falconUpvalue(FalconVM *vm, FalconValue *slot);
 ObjClosure *falconClosure(FalconVM *vm, ObjFunction *function);
 ObjFunction *falconFunction(FalconVM *vm);
@@ -95,8 +95,8 @@ ObjList *falconList(FalconVM *vm, int size);
 /**
  * Checks if a Value is of an FalconObj type.
  */
-static inline bool falconIsObjType(FalconValue value, ObjType type) {
-    return FALCON_IS_OBJ(value) && FALCON_AS_OBJ(value)->type == type;
+static inline bool isObjType(FalconValue value, ObjType type) {
+    return IS_OBJ(value) && AS_OBJ(value)->type == type;
 }
 
 #endif // FALCON_OBJECT_H

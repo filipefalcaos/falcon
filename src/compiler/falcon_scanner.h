@@ -29,12 +29,12 @@ typedef struct {
 } Scanner;
 
 /* Scanning operations */
-void falconInitScanner(const char *source, Scanner *scanner);
-const char *falconGetSourceFromLine(Scanner *scanner);
-Token falconScanToken(Scanner *scanner);
+void initScanner(const char *source, Scanner *scanner);
+const char *getSourceFromLine(Scanner *scanner);
+Token scanToken(Scanner *scanner);
 
 /* Scanning error messages */
-#define FALCON_UNTERMINATED_STR_ERR "Unterminated string."
-#define FALCON_UNEXPECTED_TK_ERR    "Unexpected token."
+#define SCAN_UNTERMINATED_STR_ERR "Unterminated string."
+#define SCAN_UNEXPECTED_TK_ERR    "Unexpected token."
 
 #endif // FALCON_SCANNER_H

@@ -47,10 +47,10 @@ struct FalconVM {
     FalconObj *objects;
 
     /* Table for the interned strings */
-    FalconTable strings;
+    Table strings;
 
     /* Table for all global variables */
-    FalconTable globals;
+    Table globals;
 
     /* Current function compiler. This is necessary when the garbage collector is triggered during
      * the compilation stage */
@@ -74,31 +74,30 @@ typedef enum { FALCON_OK, FALCON_COMPILE_ERROR, FALCON_RUNTIME_ERROR } FalconRes
 void falconInitVM(FalconVM *vm);
 void falconFreeVM(FalconVM *vm);
 void resetVMStack(FalconVM *vm);
-bool falconPush(FalconVM *vm, FalconValue value);
-FalconValue falconPop(FalconVM *vm);
+bool VMPush(FalconVM *vm, FalconValue value);
+FalconValue VMPop(FalconVM *vm);
 FalconResultCode falconInterpret(FalconVM *vm, const char *source);
 
 /* The initial allocation size for the heap, in bytes */
-#define FALCON_BASE_HEAP_SIZE 1000000 /* 1Mb */
+#define VM_BASE_HEAP_SIZE 1000000 /* 1Mb */
 
 /* Runtime error messages */
-#define FALCON_BUG \
-    "This is most likely a bug in Falcon itself. Please provide a bug report."
-#define FALCON_UNKNOWN_OPCODE_ERR  "Unknown opcode %d. " FALCON_BUG
-#define FALCON_UNREACHABLE_ERR     "Opcode %d should be unreachable. " FALCON_BUG
-#define FALCON_STACK_OVERFLOW      "Stack overflow."
-#define FALCON_UNDEF_VAR_ERR       "Undefined variable '%s'."
-#define FALCON_ARGS_COUNT_ERR      "Expected %d arguments, but got %d."
-#define FALCON_ARGS_TYPE_ERR       "Expected argument %d to be a %s."
-#define FALCON_VALUE_NOT_CALL_ERR \
-    "Cannot call value. Only functions and classes are callable values."
-#define FALCON_OPR_NOT_NUM_ERR     "Operand must be a number."
-#define FALCON_OPR_NOT_NUM_STR_ERR "Operands must be two numbers or two strings."
-#define FALCON_DIV_ZERO_ERR        "Cannot perform a division by zero."
-#define FALCON_INDEX_NOT_NUM_ERR   "List index must be a number."
-#define FALCON_INDEX_ERR           "Indexed value must be a list or a string."
-#define FALCON_INDEX_ASSG_ERR      "Only lists support subscript assignment."
-#define FALCON_LIST_BOUNDS_ERR     "List index out of bounds."
-#define FALCON_STRING_BOUNDS_ERR   "String index out of bounds."
+#define VM_BUG_REPORT          "Please provide a bug report."
+#define VM_BUG                 "This is most likely a bug in Falcon itself. " VM_BUG_REPORT
+#define VM_UNKNOWN_OPCODE_ERR  "Unknown opcode %d. " VM_BUG
+#define VM_UNREACHABLE_ERR     "Opcode %d should be unreachable. " VM_BUG
+#define VM_STACK_OVERFLOW      "Stack overflow."
+#define VM_UNDEF_VAR_ERR       "Undefined variable '%s'."
+#define VM_ARGS_COUNT_ERR      "Expected %d arguments, but got %d."
+#define VM_ARGS_TYPE_ERR       "Expected argument %d to be a %s."
+#define VM_VALUE_NOT_CALL_ERR  "Cannot call value. Only functions and classes are callable values."
+#define VM_OPR_NOT_NUM_ERR     "Operand must be a number."
+#define VM_OPR_NOT_NUM_STR_ERR "Operands must be two numbers or two strings."
+#define VM_DIV_ZERO_ERR        "Cannot perform a division by zero."
+#define VM_INDEX_NOT_NUM_ERR   "List index must be a number."
+#define VM_INDEX_ERR           "Indexed value must be a list or a string."
+#define VM_INDEX_ASSG_ERR      "Only lists support subscript assignment."
+#define VM_LIST_BOUNDS_ERR     "List index out of bounds."
+#define VM_STRING_BOUNDS_ERR   "String index out of bounds."
 
 #endif // FALCON_VM_H

@@ -5,10 +5,10 @@
  */
 
 #include "falcon_natives.h"
-#include "falcon_io.h"
-#include "falcon_math.h"
-#include "falcon_string.h"
 #include "falcon_error.h"
+#include "falcon_io.h"
+#include "falcon_string.h"
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,8 +18,8 @@
 #define CHECK_ARGS(vm, op, argCount, expectedCount)                            \
     do {                                                                       \
         if (argCount op expectedCount) {                                       \
-            falconVMError(vm, FALCON_ARGS_COUNT_ERR, expectedCount, argCount); \
-            return FALCON_ERR_VAL;                                             \
+            falconVMError(vm, VM_ARGS_COUNT_ERR, expectedCount, argCount); \
+            return ERR_VAL;                                             \
         }                                                                      \
     } while (false)
 
@@ -28,8 +28,8 @@
 #define CHECK_TYPE(type, typeName, value, vm, pos)                  \
     do {                                                            \
         if (!type(value)) {                                         \
-            falconVMError(vm, FALCON_ARGS_TYPE_ERR, pos, typeName); \
-            return FALCON_ERR_VAL;                                  \
+            falconVMError(vm, VM_ARGS_TYPE_ERR, pos, typeName); \
+            return ERR_VAL;                                  \
         }                                                           \
     } while (false)
 
@@ -49,7 +49,7 @@ FALCON_NATIVE(authors) {
     (void) args; /* Unused */
     CHECK_ARGS(vm, !=, argCount, 0);
     falconPrintAuthors();
-    return FALCON_NULL_VAL;
+    return NULL_VAL;
 }
 
 /**
@@ -59,7 +59,7 @@ FALCON_NATIVE(license) {
     (void) args; /* Unused */
     CHECK_ARGS(vm, !=, argCount, 0);
     falconPrintLicense();
-    return FALCON_NULL_VAL;
+    return NULL_VAL;
 }
 
 /**
@@ -69,7 +69,7 @@ FALCON_NATIVE(help) {
     (void) args; /* Unused */
     CHECK_ARGS(vm, !=, argCount, 0);
     falconPrintUsage();
-    return FALCON_NULL_VAL;
+    return NULL_VAL;
 }
 
 /**
@@ -77,8 +77,8 @@ FALCON_NATIVE(help) {
  */
 FALCON_NATIVE(exit_) {
     CHECK_ARGS(vm, !=, argCount, 1);
-    CHECK_TYPE(FALCON_IS_NUM, "number", *args, vm, 1);
-    exit((int) FALCON_AS_NUM(*args)); /* Exits the process */
+    CHECK_TYPE(IS_NUM, "number", *args, vm, 1);
+    exit((int) AS_NUM(*args)); /* Exits the process */
 }
 
 /**
@@ -87,7 +87,7 @@ FALCON_NATIVE(exit_) {
 FALCON_NATIVE(clock_) {
     (void) args; /* Unused */
     CHECK_ARGS(vm, !=, argCount, 0);
-    return FALCON_NUM_VAL((double) clock() / CLOCKS_PER_SEC);
+    return NUM_VAL((double) clock() / CLOCKS_PER_SEC);
 }
 
 /**
@@ -96,7 +96,7 @@ FALCON_NATIVE(clock_) {
 FALCON_NATIVE(time_) {
     (void) args; /* Unused */
     CHECK_ARGS(vm, !=, argCount, 0);
-    return FALCON_NUM_VAL((double) time(NULL));
+    return NUM_VAL((double) time(NULL));
 }
 
 /*
@@ -128,7 +128,7 @@ FALCON_NATIVE(type) {
             typeStringLen = 8;
             break;
         case VAL_OBJ:
-            switch (FALCON_OBJ_TYPE(*args)) {
+            switch (OBJ_TYPE(*args)) {
                 case OBJ_STRING:
                     typeString = "<string>";
                     typeStringLen = 8;
@@ -151,16 +151,16 @@ FALCON_NATIVE(type) {
             break;
     }
 
-    return FALCON_OBJ_VAL(falconCopyString(vm, typeString, typeStringLen));
+    return OBJ_VAL(copyString(vm, typeString, typeStringLen));
 }
 
 /**
  * Native Falcon function to convert a given Falcon Value to a number. The conversion is implemented
- * through the "falconIsFalsy" function.
+ * through the "isFalsy" function.
  */
 FALCON_NATIVE(bool_) {
     CHECK_ARGS(vm, !=, argCount, 1);
-    if (!FALCON_IS_BOOL(*args)) return FALCON_BOOL_VAL(!falconIsFalsy(*args));
+    if (!IS_BOOL(*args)) return BOOL_VAL(!isFalsy(*args));
     return *args; /* Given value is already a boolean */
 }
 
@@ -169,24 +169,24 @@ FALCON_NATIVE(bool_) {
  */
 FALCON_NATIVE(num) {
     CHECK_ARGS(vm, !=, argCount, 1);
-    if (!FALCON_IS_NUM(*args)) {
-        if (!FALCON_IS_STRING(*args) && !FALCON_IS_BOOL(*args)) {
-            falconVMError(vm, FALCON_ARGS_TYPE_ERR, 1, "string, boolean, or number");
-            return FALCON_ERR_VAL;
+    if (!IS_NUM(*args)) {
+        if (!IS_STRING(*args) && !IS_BOOL(*args)) {
+            falconVMError(vm, VM_ARGS_TYPE_ERR, 1, "string, boolean, or number");
+            return ERR_VAL;
         }
 
-        if (FALCON_IS_STRING(*args)) { /* String to number */
-            char *start = FALCON_AS_CSTRING(*args), *end;
-            double number = strtod(FALCON_AS_CSTRING(*args), &end); /* Converts to double */
+        if (IS_STRING(*args)) { /* String to number */
+            char *start = AS_CSTRING(*args), *end;
+            double number = strtod(AS_CSTRING(*args), &end); /* Converts to double */
 
             if (start == end) { /* Checks for conversion success */
                 falconVMError(vm, FALCON_CONV_STR_NUM_ERR);
-                return FALCON_ERR_VAL;
+                return ERR_VAL;
             }
 
-            return FALCON_NUM_VAL(number);
+            return NUM_VAL(number);
         } else { /* Boolean to number */
-            return FALCON_NUM_VAL(FALCON_AS_BOOL(*args) ? 1 : 0);
+            return NUM_VAL(AS_BOOL(*args) ? 1 : 0);
         }
     }
 
@@ -195,13 +195,13 @@ FALCON_NATIVE(num) {
 
 /**
  * Native Falcon function to convert a given Falcon Value to a string. The conversion is implemented
- * through the "falconValToString" function.
+ * through the "valueToString" function.
  */
 FALCON_NATIVE(str) {
     CHECK_ARGS(vm, !=, argCount, 1);
-    if (!FALCON_IS_STRING(*args)) {
-        char *string = falconValToString(vm, args); /* Converts value to a string */
-        return FALCON_OBJ_VAL(falconCopyString(vm, string, strlen(string)));
+    if (!IS_STRING(*args)) {
+        char *string = valueToString(vm, args); /* Converts value to a string */
+        return OBJ_VAL(copyString(vm, string, strlen(string)));
     }
 
     return *args; /* Given value is already a string */
@@ -212,8 +212,8 @@ FALCON_NATIVE(str) {
  */
 FALCON_NATIVE(len) {
     CHECK_ARGS(vm, !=, argCount, 1);
-    CHECK_TYPE(FALCON_IS_LIST, "list", *args, vm, 1);
-    return FALCON_NUM_VAL(FALCON_AS_LIST(*args)->elements.count); /* Returns list length */
+    CHECK_TYPE(IS_LIST, "list", *args, vm, 1);
+    return NUM_VAL(AS_LIST(*args)->elements.count); /* Returns list length */
 }
 
 /*
@@ -227,9 +227,9 @@ FALCON_NATIVE(len) {
  */
 FALCON_NATIVE(abs_) {
     CHECK_ARGS(vm, !=, argCount, 1);
-    CHECK_TYPE(FALCON_IS_NUM, "number", *args, vm, 1);
-    double absValue = falconAbs(FALCON_AS_NUM(*args)); /* Gets the abs value */
-    return FALCON_NUM_VAL(absValue);
+    CHECK_TYPE(IS_NUM, "number", *args, vm, 1);
+    double absValue = fabs(AS_NUM(*args)); /* Gets the abs value */
+    return NUM_VAL(absValue);
 }
 
 /**
@@ -237,9 +237,9 @@ FALCON_NATIVE(abs_) {
  */
 FALCON_NATIVE(sqrt_) {
     CHECK_ARGS(vm, !=, argCount, 1);
-    CHECK_TYPE(FALCON_IS_NUM, "number", *args, vm, 1);
-    double sqrtValue = falconSqrt(FALCON_AS_NUM(*args)); /* Gets the sqrt value */
-    return FALCON_NUM_VAL(sqrtValue);
+    CHECK_TYPE(IS_NUM, "number", *args, vm, 1);
+    double sqrtValue = sqrt(AS_NUM(*args)); /* Gets the sqrt value */
+    return NUM_VAL(sqrtValue);
 }
 
 /**
@@ -247,12 +247,11 @@ FALCON_NATIVE(sqrt_) {
  */
 FALCON_NATIVE(pow_) {
     CHECK_ARGS(vm, !=, argCount, 2);
-    CHECK_TYPE(FALCON_IS_NUM, "number", args[0], vm, 1);
-    CHECK_TYPE(FALCON_IS_NUM, "number", args[1], vm, 2);
+    CHECK_TYPE(IS_NUM, "number", args[0], vm, 1);
+    CHECK_TYPE(IS_NUM, "number", args[1], vm, 2);
 
-    double powValue =
-        falconPow(FALCON_AS_NUM(args[0]), FALCON_AS_NUM(args[1])); /* Gets the pow value */
-    return FALCON_NUM_VAL(powValue);
+    double powValue = pow(AS_NUM(args[0]), AS_NUM(args[1])); /* Gets the pow value */
+    return NUM_VAL(powValue);
 }
 
 /*
@@ -269,12 +268,12 @@ FALCON_NATIVE(input) {
     CHECK_ARGS(vm, >, argCount, 1);
     if (argCount == 1) {
         FalconValue prompt = *args;
-        CHECK_TYPE(FALCON_IS_STRING, "string", prompt, vm, 1); /* Checks if is valid */
-        printf("%s", FALCON_AS_CSTRING(prompt));               /* Prints the prompt */
+        CHECK_TYPE(IS_STRING, "string", prompt, vm, 1); /* Checks if is valid */
+        printf("%s", AS_CSTRING(prompt));               /* Prints the prompt */
     }
 
-    char *inputString = falconReadStrStdin(vm); /* Reads the input string */
-    return FALCON_OBJ_VAL(falconCopyString(vm, inputString, strlen(inputString)));
+    char *inputString = readStrStdin(vm); /* Reads the input string */
+    return OBJ_VAL(copyString(vm, inputString, strlen(inputString)));
 }
 
 /**
@@ -283,15 +282,15 @@ FALCON_NATIVE(input) {
 FALCON_NATIVE(print) {
     if (argCount > 1) {
         for (int i = 0; i < argCount; i++) {
-            falconPrintVal(vm, args[i], false);
+            printValue(vm, args[i], false);
             if (i < argCount - 1) printf(" "); /* Separator */
         }
     } else {
-        falconPrintVal(vm, *args, false);
+        printValue(vm, *args, false);
     }
 
     printf("\n"); /* End */
-    return FALCON_NULL_VAL;
+    return NULL_VAL;
 }
 
 #undef CHECK_ARGS
@@ -308,11 +307,11 @@ FALCON_NATIVE(print) {
  * Defines a new native function for Falcon.
  */
 static void defNative(FalconVM *vm, const char *name, FalconNativeFn function) {
-    falconPush(vm, FALCON_OBJ_VAL(falconCopyString(vm, name, (int) strlen(name)))); /* Avoids GC */
-    falconPush(vm, FALCON_OBJ_VAL(falconNative(vm, function, name)));               /* Avoids GC */
-    falconTableSet(vm, &vm->globals, FALCON_AS_STRING(vm->stack[0]), vm->stack[1]);
-    falconPop(vm);
-    falconPop(vm);
+    VMPush(vm, OBJ_VAL(copyString(vm, name, (int) strlen(name)))); /* Avoids GC */
+    VMPush(vm, OBJ_VAL(falconNative(vm, function, name)));         /* Avoids GC */
+    tableSet(vm, &vm->globals, AS_STRING(vm->stack[0]), vm->stack[1]);
+    VMPop(vm);
+    VMPop(vm);
 }
 
 /**

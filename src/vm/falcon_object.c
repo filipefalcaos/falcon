@@ -10,7 +10,7 @@
 /**
  * Gets the name (string) of a given Falcon Object type.
  */
-const char *falconGetObjName(ObjType type) {
+const char *getObjName(ObjType type) {
     const char *objectTypeNames[] = {
         "OBJ_STRING",
         "OBJ_UPVALUE",
@@ -28,7 +28,7 @@ ObjUpvalue *falconUpvalue(FalconVM *vm, FalconValue *slot) {
     ObjUpvalue *upvalue = FALCON_ALLOCATE_OBJ(vm, ObjUpvalue, OBJ_UPVALUE);
     upvalue->slot = slot;
     upvalue->next = NULL;
-    upvalue->closed = FALCON_NULL_VAL;
+    upvalue->closed = NULL_VAL;
     return upvalue;
 }
 
@@ -58,7 +58,7 @@ ObjFunction *falconFunction(FalconVM *vm) {
     function->arity = 0;
     function->upvalueCount = 0;
     function->name = NULL;
-    falconInitBytecode(&function->bytecode);
+    initBytecode(&function->bytecode);
     return function;
 }
 

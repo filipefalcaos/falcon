@@ -66,7 +66,7 @@ FalconObj *falconAllocateObj(FalconVM *vm, size_t size, ObjType type) {
     vm->objects = object;
 
 #ifdef FALCON_DEBUG_LEVEL_02
-    falconDumpAllocation(object, size, type);
+    dumpAllocation(object, size, type);
 #endif
 
     return object;
@@ -77,7 +77,7 @@ FalconObj *falconAllocateObj(FalconVM *vm, size_t size, ObjType type) {
  */
 void falconFreeObj(FalconVM *vm, FalconObj *object) {
 #ifdef FALCON_DEBUG_LEVEL_02
-    falconDumpFree(object);
+    dumpFree(object);
 #endif
 
     switch (object->type) {
@@ -97,7 +97,7 @@ void falconFreeObj(FalconVM *vm, FalconObj *object) {
         }
         case OBJ_FUNCTION: {
             ObjFunction *function = (ObjFunction *) object;
-            falconFreeBytecode(vm, &function->bytecode);
+            freeBytecode(vm, &function->bytecode);
             FALCON_FREE(vm, ObjFunction, object);
             break;
         }

@@ -11,15 +11,15 @@
 #include <stdio.h>
 
 /* File operations */
-char *falconReadFile(FalconVM *vm, const char *path);
-char *falconReadStrStdin(FalconVM *vm);
-void falconPrintUntil(FILE *file, const char *str, char delimiter);
+char *readFile(FalconVM *vm, const char *path);
+char *readStrStdin(FalconVM *vm);
+void printUntil(FILE *file, const char *str, char delimiter);
 
 /* Readline errors */
-#define FALCON_READLINE_ERR "Could not read input line"
+#define IO_READLINE_ERR "Could not read input line."
 
 /* File errors */
-#define FALCON_OPEN_ERR "Could not open file"
-#define FALCON_READ_ERR "Could not read file"
+#define IO_OPEN_FILE_ERR "Could not open file."
+#define IO_READ_FILE_ERR "Could not read file."
 
 #endif // FALCON_IO_H

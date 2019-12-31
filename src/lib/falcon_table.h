@@ -21,14 +21,14 @@ typedef struct {
     int count;
     int capacity;
     Entry *entries; /* Array of hashtable entries */
-} FalconTable;
+} Table;
 
 /* Hashtable operations */
-void falconInitTable(FalconTable *table);
-void falconFreeTable(FalconVM *vm, FalconTable *table);
-bool falconTableGet(FalconTable *table, ObjString *key, FalconValue *value);
-bool falconTableSet(FalconVM *vm, FalconTable *table, ObjString *key, FalconValue value);
-bool falconTableDelete(FalconTable *table, ObjString *key);
-ObjString *falconTableFindStr(FalconTable *table, const char *chars, size_t length, uint32_t hash);
+void initTable(Table *table);
+void freeTable(FalconVM *vm, Table *table);
+bool tableGet(Table *table, ObjString *key, FalconValue *value);
+bool tableSet(FalconVM *vm, Table *table, ObjString *key, FalconValue value);
+bool tableDelete(Table *table, ObjString *key);
+ObjString *tableFindStr(Table *table, const char *chars, size_t length, uint32_t hash);
 
 #endif // FALCON_TABLE_H

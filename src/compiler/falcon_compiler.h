@@ -83,62 +83,62 @@ typedef struct {
 ObjFunction *falconCompile(FalconVM *vm, const char *source);
 
 /* Compilation flags */
-#define FALCON_ERROR_STATE      (-1)
-#define FALCON_UNDEFINED_SCOPE  FALCON_ERROR_STATE
-#define FALCON_UNRESOLVED_LOCAL FALCON_ERROR_STATE
-#define FALCON_GLOBAL_SCOPE     0
+#define COMP_ERROR_STATE      (-1)
+#define COMP_UNDEF_SCOPE      COMP_ERROR_STATE
+#define COMP_UNRESOLVED_LOCAL COMP_ERROR_STATE
+#define COMP_GLOBAL_SCOPE     0
 
 /* Compilation error messages */
 /* Expressions */
-#define FALCON_GRP_EXPR_ERR     "Expected a ')' after expression."
-#define FALCON_TERNARY_EXPR_ERR "Expected a ':' after first branch of ternary operator."
-#define FALCON_EXPR_ERR         "Expected an expression."
-#define FALCON_EXPR_STMT_ERR    "Expected a ';' after expression."
-#define FALCON_LIST_BRACKET_ERR "Expected a ']' after list elements."
-#define FALCON_SUB_BRACKET_ERR  "Expected a ']' after subscript expression."
+#define COMP_GRP_EXPR_ERR     "Expected a ')' after expression."
+#define COMP_TERNARY_EXPR_ERR "Expected a ':' after first branch of ternary operator."
+#define COMP_EXPR_ERR         "Expected an expression."
+#define COMP_EXPR_STMT_ERR    "Expected a ';' after expression."
+#define COMP_LIST_BRACKET_ERR "Expected a ']' after list elements."
+#define COMP_SUB_BRACKET_ERR  "Expected a ']' after subscript expression."
 
 /* Conditionals and Loops */
-#define FALCON_IF_STMT_ERR       "Expected a '{' after 'if' condition."
-#define FALCON_SWITCH_STMT_ERR   "Expected a '{' before switch cases."
-#define FALCON_ELSE_END_ERR      "Cases or else are not allowed after an else case."
-#define FALCON_ARR_CASE_ERR      "Expected a '->' after case."
-#define FALCON_ARR_ELSE_ERR      "Expected a '->' after else case."
-#define FALCON_STMT_SWITCH_ERR   "Cannot have statements before any switch case."
-#define FALCON_WHILE_STMT_ERR    "Expected a '{' after 'while' condition."
-#define FALCON_FOR_STMT_INIT_ERR "Expected an implicit variable declaration in the init clause."
-#define FALCON_FOR_STMT_CM1_ERR  "Expected a ',' after 'for' loop init clause."
-#define FALCON_FOR_STMT_CM2_ERR  "Expected a ',' after 'for' loop conditional clause."
-#define FALCON_FOR_STMT_BRC_ERR  "Expected a '{' after 'for' loop increment clause."
-#define FALCON_NEXT_STMT_ERR     "Expected a ';' after 'next' statement."
-#define FALCON_NEXT_LOOP_ERR     "'next' statement outside of a loop body."
-#define FALCON_BREAK_STMT_ERR    "Expected a ';' after 'break' statement."
-#define FALCON_BREAK_LOOP_ERR    "'break' statement outside of a loop body."
+#define COMP_IF_STMT_ERR       "Expected a '{' after 'if' condition."
+#define COMP_SWITCH_STMT_ERR   "Expected a '{' before switch cases."
+#define COMP_ELSE_END_ERR      "Cases or else are not allowed after an else case."
+#define COMP_ARR_CASE_ERR      "Expected a '->' after case."
+#define COMP_ARR_ELSE_ERR      "Expected a '->' after else case."
+#define COMP_STMT_SWITCH_ERR   "Cannot have statements before any switch case."
+#define COMP_WHILE_STMT_ERR    "Expected a '{' after 'while' condition."
+#define COMP_FOR_STMT_INIT_ERR "Expected an implicit variable declaration in the init clause."
+#define COMP_FOR_STMT_CM1_ERR  "Expected a ',' after 'for' loop init clause."
+#define COMP_FOR_STMT_CM2_ERR  "Expected a ',' after 'for' loop conditional clause."
+#define COMP_FOR_STMT_BRC_ERR  "Expected a '{' after 'for' loop increment clause."
+#define COMP_NEXT_STMT_ERR     "Expected a ';' after 'next' statement."
+#define COMP_NEXT_LOOP_ERR     "'next' statement outside of a loop body."
+#define COMP_BREAK_STMT_ERR    "Expected a ';' after 'break' statement."
+#define COMP_BREAK_LOOP_ERR    "'break' statement outside of a loop body."
 
 /* Variables */
-#define FALCON_RED_INIT_ERR   "Cannot read variable in its own initializer."
-#define FALCON_VAR_REDECL_ERR "Variable or closure already declared in this scope."
-#define FALCON_INV_ASSG_ERR   "Invalid assignment target."
-#define FALCON_VAR_NAME_ERR   "Expected a variable name."
-#define FALCON_VAR_DECL_ERR   "Expected a ';' after variable declaration."
+#define COMP_READ_INIT_ERR  "Cannot read variable in its own initializer."
+#define COMP_VAR_REDECL_ERR "Variable or closure already declared in this scope."
+#define COMP_INV_ASSG_ERR   "Invalid assignment target."
+#define COMP_VAR_NAME_ERR   "Expected a variable name."
+#define COMP_VAR_DECL_ERR   "Expected a ';' after variable declaration."
 
 /* Functions and Blocks */
-#define FALCON_BLOCK_BRACE_ERR      "Expected a '}' after block."
-#define FALCON_CALL_LIST_PAREN_ERR  "Expected a ')' after function arguments."
-#define FALCON_FUNC_NAME_PAREN_ERR  "Expected a '(' after function name."
-#define FALCON_FUNC_LIST_PAREN_ERR  "Expected a ')' after function parameters."
-#define FALCON_FUNC_BODY_BRACE_ERR  "Expected a '{' before function body."
-#define FALCON_FUNC_NAME_ERR        "Expected a function name."
-#define FALCON_PARAM_NAME_ERR       "Expected a parameter name."
-#define FALCON_RETURN_STMT_ERR      "Expected a ';' after return value."
-#define FALCON_RETURN_TOP_LEVEL_ERR "Cannot return from top level code."
+#define COMP_BLOCK_BRACE_ERR      "Expected a '}' after block."
+#define COMP_CALL_LIST_PAREN_ERR  "Expected a ')' after function arguments."
+#define COMP_FUNC_NAME_PAREN_ERR  "Expected a '(' after function name."
+#define COMP_FUNC_LIST_PAREN_ERR  "Expected a ')' after function parameters."
+#define COMP_FUNC_BODY_BRACE_ERR  "Expected a '{' before function body."
+#define COMP_FUNC_NAME_ERR        "Expected a function name."
+#define COMP_PARAM_NAME_ERR       "Expected a parameter name."
+#define COMP_RETURN_STMT_ERR      "Expected a ';' after return value."
+#define COMP_RETURN_TOP_LEVEL_ERR "Cannot return from top level code."
 
 /* Limits */
-#define FALCON_CONST_LIMIT_ERR   "Limit of 65535 constants reached."
-#define FALCON_LOOP_LIMIT_ERR    "Limit of 65535 instructions in loop body reached."
-#define FALCON_JUMP_LIMIT_ERR    "Limit of 65535 instructions in conditional branch reached."
-#define FALCON_VAR_LIMIT_ERR     "Limit of 255 local variables in scope reached."
-#define FALCON_CLOSURE_LIMIT_ERR "Limit of 255 closure variables reached."
-#define FALCON_ARGS_LIMIT_ERR    "Limit of 255 arguments reached."
-#define FALCON_PARAMS_LIMIT_ERR  "Limit of 255 parameters reached."
+#define COMP_CONST_LIMIT_ERR   "Limit of 65535 constants reached."
+#define COMP_LOOP_LIMIT_ERR    "Limit of 65535 instructions in loop body reached."
+#define COMP_JUMP_LIMIT_ERR    "Limit of 65535 instructions in conditional branch reached."
+#define COMP_VAR_LIMIT_ERR     "Limit of 255 local variables in scope reached."
+#define COMP_CLOSURE_LIMIT_ERR "Limit of 255 closure variables reached."
+#define COMP_ARGS_LIMIT_ERR    "Limit of 255 arguments reached."
+#define COMP_PARAMS_LIMIT_ERR  "Limit of 255 parameters reached."
 
 #endif // FALCON_COMPILER_H
