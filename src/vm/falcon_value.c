@@ -157,23 +157,29 @@ char *valueToString(FalconVM *vm, FalconValue *value) {
         }
         case VAL_OBJ:
             switch (OBJ_TYPE(*value)) {
+                case OBJ_FUNCTION: {
+                    ObjFunction *function = AS_FUNCTION(*value);
+                    return functionToString(vm, function);
+                }
                 case OBJ_CLOSURE: {
                     ObjClosure *closure = AS_CLOSURE(*value);
                     return functionToString(vm, closure->function);
                 }
-                case OBJ_FUNCTION: {
-                    ObjFunction *function = AS_FUNCTION(*value);
-                    return functionToString(vm, function);
+                case OBJ_CLASS: {
+                    ObjClass *class_ = AS_CLASS(*value);
+                    char *string = FALCON_ALLOCATE_OBJ(vm, char, class_->name->length + 9);
+                    sprintf(string, "<class %s>", class_->name->chars);
+                    return string;
+                }
+                case OBJ_LIST: {
+                    ObjList *list = AS_LIST(*value);
+                    return listToString(vm, list);
                 }
                 case OBJ_NATIVE: {
                     ObjNative *native = AS_NATIVE(*value);
                     char *string = FALCON_ALLOCATE(vm, char, strlen(native->name) + 13);
                     sprintf(string, "<native fn %s>", native->name);
                     return string;
-                }
-                case OBJ_LIST: {
-                    ObjList *list = AS_LIST(*value);
-                    return listToString(vm, list);
                 }
                 default:
                     break;
@@ -213,9 +219,10 @@ void printValue(FalconVM *vm, FalconValue value, bool printQuotes) {
             break;
         case VAL_OBJ:
             switch (OBJ_TYPE(value)) {
-                case OBJ_CLOSURE: {
-                    ObjClosure *closure = AS_CLOSURE(value);
-                    printFunction(closure->function);
+                case OBJ_STRING: {
+                    if (printQuotes) printf("\"");
+                    printf("%s", AS_CSTRING(value));
+                    if (printQuotes) printf("\"");
                     break;
                 }
                 case OBJ_FUNCTION: {
@@ -223,17 +230,14 @@ void printValue(FalconVM *vm, FalconValue value, bool printQuotes) {
                     printFunction(function);
                     break;
                 }
-                case OBJ_NATIVE: {
-                    ObjNative *native = AS_NATIVE(value);
-                    printf("<native fn %s>", native->name);
+                case OBJ_CLOSURE: {
+                    ObjClosure *closure = AS_CLOSURE(value);
+                    printFunction(closure->function);
                     break;
                 }
-                case OBJ_STRING: {
-                    if (printQuotes) printf("\"");
-                    printf("%s", AS_CSTRING(value));
-                    if (printQuotes) printf("\"");
+                case OBJ_CLASS:
+                    printf("<class %s>", AS_CLASS(value)->name->chars);
                     break;
-                }
                 case OBJ_LIST: {
                     ObjList *list = AS_LIST(value);
                     printf("[");
@@ -244,6 +248,11 @@ void printValue(FalconVM *vm, FalconValue value, bool printQuotes) {
                     }
 
                     printf("]");
+                    break;
+                }
+                case OBJ_NATIVE: {
+                    ObjNative *native = AS_NATIVE(value);
+                    printf("<native fn %s>", native->name);
                     break;
                 }
                 default:

@@ -133,6 +133,10 @@ FALCON_NATIVE(type) {
                     typeString = "<string>";
                     typeStringLen = 8;
                     break;
+                case OBJ_CLASS:
+                    typeString = "<class>";
+                    typeStringLen = 7;
+                    break;
                 case OBJ_LIST:
                     typeString = "<list>";
                     typeStringLen = 6;
