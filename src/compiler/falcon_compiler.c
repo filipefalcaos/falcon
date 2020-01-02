@@ -823,30 +823,17 @@ static void block(FalconCompiler *compiler) {
 }
 
 /**
- * Compiles the declaration of a single variable.
+ * Compiles a class declaration.
  */
-static void singleVarDeclaration(FalconCompiler *compiler) {
-    uint8_t global = parseVariable(compiler, COMP_VAR_NAME_ERR); /* Parses a variable name */
+static void classDeclaration(FalconCompiler *compiler) {
+    consume(compiler, TK_IDENTIFIER, COMP_CLASS_NAME_ERR);
+    uint8_t nameConstant = identifierConstant(compiler, &compiler->parser->previous);
+    declareVariable(compiler);
+    emitBytes(compiler, DEF_CLASS, nameConstant);
+    defineVariable(compiler, nameConstant);
 
-    if (match(compiler, TK_EQUAL)) {
-        expression(compiler); /* Compiles the variable initializer */
-    } else {
-        emitByte(compiler, LOAD_NULL); /* Default variable value is "null" */
-    }
-
-    defineVariable(compiler, global); /* Emits the declaration bytecode */
-}
-
-/**
- * Compiles a variable declaration list.
- */
-static void varDeclaration(FalconCompiler *compiler) {
-    Parser *parser = compiler->parser;
-    if (!check(parser, TK_SEMICOLON)) {
-        do {
-            singleVarDeclaration(compiler); /* Compiles the declaration */
-        } while (match(compiler, TK_COMMA));
-    }
+    consume(compiler, TK_LEFT_BRACE, COMP_CLASS_BODY_BRACE_ERR);
+    consume(compiler, TK_RIGHT_BRACE, "Expect '}' after class body.");
 }
 
 /**
@@ -897,6 +884,35 @@ static void funDeclaration(FalconCompiler *compiler) {
     markInitialized(compiler->fCompiler);
     function(compiler, TYPE_FUNCTION);
     defineVariable(compiler, func);
+}
+
+/**
+ * Compiles the declaration of a single variable.
+ */
+static void singleVarDeclaration(FalconCompiler *compiler) {
+    uint8_t global = parseVariable(compiler, COMP_VAR_NAME_ERR); /* Parses a variable name */
+
+    if (match(compiler, TK_EQUAL)) {
+        expression(compiler); /* Compiles the variable initializer */
+    } else {
+        emitByte(compiler, LOAD_NULL); /* Default variable value is "null" */
+    }
+
+    defineVariable(compiler, global); /* Emits the declaration bytecode */
+}
+
+/**
+ * Compiles a variable declaration list.
+ */
+static void varDeclaration(FalconCompiler *compiler) {
+    Parser *parser = compiler->parser;
+    if (!check(parser, TK_SEMICOLON)) {
+        do {
+            singleVarDeclaration(compiler); /* Compiles each declaration */
+        } while (match(compiler, TK_COMMA));
+    }
+
+    consume(compiler, TK_SEMICOLON, COMP_VAR_DECL_ERR);
 }
 
 /**
@@ -1067,6 +1083,7 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case GET_LOCAL:
         case SET_LOCAL:
         case FN_CALL:
+        case DEF_CLASS:
             return 1; /* Instructions with single byte as argument */
 
         case LOAD_CONST:
@@ -1313,11 +1330,12 @@ static void synchronize(FalconCompiler *compiler) {
  * Compiles a declaration statement.
  */
 static void declaration(FalconCompiler *compiler) {
-    if (match(compiler, TK_VAR)) {
-        varDeclaration(compiler);
-        consume(compiler, TK_SEMICOLON, COMP_VAR_DECL_ERR);
+    if (match(compiler, TK_CLASS)) {
+        classDeclaration(compiler);
     } else if (match(compiler, TK_FUNCTION)) {
         funDeclaration(compiler);
+    } else if (match(compiler, TK_VAR)) {
+        varDeclaration(compiler);
     } else {
         statement(compiler);
     }

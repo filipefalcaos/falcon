@@ -103,6 +103,8 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
 
     uint8_t instruction = bytecode->code[offset]; /* Current instruction */
     switch (instruction) {                        /* Verifies the instruction type */
+
+        /* Constants and literals */
         case LOAD_CONST:
             return constantInstruction16("LOAD_CONST", vm, bytecode, offset);
         case LOAD_FALSE:
@@ -111,6 +113,8 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
             return simpleInstruction("LOAD_TRUE", offset);
         case LOAD_NULL:
             return simpleInstruction("LOAD_NULL", offset);
+
+        /* Lists */
         case DEF_LIST:
             return byteInstruction("DEF_LIST", bytecode, offset);
         case PUSH_LIST:
@@ -119,6 +123,8 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
             return simpleInstruction("GET_SUBSCRIPT", offset);
         case SET_SUBSCRIPT:
             return simpleInstruction("SET_SUBSCRIPT", offset);
+
+        /* Relational operations */
         case BIN_AND:
             return simpleInstruction("BIN_AND", offset);
         case BIN_OR:
@@ -131,6 +137,8 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
             return simpleInstruction("BIN_GREATER", offset);
         case BIN_LESS:
             return simpleInstruction("BIN_LESS", offset);
+
+        /* Arithmetic operations */
         case BIN_ADD:
             return simpleInstruction("BIN_ADD", offset);
         case BIN_SUB:
@@ -145,6 +153,8 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
             return simpleInstruction("BIN_MULT", offset);
         case BIN_POW:
             return simpleInstruction("BIN_POW", offset);
+
+        /* Variable operations */
         case DEF_GLOBAL:
             return constantInstruction("DEF_GLOBAL", vm, bytecode, offset);
         case GET_GLOBAL:
@@ -161,18 +171,28 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
             return byteInstruction("GET_LOCAL", bytecode, offset);
         case SET_LOCAL:
             return byteInstruction("SET_LOCAL", bytecode, offset);
+
+        /* Jump/loop operations */
         case JUMP_FWR:
             return jumpInstruction("JUMP_FWR", 1, bytecode, offset);
         case JUMP_IF_FALSE:
             return jumpInstruction("JUMP_IF_FALSE", 1, bytecode, offset);
         case LOOP_BACK:
             return jumpInstruction("LOOP_BACK", -1, bytecode, offset);
+
+        /* Closures/functions operations */
         case FN_CLOSURE:
             return closureInstruction("FN_CLOSURE", vm, bytecode, offset);
         case FN_CALL:
             return byteInstruction("FN_CALL", bytecode, offset);
         case FN_RETURN:
             return simpleInstruction("FN_RETURN", offset);
+
+        /* Class operations */
+        case DEF_CLASS:
+            return constantInstruction("DEF_CLASS", vm, bytecode, offset);
+
+        /* VM operations */
         case DUP_TOP:
             return simpleInstruction("DUP_TOP", offset);
         case POP_TOP:
@@ -181,6 +201,8 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
             return simpleInstruction("POP_TOP_EXPR", offset);
         case TEMP_MARK:
             return simpleInstruction("TEMP_MARK", offset); /* Should not be reachable */
+
+        /* Unknown opcode */
         default:
             printf("Unknown opcode %d\n", instruction);
             return offset + 1;

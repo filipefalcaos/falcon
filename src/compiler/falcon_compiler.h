@@ -132,6 +132,10 @@ ObjFunction *falconCompile(FalconVM *vm, const char *source);
 #define COMP_RETURN_STMT_ERR      "Expected a ';' after return value."
 #define COMP_RETURN_TOP_LEVEL_ERR "Cannot return from top level code."
 
+/* Classes */
+#define COMP_CLASS_NAME_ERR       "Expected a class name."
+#define COMP_CLASS_BODY_BRACE_ERR "Expected a '{' before class body."
+
 /* Limits */
 #define COMP_CONST_LIMIT_ERR   "Limit of 65535 constants reached."
 #define COMP_LOOP_LIMIT_ERR    "Limit of 65535 instructions in loop body reached."

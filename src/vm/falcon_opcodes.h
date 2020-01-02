@@ -17,7 +17,7 @@ typedef enum {
     LOAD_NULL,  /* "null" literal */
 
     /* Lists */
-    DEF_LIST,      /* Create a new list */
+    DEF_LIST,      /* Define a new list */
     PUSH_LIST,     /* Push a value to the end of a list */
     GET_SUBSCRIPT, /* Get a list element by index */
     SET_SUBSCRIPT, /* Set a list element by index */
@@ -40,7 +40,7 @@ typedef enum {
     BIN_POW,  /* "^" operator */
 
     /* Variable operations */
-    DEF_GLOBAL,  /* Define global variable */
+    DEF_GLOBAL,  /* Define a global variable */
     GET_GLOBAL,  /* Get global variable value */
     SET_GLOBAL,  /* Set global variable value */
     GET_UPVALUE, /* Get upvalue value */
@@ -58,6 +58,9 @@ typedef enum {
     FN_CLOSURE, /* Closure declaration */
     FN_CALL,    /* Perform a function call */
     FN_RETURN,  /* "return" statement */
+
+    /* Class operations */
+    DEF_CLASS, /* Define a new class */
 
     /* VM operations */
     DUP_TOP,      /* Duplicate the top of the VM stack */

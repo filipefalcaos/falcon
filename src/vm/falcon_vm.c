@@ -580,6 +580,11 @@ static FalconResultCode run(FalconVM *vm) {
                 break;
             }
 
+            /* Class operations */
+            case DEF_CLASS:
+                VMPush(vm, OBJ_VAL(falconClass(vm, READ_STRING())));
+                break;
+
             /* VM operations */
             case DUP_TOP:
                 VMPush(vm, peek(vm, 0));
