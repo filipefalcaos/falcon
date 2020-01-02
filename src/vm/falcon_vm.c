@@ -113,6 +113,11 @@ static bool call(FalconVM *vm, ObjClosure *closure, int argCount) {
 static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
     if (IS_OBJ(callee)) {
         switch (OBJ_TYPE(callee)) {
+            case OBJ_CLASS: {
+                ObjClass *class_ = AS_CLASS(callee);
+                vm->stackTop[-argCount - 1] = OBJ_VAL(falconInstance(vm, class_));
+                return true;
+            }
             case OBJ_CLOSURE:
                 return call(vm, AS_CLOSURE(callee), argCount);
             case OBJ_NATIVE: {

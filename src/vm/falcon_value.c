@@ -167,8 +167,14 @@ char *valueToString(FalconVM *vm, FalconValue *value) {
                 }
                 case OBJ_CLASS: {
                     ObjClass *class_ = AS_CLASS(*value);
-                    char *string = FALCON_ALLOCATE_OBJ(vm, char, class_->name->length + 9);
+                    char *string = FALCON_ALLOCATE(vm, char, class_->name->length + 9);
                     sprintf(string, "<class %s>", class_->name->chars);
+                    return string;
+                }
+                case OBJ_INSTANCE: {
+                    ObjInstance *instance = AS_INSTANCE(*value);
+                    char *string = FALCON_ALLOCATE(vm, char, instance->class_->name->length + 15);
+                    sprintf(string, "<instance of %s>", instance->class_->name->chars);
                     return string;
                 }
                 case OBJ_LIST: {
@@ -237,6 +243,9 @@ void printValue(FalconVM *vm, FalconValue value, bool printQuotes) {
                 }
                 case OBJ_CLASS:
                     printf("<class %s>", AS_CLASS(value)->name->chars);
+                    break;
+                case OBJ_INSTANCE:
+                    printf("<instance of %s>", AS_INSTANCE(value)->class_->name->chars);
                     break;
                 case OBJ_LIST: {
                     ObjList *list = AS_LIST(value);

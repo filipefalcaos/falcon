@@ -74,6 +74,16 @@ ObjClass *falconClass(FalconVM *vm, ObjString *name) {
 }
 
 /**
+ * Allocates a new Falcon instance (of a class) object.
+ */
+ObjInstance *falconInstance(FalconVM *vm, ObjClass *class_) {
+    ObjInstance *instance = FALCON_ALLOCATE_OBJ(vm, ObjInstance, OBJ_INSTANCE);
+    instance->class_ = class_;
+    initTable(&instance->fields);
+    return instance;
+}
+
+/**
  * Allocates a new Falcon list object.
  */
 ObjList *falconList(FalconVM *vm, int size) {

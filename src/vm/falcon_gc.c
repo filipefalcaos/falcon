@@ -123,6 +123,12 @@ static void blackenObject(FalconVM *vm, FalconObj *object) {
             markObject(vm, (FalconObj *) class_->name);
             break;
         }
+        case OBJ_INSTANCE: {
+            ObjInstance *instance = (ObjInstance *) object;
+            markObject(vm, (FalconObj *) instance->class_);
+            markTable(vm, &instance->fields);
+            break;
+        }
         case OBJ_LIST: {
             ObjList *list = (ObjList *) object;
             markArray(vm, &list->elements);
