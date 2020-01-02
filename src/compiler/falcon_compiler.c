@@ -1309,6 +1309,7 @@ static void synchronize(FalconCompiler *compiler) {
         if (parser->previous.type == TK_SEMICOLON) return; /* Sync point (expression end) */
 
         switch (parser->current.type) { /* Sync point (statement/declaration begin) */
+            case TK_BREAK:
             case TK_CLASS:
             case TK_FOR:
             case TK_FUNCTION:
