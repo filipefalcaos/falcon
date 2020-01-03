@@ -212,7 +212,7 @@ FALCON_NATIVE(str) {
 }
 
 /**
- * Native function to get the length of a Falcon Value (lists only).
+ * Native function to get the length of a Falcon Value (lists or strings only).
  */
 FALCON_NATIVE(len) {
     ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
@@ -230,6 +230,12 @@ FALCON_NATIVE(len) {
     }
 }
 
+/*
+ * ================================================================================================
+ * ================================ Class-related native functions ================================
+ * ================================================================================================
+ */
+
 /**
  * Native function to test if a given Falcon Value has a given field (string).
  */
@@ -245,7 +251,8 @@ FALCON_NATIVE(hasField) {
 }
 
 /**
- * Native function to get the value of a given field (string) from a given Falcon Value.
+ * Native function to get the value of a given field (string) from a given Falcon Value (class
+ * instance).
  */
 FALCON_NATIVE(getField) {
     ASSERT_ARGS_COUNT(vm, !=, argCount, 2);
@@ -263,6 +270,10 @@ FALCON_NATIVE(getField) {
     return ERR_VAL;
 }
 
+/**
+ * Native function to set a given Falcon Value to a given field (string) from another given Falcon
+ * Value (class instance).
+ */
 FALCON_NATIVE(setField) {
     ASSERT_ARGS_COUNT(vm, !=, argCount, 3);
     ASSERT_ARG_TYPE(IS_INSTANCE, "class instance", args[0], vm, 1);
@@ -272,6 +283,20 @@ FALCON_NATIVE(setField) {
     ObjInstance *instance = AS_INSTANCE(args[0]);
     tableSet(vm, &instance->fields, AS_STRING(args[1]), args[2]);
     return args[2];
+}
+
+/**
+ * Native function to delete a given field (string) from a given Falcon Value (class instance).
+ */
+FALCON_NATIVE(delField) {
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 2);
+    ASSERT_ARG_TYPE(IS_INSTANCE, "class instance", args[0], vm, 1);
+    ASSERT_ARG_TYPE(IS_STRING, "string", args[1], vm, 2);
+
+    /* Deletes the field */
+    ObjInstance *instance = AS_INSTANCE(args[0]);
+    tableDelete(&instance->fields, AS_STRING(args[1]));
+    return NULL_VAL;
 }
 
 /*
@@ -391,6 +416,7 @@ void falconDefNatives(FalconVM *vm) {
         { .function = hasField, .name = "hasField" },
         { .function = getField, .name = "getField" },
         { .function = setField, .name = "setField" },
+        { .function = delField, .name = "delField" },
         { .function = abs_, .name = "abs" },
         { .function = sqrt_, .name = "sqrt" },
         { .function = pow_, .name = "pow" },
