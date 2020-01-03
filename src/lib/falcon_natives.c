@@ -244,6 +244,36 @@ FALCON_NATIVE(hasField) {
     return BOOL_VAL(tableGet(&instance->fields, AS_STRING(args[1]), &value));
 }
 
+/**
+ * Native function to get the value of a given field (string) from a given Falcon Value.
+ */
+FALCON_NATIVE(getField) {
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 2);
+    ASSERT_ARG_TYPE(IS_INSTANCE, "class instance", args[0], vm, 1);
+    ASSERT_ARG_TYPE(IS_STRING, "string", args[1], vm, 2);
+
+    /* Gets the field value */
+    ObjInstance *instance = AS_INSTANCE(args[0]);
+    FalconValue value;
+    if (tableGet(&instance->fields, AS_STRING(args[1]), &value))
+        return value;
+
+    /* Undefined field error */
+    falconVMError(vm, VM_UNDEF_FIELD_ERR, instance->class_->name->chars, AS_STRING(args[1])->chars);
+    return ERR_VAL;
+}
+
+FALCON_NATIVE(setField) {
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 3);
+    ASSERT_ARG_TYPE(IS_INSTANCE, "class instance", args[0], vm, 1);
+    ASSERT_ARG_TYPE(IS_STRING, "string", args[1], vm, 2);
+
+    /* Sets the field value */
+    ObjInstance *instance = AS_INSTANCE(args[0]);
+    tableSet(vm, &instance->fields, AS_STRING(args[1]), args[2]);
+    return args[2];
+}
+
 /*
  * ================================================================================================
  * ===================================== Math native functions ====================================
@@ -359,6 +389,8 @@ void falconDefNatives(FalconVM *vm) {
         { .function = str, .name = "str" },
         { .function = len, .name = "len" },
         { .function = hasField, .name = "hasField" },
+        { .function = getField, .name = "getField" },
+        { .function = setField, .name = "setField" },
         { .function = abs_, .name = "abs" },
         { .function = sqrt_, .name = "sqrt" },
         { .function = pow_, .name = "pow" },
