@@ -286,21 +286,6 @@ static FalconResultCode run(FalconVM *vm) {
         }                                                                              \
     } while (false)
 
-/* Presents a runtime error when trying to access an index that is out of bounds */
-#define OUT_OF_BOUNDS_ERR(vm, error) \
-    do {                             \
-        falconVMError(vm, error);    \
-        return FALCON_RUNTIME_ERROR; \
-    } while (false)
-
-/* Presents a runtime error when a global variable is undefined */
-#define UNDEF_VAR_ERR(vm, name, delete)                     \
-    do {                                                    \
-        if (delete) tableDelete(&(vm)->globals, name);      \
-        falconVMError(vm, VM_UNDEF_VAR_ERR, (name)->chars); \
-        return FALCON_RUNTIME_ERROR;                        \
-    } while (false)
-
     /* Main virtual machine loop */
     while (true) {
 #ifdef FALCON_DEBUG_LEVEL_01
@@ -361,7 +346,9 @@ static FalconResultCode run(FalconVM *vm) {
                             break;
                         }
 
-                        OUT_OF_BOUNDS_ERR(vm, VM_LIST_BOUNDS_ERR); /* Out of bounds index */
+                        /* Out of bounds index */
+                        falconVMError(vm, VM_LIST_BOUNDS_ERR);
+                        return FALCON_RUNTIME_ERROR;
                     }
                     case OBJ_STRING: {
                         ObjString *string = AS_STRING(subscript);
@@ -371,7 +358,9 @@ static FalconResultCode run(FalconVM *vm) {
                             break;
                         }
 
-                        OUT_OF_BOUNDS_ERR(vm, VM_STRING_BOUNDS_ERR); /* Out of bounds index */
+                        /* Out of bounds index */
+                        falconVMError(vm, VM_STRING_BOUNDS_ERR);
+                        return FALCON_RUNTIME_ERROR;
                     }
                     default: /* Only lists and strings can be subscript */
                         falconVMError(vm, VM_INDEX_ERR);
@@ -401,7 +390,9 @@ static FalconResultCode run(FalconVM *vm) {
                             break;
                         }
 
-                        OUT_OF_BOUNDS_ERR(vm, VM_LIST_BOUNDS_ERR); /* Out of bounds index */
+                        /* Out of bounds index */
+                        falconVMError(vm, VM_LIST_BOUNDS_ERR);
+                        return FALCON_RUNTIME_ERROR;
                     }
                     default: /* Only lists support subscript assignment */
                         falconVMError(vm, VM_INDEX_ASSG_ERR);
@@ -490,15 +481,23 @@ static FalconResultCode run(FalconVM *vm) {
             case GET_GLOBAL: {
                 ObjString *name = READ_STRING();
                 FalconValue value;
-                if (!tableGet(&vm->globals, name, &value)) /* Checks if undefined */
-                    UNDEF_VAR_ERR(vm, name, false);
+
+                if (!tableGet(&vm->globals, name, &value)) { /* Checks if undefined */
+                    falconVMError(vm, VM_UNDEF_VAR_ERR, (name)->chars);
+                    return FALCON_RUNTIME_ERROR;
+                }
+
                 if (!VMPush(vm, value)) return FALCON_RUNTIME_ERROR;
                 break;
             }
             case SET_GLOBAL: {
                 ObjString *name = READ_STRING();
-                if (tableSet(vm, &vm->globals, name, peek(vm, 0))) /* Checks if undefined */
-                    UNDEF_VAR_ERR(vm, name, true);
+                if (tableSet(vm, &vm->globals, name, peek(vm, 0))) { /* Checks if undefined */
+                    tableDelete(&(vm)->globals, name);
+                    falconVMError(vm, VM_UNDEF_VAR_ERR, (name)->chars);
+                    return FALCON_RUNTIME_ERROR;
+                }
+
                 break;
             }
             case GET_UPVALUE: {
@@ -589,6 +588,40 @@ static FalconResultCode run(FalconVM *vm) {
             case DEF_CLASS:
                 VMPush(vm, OBJ_VAL(falconClass(vm, READ_STRING())));
                 break;
+            case GET_FIELD: {
+                if (!IS_INSTANCE(peek(vm, 0))) {
+                    falconVMError(vm, VM_NOT_INSTANCE_ERR);
+                    return FALCON_RUNTIME_ERROR;
+                }
+
+                ObjInstance *instance = AS_INSTANCE(peek(vm, 0));
+                ObjString *name = READ_STRING();
+                FalconValue value;
+
+                if (tableGet(&instance->fields, name, &value)) {
+                    VMPop(vm);         /* Pops the instance */
+                    VMPush(vm, value); /* Pushes the field value */
+                    break;
+                }
+
+                /* Undefined field error */
+                falconVMError(vm, VM_UNDEF_FIELD_ERR, instance->class_->name->chars, name->chars);
+                return FALCON_RUNTIME_ERROR;
+            }
+            case SET_FIELD: {
+                if (!IS_INSTANCE(peek(vm, 1))) {
+                    falconVMError(vm, VM_NOT_INSTANCE_ERR);
+                    return FALCON_RUNTIME_ERROR;
+                }
+
+                ObjInstance *instance = AS_INSTANCE(peek(vm, 1));
+                tableSet(vm, &instance->fields, READ_STRING(), peek(vm, 0));
+
+                FalconValue value = VMPop(vm); /* Pops the assigned value */
+                VMPop(vm);                     /* Pops the instance */
+                VMPush(vm, value);             /* Pushes the new field value */
+                break;
+            }
 
             /* VM operations */
             case DUP_TOP:

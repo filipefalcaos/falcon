@@ -570,6 +570,22 @@ PARSE_RULE(call) {
 }
 
 /**
+ * Handles the "dot" syntax for get and set expressions on a class instance.
+ */
+PARSE_RULE(dot) {
+    consume(compiler, TK_IDENTIFIER, COMP_FIELD_NAME_ERR);
+    uint8_t name = identifierConstant(compiler, &compiler->parser->previous);
+
+    /* Compiles field get or set expressions */
+    if (canAssign && match(compiler, TK_EQUAL)) { /* a.b = ... */
+        expression(compiler);
+        emitBytes(compiler, SET_FIELD, name);
+    } else { /* Access field */
+        emitBytes(compiler, GET_FIELD, name);
+    }
+}
+
+/**
  * Handles the opening parenthesis by compiling the expression between the parentheses, and then
  * parsing the closing parenthesis.
  */
@@ -719,7 +735,7 @@ ParseRule rules[] = {
     RULE(list, subscript, PREC_TOP),   /* TK_LEFT_BRACKET */
     EMPTY_RULE,                        /* TK_RIGHT_BRACKET */
     EMPTY_RULE,                        /* TK_COMMA */
-    EMPTY_RULE,                        /* TK_DOT */
+    INFIX_RULE(dot, PREC_TOP),         /* TK_DOT */
     EMPTY_RULE,                        /* TK_COLON */
     EMPTY_RULE,                        /* TK_SEMICOLON */
     EMPTY_RULE,                        /* TK_ARROW */
@@ -1084,6 +1100,8 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case SET_LOCAL:
         case FN_CALL:
         case DEF_CLASS:
+        case GET_FIELD:
+        case SET_FIELD:
             return 1; /* Instructions with single byte as argument */
 
         case LOAD_CONST:

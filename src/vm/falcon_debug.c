@@ -5,7 +5,6 @@
  */
 
 #include "falcon_debug.h"
-#include "falcon_value.h"
 #include "falcon_vm.h"
 #include <stdio.h>
 
@@ -191,6 +190,10 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
         /* Class operations */
         case DEF_CLASS:
             return constantInstruction("DEF_CLASS", vm, bytecode, offset);
+        case GET_FIELD:
+            return constantInstruction("GET_FIELD", vm, bytecode, offset);
+        case SET_FIELD:
+            return constantInstruction("SET_FIELD", vm, bytecode, offset);
 
         /* VM operations */
         case DUP_TOP:
