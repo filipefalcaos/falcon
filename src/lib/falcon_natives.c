@@ -230,6 +230,20 @@ FALCON_NATIVE(len) {
     }
 }
 
+/**
+ * Native function to test if a given Falcon Value has a given field (string).
+ */
+FALCON_NATIVE(hasField) {
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 2);
+    ASSERT_ARG_TYPE(IS_INSTANCE, "class instance", args[0], vm, 1);
+    ASSERT_ARG_TYPE(IS_STRING, "string", args[1], vm, 2);
+
+    /* Checks if the field is defined */
+    ObjInstance *instance = AS_INSTANCE(args[0]);
+    FalconValue value;
+    return BOOL_VAL(tableGet(&instance->fields, AS_STRING(args[1]), &value));
+}
+
 /*
  * ================================================================================================
  * ===================================== Math native functions ====================================
@@ -344,6 +358,7 @@ void falconDefNatives(FalconVM *vm) {
         { .function = num, .name = "num" },
         { .function = str, .name = "str" },
         { .function = len, .name = "len" },
+        { .function = hasField, .name = "hasField" },
         { .function = abs_, .name = "abs" },
         { .function = sqrt_, .name = "sqrt" },
         { .function = pow_, .name = "pow" },
