@@ -839,20 +839,6 @@ static void block(FalconCompiler *compiler) {
 }
 
 /**
- * Compiles a class declaration.
- */
-static void classDeclaration(FalconCompiler *compiler) {
-    consume(compiler, TK_IDENTIFIER, COMP_CLASS_NAME_ERR);
-    uint8_t nameConstant = identifierConstant(compiler, &compiler->parser->previous);
-    declareVariable(compiler);
-    emitBytes(compiler, DEF_CLASS, nameConstant);
-    defineVariable(compiler, nameConstant);
-
-    consume(compiler, TK_LEFT_BRACE, COMP_CLASS_BODY_BRACE_ERR);
-    consume(compiler, TK_RIGHT_BRACE, "Expect '}' after class body.");
-}
-
-/**
  * Compiles a function body and its parameters.
  */
 static void function(FalconCompiler *compiler, FunctionType type) {
@@ -890,6 +876,56 @@ static void function(FalconCompiler *compiler, FunctionType type) {
         emitByte(compiler, (uint8_t)(fCompiler.upvalues[i].isLocal ? true : false));
         emitByte(compiler, fCompiler.upvalues[i].index);
     }
+}
+
+/**
+ * Compiles a method definition inside a class declaration.
+ */
+static void method(FalconCompiler *compiler) {
+    Parser *parser = compiler->parser;
+    consume(compiler, TK_IDENTIFIER, COMP_METHOD_NAME_ERR);
+    uint8_t nameConstant = identifierConstant(compiler, &parser->previous);
+
+    /* Gets the method type */
+    FunctionType type = TYPE_METHOD;
+    if (parser->previous.length == 4 && memcmp(parser->previous.start, "init", 4) == 0) {
+        type = TYPE_INIT;
+    }
+
+    /* Parses the method declaration as a function declaration */
+    function(compiler, type);
+    emitBytes(compiler, DEF_METHOD, nameConstant);
+}
+
+/**
+ * Compiles a class declaration.
+ */
+static void classDeclaration(FalconCompiler *compiler) {
+    Parser *parser = compiler->parser;
+    consume(compiler, TK_IDENTIFIER, COMP_CLASS_NAME_ERR);
+    Token className = parser->previous;
+
+    /* Adds the class name to the constants table and set the variable */
+    uint8_t nameConstant = identifierConstant(compiler, &className);
+    declareVariable(compiler);
+    emitBytes(compiler, DEF_CLASS, nameConstant);
+    defineVariable(compiler, nameConstant);
+
+    /* Sets a new class compiler */
+    ClassCompiler classCompiler;
+    classCompiler.name = className;
+    classCompiler.enclosing = compiler->cCompiler;
+    compiler->cCompiler = &classCompiler;
+
+    /* Parses the class body and its methods */
+    consume(compiler, TK_LEFT_BRACE, COMP_CLASS_BODY_BRACE_ERR);
+    while (!check(parser, TK_RIGHT_BRACE) && !check(parser, TK_EOF)) {
+        namedVariable(compiler, className, false);
+        method(compiler);
+    }
+
+    consume(compiler, TK_RIGHT_BRACE, COMP_CLASS_BODY_BRACE2_ERR);
+    compiler->cCompiler = compiler->cCompiler->enclosing;
 }
 
 /**
@@ -1100,6 +1136,7 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case SET_LOCAL:
         case FN_CALL:
         case DEF_CLASS:
+        case DEF_METHOD:
         case GET_FIELD:
         case SET_FIELD:
             return 1; /* Instructions with single byte as argument */
@@ -1370,13 +1407,14 @@ ObjFunction *falconCompile(FalconVM *vm, const char *source) {
     Parser parser;
     Scanner scanner;
     FalconCompiler programCompiler;
-    FunctionCompiler funCompiler;
+    FunctionCompiler fCompiler;
 
     /* Inits the parser, scanner, and compiler */
     initParser(&parser);
     initScanner(source, &scanner);
     initCompiler(&programCompiler, vm, &parser, &scanner);
-    initFunctionCompiler(&programCompiler, &funCompiler, NULL, TYPE_SCRIPT);
+    initFunctionCompiler(&programCompiler, &fCompiler, NULL, TYPE_SCRIPT);
+    programCompiler.cCompiler = NULL;
 
     advance(&programCompiler);                 /* Get the first token */
     while (!match(&programCompiler, TK_EOF)) { /* Main compiler loop */

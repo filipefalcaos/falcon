@@ -11,9 +11,10 @@
 #include "../vm/falcon_object.h"
 #include "falcon_scanner.h"
 
-/* Function types: (i) TYPE_FUNCTION represents an user-defined function; and (ii) TYPE_SCRIPT
- * represents the top-level (global scope) code */
-typedef enum { TYPE_FUNCTION, TYPE_SCRIPT } FunctionType;
+/* Function types: (i) TYPE_FUNCTION represents an user-defined function; (ii) TYPE_SCRIPT
+ * represents the top-level (global scope) code; (iii) TYPE_METHOD represents a user-defined method
+ * in a class; and (iv) TYPE_INIT represents the "init" method of a class */
+typedef enum { TYPE_FUNCTION, TYPE_SCRIPT, TYPE_METHOD, TYPE_INIT } FunctionType;
 
 /* Local variable representation */
 typedef struct {
@@ -63,6 +64,18 @@ typedef struct sCompiler {
 
 } FunctionCompiler;
 
+/* Class compiler representation */
+typedef struct cCompiler {
+
+    /* The compiler for the enclosing class or NULL (when the compiling code is not inside a class
+     * definition */
+    struct cCompiler *enclosing;
+
+    /* The name of the class being compiled */
+    Token name;
+
+} ClassCompiler;
+
 /* Parser representation */
 typedef struct {
     Token current;  /* The last "lexed" token */
@@ -77,6 +90,7 @@ typedef struct {
     Parser *parser;              /* Falcon's parser instance */
     Scanner *scanner;            /* Falcon's scanner instance */
     FunctionCompiler *fCompiler; /* The compiler for the currently compiling function */
+    ClassCompiler *cCompiler;    /* The compiler for the currently compiling class */
 } FalconCompiler;
 
 /* Compiler operations */
@@ -133,9 +147,11 @@ ObjFunction *falconCompile(FalconVM *vm, const char *source);
 #define COMP_RETURN_TOP_LEVEL_ERR "Cannot return from top level code."
 
 /* Classes */
-#define COMP_CLASS_NAME_ERR       "Expected a class name."
-#define COMP_CLASS_BODY_BRACE_ERR "Expected a '{' before class body."
-#define COMP_FIELD_NAME_ERR       "Expected a field/method name after a '.'."
+#define COMP_CLASS_NAME_ERR        "Expected a class name."
+#define COMP_METHOD_NAME_ERR       "Expected a method name."
+#define COMP_CLASS_BODY_BRACE_ERR  "Expected a '{' before class body."
+#define COMP_CLASS_BODY_BRACE2_ERR "Expected a '}' after class body."
+#define COMP_FIELD_NAME_ERR        "Expected a field/method name after a '.'."
 
 /* Limits */
 #define COMP_CONST_LIMIT_ERR   "Limit of 65535 constants reached."

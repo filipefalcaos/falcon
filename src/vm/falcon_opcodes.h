@@ -60,9 +60,10 @@ typedef enum {
     FN_RETURN,  /* "return" statement */
 
     /* Class operations */
-    DEF_CLASS, /* Define a new class */
-    GET_FIELD, /* Get the value of a field */
-    SET_FIELD, /* Set the value of a field */
+    DEF_CLASS,  /* Define a new class */
+    DEF_METHOD, /* Define a new method in a class */
+    GET_FIELD,  /* Get the value of a field */
+    SET_FIELD,  /* Set the value of a field */
 
     /* VM operations */
     DUP_TOP,      /* Duplicate the top of the VM stack */

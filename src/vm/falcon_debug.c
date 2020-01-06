@@ -190,6 +190,8 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
         /* Class operations */
         case DEF_CLASS:
             return constantInstruction("DEF_CLASS", vm, bytecode, offset);
+        case DEF_METHOD:
+            return constantInstruction("DEF_METHOD", vm, bytecode, offset);
         case GET_FIELD:
             return constantInstruction("GET_FIELD", vm, bytecode, offset);
         case SET_FIELD:

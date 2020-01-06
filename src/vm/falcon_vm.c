@@ -588,6 +588,9 @@ static FalconResultCode run(FalconVM *vm) {
             case DEF_CLASS:
                 VMPush(vm, OBJ_VAL(falconClass(vm, READ_STRING())));
                 break;
+            case DEF_METHOD:
+                READ_STRING();
+                break;
             case GET_FIELD: {
                 if (!IS_INSTANCE(peek(vm, 0))) {
                     falconVMError(vm, VM_NOT_INSTANCE_ERR);
