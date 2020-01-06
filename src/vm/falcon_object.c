@@ -70,6 +70,7 @@ ObjClosure *falconClosure(FalconVM *vm, ObjFunction *function) {
 ObjClass *falconClass(FalconVM *vm, ObjString *name) {
     ObjClass *class_ = FALCON_ALLOCATE_OBJ(vm, ObjClass, OBJ_CLASS);
     class_->name = name;
+    initTable(&class_->methods);
     return class_;
 }
 

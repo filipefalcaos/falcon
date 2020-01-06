@@ -67,6 +67,7 @@ typedef struct {
 typedef struct {
     FalconObj obj;
     ObjString *name;
+    Table methods;
 } ObjClass;
 
 /* Falcon's instance (of a class) object */
