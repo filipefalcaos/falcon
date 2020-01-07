@@ -636,6 +636,9 @@ static FalconResultCode run(FalconVM *vm) {
                 VMPush(vm, value);             /* Pushes the new field value */
                 break;
             }
+            case METHOD_CALL:
+                READ_BYTE();
+                break;
 
             /* VM operations */
             case DUP_TOP:

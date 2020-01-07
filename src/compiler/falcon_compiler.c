@@ -442,6 +442,7 @@ static uint8_t argumentList(FalconCompiler *compiler) {
         } while (match(compiler, TK_COMMA));
     }
 
+    consume(compiler, TK_RIGHT_PAREN, COMP_CALL_LIST_PAREN_ERR);
     return argCount;
 }
 
@@ -558,15 +559,20 @@ PARSE_RULE(binary) {
     }
 }
 
+/* Performs a function or method call based on the given opcode */
+#define PERFORM_CALL(compiler, opcode)             \
+    do {                                           \
+        uint8_t argCount = argumentList(compiler); \
+        emitBytes(compiler, opcode, argCount);     \
+    } while (false)
+
 /**
  * Handles a function call expression by parsing its arguments list and emitting the instruction to
  * proceed with the execution of the function.
  */
 PARSE_RULE(call) {
     (void) canAssign; /* Unused */
-    uint8_t argCount = argumentList(compiler);
-    consume(compiler, TK_RIGHT_PAREN, COMP_CALL_LIST_PAREN_ERR);
-    emitBytes(compiler, FN_CALL, argCount);
+    PERFORM_CALL(compiler, FN_CALL);
 }
 
 /**
@@ -576,14 +582,19 @@ PARSE_RULE(dot) {
     consume(compiler, TK_IDENTIFIER, COMP_FIELD_NAME_ERR);
     uint8_t name = identifierConstant(compiler, &compiler->parser->previous);
 
-    /* Compiles field get or set expressions */
+    /* Compiles field get or set expressions, and method calls */
     if (canAssign && match(compiler, TK_EQUAL)) { /* a.b = ... */
         expression(compiler);
         emitBytes(compiler, SET_FIELD, name);
+    } else if (match(compiler, TK_LEFT_PAREN)) { /* Method call */
+        PERFORM_CALL(compiler, METHOD_CALL);
+        emitByte(compiler, name);
     } else { /* Access field */
         emitBytes(compiler, GET_FIELD, name);
     }
 }
+
+#undef PERFORM_CALL
 
 /**
  * Handles the opening parenthesis by compiling the expression between the parentheses, and then
@@ -1139,6 +1150,7 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case DEF_METHOD:
         case GET_FIELD:
         case SET_FIELD:
+        case METHOD_CALL:
             return 1; /* Instructions with single byte as argument */
 
         case LOAD_CONST:

@@ -196,6 +196,8 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
             return constantInstruction("GET_FIELD", vm, bytecode, offset);
         case SET_FIELD:
             return constantInstruction("SET_FIELD", vm, bytecode, offset);
+        case METHOD_CALL:
+            return constantInstruction("METHOD_CALL", vm, bytecode, offset);
 
         /* VM operations */
         case DUP_TOP:
