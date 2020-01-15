@@ -5,8 +5,9 @@
  */
 
 #include "falcon_scanner.h"
-#include "../commons.h"
+#include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 /**
  * Initializes the scanner with the first character of the first source code line.
@@ -14,7 +15,7 @@
 void initScanner(const char *source, Scanner *scanner) {
     scanner->start = source;
     scanner->current = source;
-    scanner->lineContent = source;
+    scanner->source = source;
     scanner->line = 1;
     scanner->column = 0;
 }
@@ -22,7 +23,7 @@ void initScanner(const char *source, Scanner *scanner) {
 /**
  * Gets the current line in the scanner.
  */
-const char *getSourceFromLine(Scanner *scanner) { return scanner->lineContent; }
+const char *getSourceFromLine(Scanner *scanner) { return scanner->source; }
 
 /**
  * Check if a character is a valid alpha.
@@ -76,16 +77,33 @@ static bool match(char expected, Scanner *scanner) {
 }
 
 /**
- * Makes a token of a certain token type using the current name in the scanner.
+ * Makes a new token using the current lexeme in the scanner.
  */
-static Token makeToken(FalconTokens type, Scanner *scanner) {
-    Token token;
-    token.type = type;
+static Token makeToken(Token token, Scanner *scanner) {
     token.start = scanner->start;
     token.length = (uint32_t)(scanner->current - scanner->start);
     token.line = scanner->line;
     token.column = scanner->column;
     return token;
+}
+
+/**
+ * Makes a simple token (i.e., non-literal tokens) of a certain token type.
+ */
+static Token simpleToken(FalconTokens type, Scanner *scanner) {
+    Token token;
+    token.type = type;
+    return makeToken(token, scanner);
+}
+
+/**
+ * Makes a token of a number literal.
+ */
+static Token numberToken(FalconValue value, Scanner *scanner) {
+    Token token;
+    token.type = TK_NUMBER;
+    token.value = value;
+    return makeToken(token, scanner);
 }
 
 /**
@@ -118,7 +136,7 @@ static void preProcessSource(Scanner *scanner) {
                 scanner->line++;
                 advance(scanner);
                 scanner->column = 0;
-                scanner->lineContent = scanner->current;
+                scanner->source = scanner->current;
                 break;
             case '#':
                 while (peek(scanner) != '\n' && !reachedEOF(scanner))
@@ -255,7 +273,7 @@ static FalconTokens findTokenType(Scanner *scanner) {
  */
 static Token identifier(Scanner *scanner) {
     while (isAlpha(peek(scanner)) || isDigit(peek(scanner))) advance(scanner);
-    return makeToken(findTokenType(scanner), scanner);
+    return simpleToken(findTokenType(scanner), scanner);
 }
 
 /**
@@ -270,7 +288,16 @@ static Token number(Scanner *scanner) {
         while (isDigit(peek(scanner))) advance(scanner);
     }
 
-    return makeToken(TK_NUMBER, scanner);
+    /* Gets the numeric value of the token */
+    double numValue = strtod(scanner->start, NULL);
+    if (errno == ERANGE) {
+        errorToken(SCAN_BIG_NUM_ERR, scanner);
+        numValue = 0;
+        errno = 0;
+    }
+
+    FalconValue value = NUM_VAL(numValue);
+    return numberToken(value, scanner); /* Makes a number literal token */
 }
 
 /**
@@ -281,7 +308,7 @@ static Token string(Scanner *scanner) {
         if (peek(scanner) == '\n') {
             scanner->line++;
             scanner->column = 0;
-            scanner->lineContent = scanner->current;
+            scanner->source = scanner->current;
         }
 
         advance(scanner);
@@ -291,7 +318,7 @@ static Token string(Scanner *scanner) {
         return errorToken(SCAN_UNTERMINATED_STR_ERR, scanner);
 
     advance(scanner);
-    return makeToken(TK_STRING, scanner);
+    return simpleToken(TK_STRING, scanner);
 }
 
 /**
@@ -300,7 +327,7 @@ static Token string(Scanner *scanner) {
 Token scanToken(Scanner *scanner) {
     preProcessSource(scanner);         /* Handles unnecessary characters */
     scanner->start = scanner->current; /* Sets the start point to the last token */
-    if (reachedEOF(scanner)) return makeToken(TK_EOF, scanner);
+    if (reachedEOF(scanner)) return simpleToken(TK_EOF, scanner);
 
     char nextChar = advance(scanner);                  /* Gets the next character */
     if (isAlpha(nextChar)) return identifier(scanner); /* Checks if is an alpha */
@@ -308,51 +335,51 @@ Token scanToken(Scanner *scanner) {
 
     switch (nextChar) { /* Checks for lexemes matching */
         case '(':
-            return makeToken(TK_LEFT_PAREN, scanner);
+            return simpleToken(TK_LEFT_PAREN, scanner);
         case ')':
-            return makeToken(TK_RIGHT_PAREN, scanner);
+            return simpleToken(TK_RIGHT_PAREN, scanner);
         case '{':
-            return makeToken(TK_LEFT_BRACE, scanner);
+            return simpleToken(TK_LEFT_BRACE, scanner);
         case '}':
-            return makeToken(TK_RIGHT_BRACE, scanner);
+            return simpleToken(TK_RIGHT_BRACE, scanner);
         case '[':
-            return makeToken(TK_LEFT_BRACKET, scanner);
+            return simpleToken(TK_LEFT_BRACKET, scanner);
         case ']':
-            return makeToken(TK_RIGHT_BRACKET, scanner);
+            return simpleToken(TK_RIGHT_BRACKET, scanner);
         case '?':
-            return makeToken(TK_TERNARY, scanner);
+            return simpleToken(TK_TERNARY, scanner);
         case ':':
-            return makeToken(TK_COLON, scanner);
+            return simpleToken(TK_COLON, scanner);
         case ';':
-            return makeToken(TK_SEMICOLON, scanner);
+            return simpleToken(TK_SEMICOLON, scanner);
         case ',':
-            return makeToken(TK_COMMA, scanner);
+            return simpleToken(TK_COMMA, scanner);
         case '.':
-            return makeToken(TK_DOT, scanner);
+            return simpleToken(TK_DOT, scanner);
         case '-':
             if (match('>', scanner))
-                return makeToken(TK_ARROW, scanner);
+                return simpleToken(TK_ARROW, scanner);
             else
-                return makeToken(TK_MINUS, scanner);
+                return simpleToken(TK_MINUS, scanner);
         case '+':
-            return makeToken(TK_PLUS, scanner);
+            return simpleToken(TK_PLUS, scanner);
         case '/':
-            return makeToken(TK_DIV, scanner);
+            return simpleToken(TK_DIV, scanner);
         case '%':
-            return makeToken(TK_MOD, scanner);
+            return simpleToken(TK_MOD, scanner);
         case '*':
-            return makeToken(TK_MULTIPLY, scanner);
+            return simpleToken(TK_MULTIPLY, scanner);
         case '^':
-            return makeToken(TK_POW, scanner);
+            return simpleToken(TK_POW, scanner);
         case '!':
             if (match('=', scanner)) /* Logical not operator is "not" instead of "!" */
-                return makeToken(TK_NOT_EQUAL, scanner);
+                return simpleToken(TK_NOT_EQUAL, scanner);
         case '=':
-            return makeToken(match('=', scanner) ? TK_EQUAL_EQUAL : TK_EQUAL, scanner);
+            return simpleToken(match('=', scanner) ? TK_EQUAL_EQUAL : TK_EQUAL, scanner);
         case '<':
-            return makeToken(match('=', scanner) ? TK_LESS_EQUAL : TK_LESS, scanner);
+            return simpleToken(match('=', scanner) ? TK_LESS_EQUAL : TK_LESS, scanner);
         case '>':
-            return makeToken(match('=', scanner) ? TK_GREATER_EQUAL : TK_GREATER, scanner);
+            return simpleToken(match('=', scanner) ? TK_GREATER_EQUAL : TK_GREATER, scanner);
         case '"':
             return string(scanner);
         default:

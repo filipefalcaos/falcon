@@ -650,8 +650,7 @@ PARSE_RULE(literal) {
  */
 PARSE_RULE(number) {
     (void) canAssign; /* Unused */
-    double value = strtod(compiler->parser->previous.start, NULL);
-    emitConstant(compiler, NUM_VAL(value));
+    emitConstant(compiler, compiler->parser->previous.value);
 }
 
 /**

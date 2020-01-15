@@ -8,24 +8,26 @@
 #define FALCON_SCANNER_H
 
 #include "../commons.h"
+#include "../vm/falcon_value.h"
 #include "falcon_tokens.h"
 
 /* Token representation */
 typedef struct {
-    FalconTokens type;
-    const char *start;
-    uint32_t length;
-    uint32_t line;
-    uint32_t column;
+    FalconTokens type; /* The token type */
+    const char *start; /* The start of the token (pointer to the source) */
+    FalconValue value; /* The token value, if it is a literal */
+    uint32_t length;   /* The token length (number of chars) */
+    uint32_t line;     /* The token line */
+    uint32_t column;   /* The token column */
 } Token;
 
 /* Scanner representation (lexical analysis) */
 typedef struct {
-    const char *start;
-    const char *current;
-    const char *lineContent;
-    uint32_t line;
-    uint32_t column;
+    const char *start;   /* The start of the current token in the scanner */
+    const char *current; /* The current token in the scanner */
+    const char *source;  /* The input source code */
+    uint32_t line;       /* The current source line */
+    uint32_t column;     /* The current source column */
 } Scanner;
 
 /* Scanning operations */
@@ -34,6 +36,7 @@ const char *getSourceFromLine(Scanner *scanner);
 Token scanToken(Scanner *scanner);
 
 /* Scanning error messages */
+#define SCAN_BIG_NUM_ERR          "Number literal is too large for an IEEE double."
 #define SCAN_UNTERMINATED_STR_ERR "Unterminated string."
 #define SCAN_UNEXPECTED_TK_ERR    "Unexpected token."
 
