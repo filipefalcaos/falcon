@@ -266,7 +266,7 @@ FALCON_NATIVE(getField) {
         return value;
 
     /* Undefined field error */
-    falconVMError(vm, VM_UNDEF_FIELD_ERR, instance->class_->name->chars, AS_STRING(args[1])->chars);
+    falconVMError(vm, VM_UNDEF_PROP_ERR, instance->class_->name->chars, AS_STRING(args[1])->chars);
     return ERR_VAL;
 }
 

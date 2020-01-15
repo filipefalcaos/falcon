@@ -192,12 +192,12 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
             return constantInstruction("DEF_CLASS", vm, bytecode, offset);
         case DEF_METHOD:
             return constantInstruction("DEF_METHOD", vm, bytecode, offset);
-        case GET_FIELD:
-            return constantInstruction("GET_FIELD", vm, bytecode, offset);
-        case SET_FIELD:
-            return constantInstruction("SET_FIELD", vm, bytecode, offset);
-        case METHOD_CALL:
-            return constantInstruction("METHOD_CALL", vm, bytecode, offset);
+        case GET_PROP:
+            return constantInstruction("GET_PROP", vm, bytecode, offset);
+        case SET_PROP:
+            return constantInstruction("SET_PROP", vm, bytecode, offset);
+        case INVOKE_PROP:
+            return constantInstruction("INVOKE_PROP", vm, bytecode, offset);
 
         /* VM operations */
         case DUP_TOP:

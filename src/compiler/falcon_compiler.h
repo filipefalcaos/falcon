@@ -151,7 +151,7 @@ ObjFunction *falconCompile(FalconVM *vm, const char *source);
 #define COMP_METHOD_NAME_ERR       "Expected a method name."
 #define COMP_CLASS_BODY_BRACE_ERR  "Expected a '{' before class body."
 #define COMP_CLASS_BODY_BRACE2_ERR "Expected a '}' after class body."
-#define COMP_FIELD_NAME_ERR        "Expected a field/method name after a '.'."
+#define COMP_PROP_NAME_ERR         "Expected a property name after a '.'."
 
 /* Limits */
 #define COMP_CONST_LIMIT_ERR   "Limit of 65535 constants reached."

@@ -87,7 +87,8 @@ FalconValue VMPop(FalconVM *vm) {
 static FalconValue VMPeek(FalconVM *vm, int distance) { return vm->stackTop[-1 - distance]; }
 
 /**
- * Executes a call on the given Falcon function by setting its call frame to be run.
+ * Executes a call on the given Falcon function by setting its call frame to be run. If the call
+ * succeeds, "true" is returned, and otherwise, "false".
  */
 static bool call(FalconVM *vm, ObjClosure *closure, int argCount) {
     if (argCount != closure->function->arity) {
@@ -108,7 +109,8 @@ static bool call(FalconVM *vm, ObjClosure *closure, int argCount) {
 }
 
 /**
- * Tries to execute a function call on a given Falcon value.
+ * Tries to execute a call on a given Falcon value. If the call succeeds, "true" is returned, and
+ * otherwise, "false".
  */
 static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
     if (IS_OBJ(callee)) {
@@ -136,6 +138,41 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
 
     falconVMError(vm, VM_VALUE_NOT_CALL_ERR);
     return false;
+}
+
+/**
+ * Tries to call a given method of a class instance. If the invocation succeeds, "true" is
+ * returned, and otherwise, "false".
+ */
+static bool callMethod(FalconVM *vm, ObjClass *class_, ObjString *methodName, int argCount) {
+    FalconValue method;
+    if (!tableGet(&class_->methods, methodName, &method)) { /* Checks if method is defined */
+        falconVMError(vm, VM_UNDEF_PROP_ERR);
+        return false;
+    }
+
+    return call(vm, AS_CLOSURE(method), argCount); /* Calls the method as a closure */
+}
+
+/**
+ * Tries to invoke a given property of a class instance. If the invocation succeeds, "true" is
+ * returned, and otherwise, "false".
+ */
+static bool invoke(FalconVM *vm, ObjString *calleeName, int argCount) {
+    FalconValue receiver = VMPeek(vm, argCount);
+    if (!IS_INSTANCE(receiver)) {
+        falconVMError(vm, VM_NOT_INSTANCE_ERR);
+        return false;
+    }
+
+    ObjInstance *instance = AS_INSTANCE(receiver);
+    FalconValue property;
+    if (tableGet(&instance->fields, calleeName, &property)) { /* Checks if is shadowed by a field */
+        vm->stackTop[-argCount - 1] = property;
+        return callValue(vm, property, argCount); /* Tries to execute the field as a function */
+    }
+
+    return callMethod(vm, instance->class_, calleeName, argCount); /* Invokes the method */
 }
 
 /**
@@ -602,7 +639,7 @@ static FalconResultCode run(FalconVM *vm) {
             case DEF_METHOD:
                 defineMethod(vm, READ_STRING());
                 break;
-            case GET_FIELD: {
+            case GET_PROP: {
                 if (!IS_INSTANCE(VMPeek(vm, 0))) {
                     falconVMError(vm, VM_NOT_INSTANCE_ERR);
                     return FALCON_RUNTIME_ERROR;
@@ -619,10 +656,10 @@ static FalconResultCode run(FalconVM *vm) {
                 }
 
                 /* Undefined field error */
-                falconVMError(vm, VM_UNDEF_FIELD_ERR, instance->class_->name->chars, name->chars);
+                falconVMError(vm, VM_UNDEF_PROP_ERR, instance->class_->name->chars, name->chars);
                 return FALCON_RUNTIME_ERROR;
             }
-            case SET_FIELD: {
+            case SET_PROP: {
                 if (!IS_INSTANCE(VMPeek(vm, 1))) {
                     falconVMError(vm, VM_NOT_INSTANCE_ERR);
                     return FALCON_RUNTIME_ERROR;
@@ -636,9 +673,12 @@ static FalconResultCode run(FalconVM *vm) {
                 VMPush(vm, value);             /* Pushes the new field value */
                 break;
             }
-            case METHOD_CALL:
-                READ_BYTE();
+            case INVOKE_PROP: {
+                int argCount = READ_BYTE();
+                if (!invoke(vm, READ_STRING(), argCount)) return FALCON_RUNTIME_ERROR;
+                frame = &vm->frames[vm->frameCount - 1]; /* Updates the current frame */
                 break;
+            }
 
             /* VM operations */
             case DUP_TOP:

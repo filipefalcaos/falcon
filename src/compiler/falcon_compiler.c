@@ -579,18 +579,18 @@ PARSE_RULE(call) {
  * Handles the "dot" syntax for get and set expressions on a class instance.
  */
 PARSE_RULE(dot) {
-    consume(compiler, TK_IDENTIFIER, COMP_FIELD_NAME_ERR);
+    consume(compiler, TK_IDENTIFIER, COMP_PROP_NAME_ERR);
     uint8_t name = identifierConstant(compiler, &compiler->parser->previous);
 
     /* Compiles field get or set expressions, and method calls */
     if (canAssign && match(compiler, TK_EQUAL)) { /* a.b = ... */
         expression(compiler);
-        emitBytes(compiler, SET_FIELD, name);
+        emitBytes(compiler, SET_PROP, name);
     } else if (match(compiler, TK_LEFT_PAREN)) { /* Method call */
-        PERFORM_CALL(compiler, METHOD_CALL);
+        PERFORM_CALL(compiler, INVOKE_PROP);
         emitByte(compiler, name);
     } else { /* Access field */
-        emitBytes(compiler, GET_FIELD, name);
+        emitBytes(compiler, GET_PROP, name);
     }
 }
 
@@ -1148,9 +1148,9 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case FN_CALL:
         case DEF_CLASS:
         case DEF_METHOD:
-        case GET_FIELD:
-        case SET_FIELD:
-        case METHOD_CALL:
+        case GET_PROP:
+        case SET_PROP:
+        case INVOKE_PROP:
             return 1; /* Instructions with single byte as argument */
 
         case LOAD_CONST:

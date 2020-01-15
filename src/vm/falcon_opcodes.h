@@ -62,9 +62,9 @@ typedef enum {
     /* Class operations */
     DEF_CLASS,   /* Define a new class */
     DEF_METHOD,  /* Define a new method in a class */
-    GET_FIELD,   /* Get the value of a field */
-    SET_FIELD,   /* Set the value of a field */
-    METHOD_CALL, /* Perform a method call */
+    GET_PROP,    /* Get the value of a property */
+    SET_PROP,    /* Set the value of a property */
+    INVOKE_PROP, /* Perform a invocation on a property */
 
     /* VM operations */
     DUP_TOP,      /* Duplicate the top of the VM stack */
