@@ -13,12 +13,26 @@
 const char *getObjName(ObjType type) {
     const char *objectTypeNames[] = {
         "OBJ_STRING",
+        "OBJ_FUNCTION",
         "OBJ_UPVALUE",
         "OBJ_CLOSURE",
-        "OBJ_FUNCTION",
+        "OBJ_CLASS",
+        "OBJ_LIST",
         "OBJ_NATIVE"
     };
     return objectTypeNames[type];
+}
+
+/**
+ * Allocates a new Falcon function object.
+ */
+ObjFunction *falconFunction(FalconVM *vm) {
+    ObjFunction *function = FALCON_ALLOCATE_OBJ(vm, ObjFunction, OBJ_FUNCTION);
+    function->arity = 0;
+    function->upvalueCount = 0;
+    function->name = NULL;
+    initBytecode(&function->bytecode);
+    return function;
 }
 
 /**
@@ -51,25 +65,23 @@ ObjClosure *falconClosure(FalconVM *vm, ObjFunction *function) {
 }
 
 /**
- * Allocates a new Falcon function object.
+ * Allocates a new Falcon class object.
  */
-ObjFunction *falconFunction(FalconVM *vm) {
-    ObjFunction *function = FALCON_ALLOCATE_OBJ(vm, ObjFunction, OBJ_FUNCTION);
-    function->arity = 0;
-    function->upvalueCount = 0;
-    function->name = NULL;
-    initBytecode(&function->bytecode);
-    return function;
+ObjClass *falconClass(FalconVM *vm, ObjString *name) {
+    ObjClass *class_ = FALCON_ALLOCATE_OBJ(vm, ObjClass, OBJ_CLASS);
+    class_->name = name;
+    initTable(&class_->methods);
+    return class_;
 }
 
 /**
- * Allocates a new Falcon native function object.
+ * Allocates a new Falcon instance (of a class) object.
  */
-ObjNative *falconNative(FalconVM *vm, FalconNativeFn function, const char *name) {
-    ObjNative *native = FALCON_ALLOCATE_OBJ(vm, ObjNative, OBJ_NATIVE);
-    native->function = function;
-    native->name = name;
-    return native;
+ObjInstance *falconInstance(FalconVM *vm, ObjClass *class_) {
+    ObjInstance *instance = FALCON_ALLOCATE_OBJ(vm, ObjInstance, OBJ_INSTANCE);
+    instance->class_ = class_;
+    initTable(&instance->fields);
+    return instance;
 }
 
 /**
@@ -81,4 +93,14 @@ ObjList *falconList(FalconVM *vm, int size) {
     list->elements.capacity = size;
     list->elements.values = FALCON_ALLOCATE(vm, FalconValue, size);
     return list;
+}
+
+/**
+ * Allocates a new Falcon native function object.
+ */
+ObjNative *falconNative(FalconVM *vm, FalconNativeFn function, const char *name) {
+    ObjNative *native = FALCON_ALLOCATE_OBJ(vm, ObjNative, OBJ_NATIVE);
+    native->function = function;
+    native->name = name;
+    return native;
 }

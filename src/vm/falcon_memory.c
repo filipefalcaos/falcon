@@ -86,6 +86,12 @@ void falconFreeObj(FalconVM *vm, FalconObj *object) {
             falconReallocate(vm, object, sizeof(ObjString) + string->length + 1, 0);
             break;
         }
+        case OBJ_FUNCTION: {
+            ObjFunction *function = (ObjFunction *) object;
+            freeBytecode(vm, &function->bytecode);
+            FALCON_FREE(vm, ObjFunction, object);
+            break;
+        }
         case OBJ_UPVALUE:
             FALCON_FREE(vm, ObjUpvalue, object);
             break;
@@ -95,10 +101,13 @@ void falconFreeObj(FalconVM *vm, FalconObj *object) {
             FALCON_FREE(vm, ObjClosure, object);
             break;
         }
-        case OBJ_FUNCTION: {
-            ObjFunction *function = (ObjFunction *) object;
-            freeBytecode(vm, &function->bytecode);
-            FALCON_FREE(vm, ObjFunction, object);
+        case OBJ_CLASS:
+            FALCON_FREE(vm, ObjClass, object);
+            break;
+        case OBJ_INSTANCE: {
+            ObjInstance *instance = (ObjInstance *) object;
+            freeTable(vm, &instance->fields);
+            FALCON_FREE(vm, ObjInstance, object);
             break;
         }
         case OBJ_LIST: {

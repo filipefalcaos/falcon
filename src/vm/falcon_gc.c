@@ -103,16 +103,30 @@ static void blackenObject(FalconVM *vm, FalconObj *object) {
 #endif
 
     switch (object->type) {
+        case OBJ_FUNCTION: {
+            ObjFunction *function = (ObjFunction *) object;
+            markObject(vm, (FalconObj *) function->name);
+            markArray(vm, &function->bytecode.constants);
+            break;
+        }
+        case OBJ_UPVALUE:
+            markValue(vm, ((ObjUpvalue *) object)->closed);
+            break;
         case OBJ_CLOSURE: {
             ObjClosure *closure = (ObjClosure *) object;
             markObject(vm, (FalconObj *) closure->function);
             markUpvalues(vm, closure);
             break;
         }
-        case OBJ_FUNCTION: {
-            ObjFunction *function = (ObjFunction *) object;
-            markObject(vm, (FalconObj *) function->name);
-            markArray(vm, &function->bytecode.constants);
+        case OBJ_CLASS: {
+            ObjClass *class_ = (ObjClass *) object;
+            markObject(vm, (FalconObj *) class_->name);
+            break;
+        }
+        case OBJ_INSTANCE: {
+            ObjInstance *instance = (ObjInstance *) object;
+            markObject(vm, (FalconObj *) instance->class_);
+            markTable(vm, &instance->fields);
             break;
         }
         case OBJ_LIST: {
@@ -120,11 +134,8 @@ static void blackenObject(FalconVM *vm, FalconObj *object) {
             markArray(vm, &list->elements);
             break;
         }
-        case OBJ_UPVALUE:
-            markValue(vm, ((ObjUpvalue *) object)->closed);
-            break;
-        case OBJ_NATIVE:
         case OBJ_STRING:
+        case OBJ_NATIVE:
             break;
     }
 }

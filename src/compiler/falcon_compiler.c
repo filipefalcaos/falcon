@@ -442,6 +442,7 @@ static uint8_t argumentList(FalconCompiler *compiler) {
         } while (match(compiler, TK_COMMA));
     }
 
+    consume(compiler, TK_RIGHT_PAREN, COMP_CALL_LIST_PAREN_ERR);
     return argCount;
 }
 
@@ -558,16 +559,42 @@ PARSE_RULE(binary) {
     }
 }
 
+/* Performs a function or method call based on the given opcode */
+#define PERFORM_CALL(compiler, opcode)             \
+    do {                                           \
+        uint8_t argCount = argumentList(compiler); \
+        emitBytes(compiler, opcode, argCount);     \
+    } while (false)
+
 /**
  * Handles a function call expression by parsing its arguments list and emitting the instruction to
  * proceed with the execution of the function.
  */
 PARSE_RULE(call) {
     (void) canAssign; /* Unused */
-    uint8_t argCount = argumentList(compiler);
-    consume(compiler, TK_RIGHT_PAREN, COMP_CALL_LIST_PAREN_ERR);
-    emitBytes(compiler, FN_CALL, argCount);
+    PERFORM_CALL(compiler, FN_CALL);
 }
+
+/**
+ * Handles the "dot" syntax for get and set expressions on a class instance.
+ */
+PARSE_RULE(dot) {
+    consume(compiler, TK_IDENTIFIER, COMP_PROP_NAME_ERR);
+    uint8_t name = identifierConstant(compiler, &compiler->parser->previous);
+
+    /* Compiles field get or set expressions, and method calls */
+    if (canAssign && match(compiler, TK_EQUAL)) { /* a.b = ... */
+        expression(compiler);
+        emitBytes(compiler, SET_PROP, name);
+    } else if (match(compiler, TK_LEFT_PAREN)) { /* Method call */
+        PERFORM_CALL(compiler, INVOKE_PROP);
+        emitByte(compiler, name);
+    } else { /* Access field */
+        emitBytes(compiler, GET_PROP, name);
+    }
+}
+
+#undef PERFORM_CALL
 
 /**
  * Handles the opening parenthesis by compiling the expression between the parentheses, and then
@@ -719,7 +746,7 @@ ParseRule rules[] = {
     RULE(list, subscript, PREC_TOP),   /* TK_LEFT_BRACKET */
     EMPTY_RULE,                        /* TK_RIGHT_BRACKET */
     EMPTY_RULE,                        /* TK_COMMA */
-    EMPTY_RULE,                        /* TK_DOT */
+    INFIX_RULE(dot, PREC_TOP),         /* TK_DOT */
     EMPTY_RULE,                        /* TK_COLON */
     EMPTY_RULE,                        /* TK_SEMICOLON */
     EMPTY_RULE,                        /* TK_ARROW */
@@ -823,33 +850,6 @@ static void block(FalconCompiler *compiler) {
 }
 
 /**
- * Compiles the declaration of a single variable.
- */
-static void singleVarDeclaration(FalconCompiler *compiler) {
-    uint8_t global = parseVariable(compiler, COMP_VAR_NAME_ERR); /* Parses a variable name */
-
-    if (match(compiler, TK_EQUAL)) {
-        expression(compiler); /* Compiles the variable initializer */
-    } else {
-        emitByte(compiler, LOAD_NULL); /* Default variable value is "null" */
-    }
-
-    defineVariable(compiler, global); /* Emits the declaration bytecode */
-}
-
-/**
- * Compiles a variable declaration list.
- */
-static void varDeclaration(FalconCompiler *compiler) {
-    Parser *parser = compiler->parser;
-    if (!check(parser, TK_SEMICOLON)) {
-        do {
-            singleVarDeclaration(compiler); /* Compiles the declaration */
-        } while (match(compiler, TK_COMMA));
-    }
-}
-
-/**
  * Compiles a function body and its parameters.
  */
 static void function(FalconCompiler *compiler, FunctionType type) {
@@ -890,6 +890,56 @@ static void function(FalconCompiler *compiler, FunctionType type) {
 }
 
 /**
+ * Compiles a method definition inside a class declaration.
+ */
+static void method(FalconCompiler *compiler) {
+    Parser *parser = compiler->parser;
+    consume(compiler, TK_IDENTIFIER, COMP_METHOD_NAME_ERR);
+    uint8_t nameConstant = identifierConstant(compiler, &parser->previous);
+
+    /* Gets the method type */
+    FunctionType type = TYPE_METHOD;
+    if (parser->previous.length == 4 && memcmp(parser->previous.start, "init", 4) == 0) {
+        type = TYPE_INIT;
+    }
+
+    /* Parses the method declaration as a function declaration */
+    function(compiler, type);
+    emitBytes(compiler, DEF_METHOD, nameConstant);
+}
+
+/**
+ * Compiles a class declaration.
+ */
+static void classDeclaration(FalconCompiler *compiler) {
+    Parser *parser = compiler->parser;
+    consume(compiler, TK_IDENTIFIER, COMP_CLASS_NAME_ERR);
+    Token className = parser->previous;
+
+    /* Adds the class name to the constants table and set the variable */
+    uint8_t nameConstant = identifierConstant(compiler, &className);
+    declareVariable(compiler);
+    emitBytes(compiler, DEF_CLASS, nameConstant);
+    defineVariable(compiler, nameConstant);
+
+    /* Sets a new class compiler */
+    ClassCompiler classCompiler;
+    classCompiler.name = className;
+    classCompiler.enclosing = compiler->cCompiler;
+    compiler->cCompiler = &classCompiler;
+
+    /* Parses the class body and its methods */
+    consume(compiler, TK_LEFT_BRACE, COMP_CLASS_BODY_BRACE_ERR);
+    while (!check(parser, TK_RIGHT_BRACE) && !check(parser, TK_EOF)) {
+        namedVariable(compiler, className, false);
+        method(compiler);
+    }
+
+    consume(compiler, TK_RIGHT_BRACE, COMP_CLASS_BODY_BRACE2_ERR);
+    compiler->cCompiler = compiler->cCompiler->enclosing;
+}
+
+/**
  * Compiles a function declaration.
  */
 static void funDeclaration(FalconCompiler *compiler) {
@@ -897,6 +947,35 @@ static void funDeclaration(FalconCompiler *compiler) {
     markInitialized(compiler->fCompiler);
     function(compiler, TYPE_FUNCTION);
     defineVariable(compiler, func);
+}
+
+/**
+ * Compiles the declaration of a single variable.
+ */
+static void singleVarDeclaration(FalconCompiler *compiler) {
+    uint8_t global = parseVariable(compiler, COMP_VAR_NAME_ERR); /* Parses a variable name */
+
+    if (match(compiler, TK_EQUAL)) {
+        expression(compiler); /* Compiles the variable initializer */
+    } else {
+        emitByte(compiler, LOAD_NULL); /* Default variable value is "null" */
+    }
+
+    defineVariable(compiler, global); /* Emits the declaration bytecode */
+}
+
+/**
+ * Compiles a variable declaration list.
+ */
+static void varDeclaration(FalconCompiler *compiler) {
+    Parser *parser = compiler->parser;
+    if (!check(parser, TK_SEMICOLON)) {
+        do {
+            singleVarDeclaration(compiler); /* Compiles each declaration */
+        } while (match(compiler, TK_COMMA));
+    }
+
+    consume(compiler, TK_SEMICOLON, COMP_VAR_DECL_ERR);
 }
 
 /**
@@ -1067,6 +1146,11 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case GET_LOCAL:
         case SET_LOCAL:
         case FN_CALL:
+        case DEF_CLASS:
+        case DEF_METHOD:
+        case GET_PROP:
+        case SET_PROP:
+        case INVOKE_PROP:
             return 1; /* Instructions with single byte as argument */
 
         case LOAD_CONST:
@@ -1292,6 +1376,7 @@ static void synchronize(FalconCompiler *compiler) {
         if (parser->previous.type == TK_SEMICOLON) return; /* Sync point (expression end) */
 
         switch (parser->current.type) { /* Sync point (statement/declaration begin) */
+            case TK_BREAK:
             case TK_CLASS:
             case TK_FOR:
             case TK_FUNCTION:
@@ -1313,11 +1398,12 @@ static void synchronize(FalconCompiler *compiler) {
  * Compiles a declaration statement.
  */
 static void declaration(FalconCompiler *compiler) {
-    if (match(compiler, TK_VAR)) {
-        varDeclaration(compiler);
-        consume(compiler, TK_SEMICOLON, COMP_VAR_DECL_ERR);
+    if (match(compiler, TK_CLASS)) {
+        classDeclaration(compiler);
     } else if (match(compiler, TK_FUNCTION)) {
         funDeclaration(compiler);
+    } else if (match(compiler, TK_VAR)) {
+        varDeclaration(compiler);
     } else {
         statement(compiler);
     }
@@ -1333,13 +1419,14 @@ ObjFunction *falconCompile(FalconVM *vm, const char *source) {
     Parser parser;
     Scanner scanner;
     FalconCompiler programCompiler;
-    FunctionCompiler funCompiler;
+    FunctionCompiler fCompiler;
 
     /* Inits the parser, scanner, and compiler */
     initParser(&parser);
     initScanner(source, &scanner);
     initCompiler(&programCompiler, vm, &parser, &scanner);
-    initFunctionCompiler(&programCompiler, &funCompiler, NULL, TYPE_SCRIPT);
+    initFunctionCompiler(&programCompiler, &fCompiler, NULL, TYPE_SCRIPT);
+    programCompiler.cCompiler = NULL;
 
     advance(&programCompiler);                 /* Get the first token */
     while (!match(&programCompiler, TK_EOF)) { /* Main compiler loop */

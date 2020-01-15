@@ -133,6 +133,10 @@ FALCON_NATIVE(type) {
                     typeString = "<string>";
                     typeStringLen = 8;
                     break;
+                case OBJ_CLASS:
+                    typeString = "<class>";
+                    typeStringLen = 7;
+                    break;
                 case OBJ_LIST:
                     typeString = "<list>";
                     typeStringLen = 6;
@@ -208,7 +212,7 @@ FALCON_NATIVE(str) {
 }
 
 /**
- * Native function to get the length of a Falcon Value (lists only).
+ * Native function to get the length of a Falcon Value (lists or strings only).
  */
 FALCON_NATIVE(len) {
     ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
@@ -224,6 +228,75 @@ FALCON_NATIVE(len) {
             falconVMError(vm, VM_ARGS_TYPE_ERR, 1, "list or string");
             return ERR_VAL;
     }
+}
+
+/*
+ * ================================================================================================
+ * ================================ Class-related native functions ================================
+ * ================================================================================================
+ */
+
+/**
+ * Native function to test if a given Falcon Value has a given field (string).
+ */
+FALCON_NATIVE(hasField) {
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 2);
+    ASSERT_ARG_TYPE(IS_INSTANCE, "class instance", args[0], vm, 1);
+    ASSERT_ARG_TYPE(IS_STRING, "string", args[1], vm, 2);
+
+    /* Checks if the field is defined */
+    ObjInstance *instance = AS_INSTANCE(args[0]);
+    FalconValue value;
+    return BOOL_VAL(tableGet(&instance->fields, AS_STRING(args[1]), &value));
+}
+
+/**
+ * Native function to get the value of a given field (string) from a given Falcon Value (class
+ * instance).
+ */
+FALCON_NATIVE(getField) {
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 2);
+    ASSERT_ARG_TYPE(IS_INSTANCE, "class instance", args[0], vm, 1);
+    ASSERT_ARG_TYPE(IS_STRING, "string", args[1], vm, 2);
+
+    /* Gets the field value */
+    ObjInstance *instance = AS_INSTANCE(args[0]);
+    FalconValue value;
+    if (tableGet(&instance->fields, AS_STRING(args[1]), &value))
+        return value;
+
+    /* Undefined field error */
+    falconVMError(vm, VM_UNDEF_PROP_ERR, instance->class_->name->chars, AS_STRING(args[1])->chars);
+    return ERR_VAL;
+}
+
+/**
+ * Native function to set a given Falcon Value to a given field (string) from another given Falcon
+ * Value (class instance).
+ */
+FALCON_NATIVE(setField) {
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 3);
+    ASSERT_ARG_TYPE(IS_INSTANCE, "class instance", args[0], vm, 1);
+    ASSERT_ARG_TYPE(IS_STRING, "string", args[1], vm, 2);
+
+    /* Sets the field value */
+    ObjInstance *instance = AS_INSTANCE(args[0]);
+    tableSet(vm, &instance->fields, AS_STRING(args[1]), args[2]);
+    return args[2];
+}
+
+/**
+ * Native function to delete a given field (string) from a given Falcon Value (class instance).
+ */
+FALCON_NATIVE(delField) {
+    ASSERT_ARGS_COUNT(vm, !=, argCount, 2);
+    ASSERT_ARG_TYPE(IS_INSTANCE, "class instance", args[0], vm, 1);
+    ASSERT_ARG_TYPE(IS_STRING, "string", args[1], vm, 2);
+
+    /* Deletes the field */
+    ObjInstance *instance = AS_INSTANCE(args[0]);
+    tableDelete(&instance->fields, AS_STRING(args[1]));
+    return NULL_VAL;
 }
 
 /*
@@ -340,6 +413,10 @@ void falconDefNatives(FalconVM *vm) {
         { .function = num, .name = "num" },
         { .function = str, .name = "str" },
         { .function = len, .name = "len" },
+        { .function = hasField, .name = "hasField" },
+        { .function = getField, .name = "getField" },
+        { .function = setField, .name = "setField" },
+        { .function = delField, .name = "delField" },
         { .function = abs_, .name = "abs" },
         { .function = sqrt_, .name = "sqrt" },
         { .function = pow_, .name = "pow" },

@@ -88,6 +88,8 @@ FalconResultCode falconInterpret(FalconVM *vm, const char *source);
 #define VM_UNREACHABLE_ERR     "Opcode %d should be unreachable. " VM_BUG
 #define VM_STACK_OVERFLOW      "Stack overflow."
 #define VM_UNDEF_VAR_ERR       "Undefined variable '%s'."
+#define VM_UNDEF_PROP_ERR      "Undefined property '%s.%s'."
+#define VM_NOT_INSTANCE_ERR    "Only instances of classes have properties."
 #define VM_ARGS_COUNT_ERR      "Expected %d arguments, but got %d."
 #define VM_ARGS_TYPE_ERR       "Expected argument %d to be a %s."
 #define VM_VALUE_NOT_CALL_ERR  "Cannot call value. Only functions and classes are callable values."
