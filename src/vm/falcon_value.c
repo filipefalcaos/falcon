@@ -212,7 +212,7 @@ void printFunction(ObjFunction *function) {
 /**
  * Prints a single Falcon Value.
  */
-void printValue(FalconVM *vm, FalconValue value, bool printQuotes) {
+void printValue(FalconVM *vm, FalconValue value) {
     switch (value.type) {
         case VAL_BOOL:
             printf("%s", AS_BOOL(value) ? "true" : "false");
@@ -226,9 +226,7 @@ void printValue(FalconVM *vm, FalconValue value, bool printQuotes) {
         case VAL_OBJ:
             switch (OBJ_TYPE(value)) {
                 case OBJ_STRING: {
-                    if (printQuotes) printf("\"");
                     printf("%s", AS_CSTRING(value));
-                    if (printQuotes) printf("\"");
                     break;
                 }
                 case OBJ_FUNCTION: {
@@ -252,7 +250,7 @@ void printValue(FalconVM *vm, FalconValue value, bool printQuotes) {
                     printf("[");
 
                     for (int i = 0; i < list->elements.count; i++) {
-                        printValue(vm, list->elements.values[i], printQuotes);
+                        printValue(vm, list->elements.values[i]);
                         if (i != list->elements.count - 1) printf(", ");
                     }
 

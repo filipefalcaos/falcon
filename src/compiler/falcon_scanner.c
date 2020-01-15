@@ -5,9 +5,11 @@
  */
 
 #include "falcon_scanner.h"
+#include "../lib/falcon_string.h"
+#include "../vm/falcon_memory.h"
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 
 /**
  * Initializes the scanner with the first character of the first source code line.
@@ -97,11 +99,11 @@ static Token simpleToken(FalconTokens type, Scanner *scanner) {
 }
 
 /**
- * Makes a token of a number literal.
+ * Makes a token of a number or string literal.
  */
-static Token numberToken(FalconValue value, Scanner *scanner) {
+static Token literalToken(FalconTokens type, FalconValue value, Scanner *scanner) {
     Token token;
-    token.type = TK_NUMBER;
+    token.type = type;
     token.value = value;
     return makeToken(token, scanner);
 }
@@ -297,34 +299,80 @@ static Token number(Scanner *scanner) {
     }
 
     FalconValue value = NUM_VAL(numValue);
-    return numberToken(value, scanner); /* Makes a number literal token */
+    return literalToken(TK_NUMBER, value, scanner); /* Makes a number literal token */
 }
 
 /**
- * Extracts a string value from the source code.
+ * Extracts a string value from the source code. The string is dynamically allocated to handle
+ * escape characters and string interpolation.
  */
-static Token string(Scanner *scanner) {
-    while (peek(scanner) != '"' && !reachedEOF(scanner)) {
-        if (peek(scanner) == '\n') {
+static Token string(Scanner *scanner, FalconVM *vm) {
+    uint64_t currentSize = 0;
+    char *string = FALCON_ALLOCATE(vm, char, currentSize); /* Allocates initial space */
+
+    while (true) {
+        char nextChar = advance(scanner);
+
+        if (nextChar == '"') /* Checks if the string is terminated */
+            break;           /* Goes to "FalconValue value = ..." */
+
+        if (nextChar == '\0') /* Checks if is an unterminated string */
+            return errorToken(SCAN_UNTERMINATED_STR_ERR, scanner);
+
+        /* Newlines inside strings are ignored */
+        if (nextChar == '\n' || nextChar == '\r') {
             scanner->line++;
             scanner->column = 0;
             scanner->source = scanner->current;
         }
 
-        advance(scanner);
+        /* Checks if an escape character is found */
+        if (nextChar == '\\') {
+            switch (advance(scanner)) {
+                case '"':
+                    nextChar = '"';
+                    break;
+                case '\\':
+                    nextChar = '\\';
+                    break;
+                case 'b':
+                    nextChar = '\b';
+                    break;
+                case 'n':
+                    nextChar = '\n';
+                    break;
+                case 'r':
+                    nextChar = '\r';
+                    break;
+                case 'f':
+                    nextChar = '\f';
+                    break;
+                case 't':
+                    nextChar = '\t';
+                    break;
+                case 'v':
+                    nextChar = '\v';
+                    break;
+                default:
+                    return errorToken(SCAN_INVALID_ESCAPE, scanner);
+            }
+        }
+
+        /* Adds the character to the string */
+        uint64_t oldSize = currentSize;
+        currentSize++;
+        string = falconReallocate(vm, string, oldSize, currentSize); /* Increases the string */
+        string[oldSize] = nextChar;
     }
 
-    if (reachedEOF(scanner)) /* Checks if is an unterminated string */
-        return errorToken(SCAN_UNTERMINATED_STR_ERR, scanner);
-
-    advance(scanner);
-    return simpleToken(TK_STRING, scanner);
+    FalconValue value = OBJ_VAL(copyString(vm, string, currentSize));
+    return literalToken(TK_STRING, value, scanner); /* Makes a string literal token */
 }
 
 /**
  * Main scanner function. Scans and returns the next token in the source code.
  */
-Token scanToken(Scanner *scanner) {
+Token scanToken(Scanner *scanner, FalconVM *vm) {
     preProcessSource(scanner);         /* Handles unnecessary characters */
     scanner->start = scanner->current; /* Sets the start point to the last token */
     if (reachedEOF(scanner)) return simpleToken(TK_EOF, scanner);
@@ -381,7 +429,7 @@ Token scanToken(Scanner *scanner) {
         case '>':
             return simpleToken(match('=', scanner) ? TK_GREATER_EQUAL : TK_GREATER, scanner);
         case '"':
-            return string(scanner);
+            return string(scanner, vm);
         default:
             return errorToken(SCAN_UNEXPECTED_TK_ERR, scanner);
     }

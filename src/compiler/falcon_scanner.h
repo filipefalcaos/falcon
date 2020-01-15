@@ -33,11 +33,12 @@ typedef struct {
 /* Scanning operations */
 void initScanner(const char *source, Scanner *scanner);
 const char *getSourceFromLine(Scanner *scanner);
-Token scanToken(Scanner *scanner);
+Token scanToken(Scanner *scanner, FalconVM *vm);
 
 /* Scanning error messages */
 #define SCAN_BIG_NUM_ERR          "Number literal is too large for an IEEE double."
 #define SCAN_UNTERMINATED_STR_ERR "Unterminated string."
+#define SCAN_INVALID_ESCAPE       "Invalid escape character."
 #define SCAN_UNEXPECTED_TK_ERR    "Unexpected token."
 
 #endif // FALCON_SCANNER_H

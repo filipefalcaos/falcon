@@ -58,7 +58,7 @@ static void advance(FalconCompiler *compiler) {
     compiler->parser->previous = compiler->parser->current;
 
     while (true) {
-        compiler->parser->current = scanToken(compiler->scanner);
+        compiler->parser->current = scanToken(compiler->scanner, compiler->vm);
         if (compiler->parser->current.type != TK_ERROR) break;
         falconCompilerError(compiler, &compiler->parser->current, compiler->parser->current.start);
     }
@@ -659,9 +659,7 @@ PARSE_RULE(number) {
  */
 PARSE_RULE(string) {
     (void) canAssign; /* Unused */
-    Parser *parser = compiler->parser;
-    emitConstant(compiler, OBJ_VAL(copyString(compiler->vm, parser->previous.start + 1,
-                                              parser->previous.length - 2)));
+    emitConstant(compiler, compiler->parser->previous.value);
 }
 
 /**

@@ -365,11 +365,11 @@ FALCON_NATIVE(input) {
 FALCON_NATIVE(print) {
     if (argCount > 1) {
         for (int i = 0; i < argCount; i++) {
-            printValue(vm, args[i], false);
+            printValue(vm, args[i]);
             if (i < argCount - 1) printf(" "); /* Separator */
         }
     } else {
-        printValue(vm, *args, false);
+        printValue(vm, *args);
     }
 
     printf("\n"); /* End */

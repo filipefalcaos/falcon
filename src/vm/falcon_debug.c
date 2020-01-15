@@ -45,7 +45,7 @@ static int constantInstruction(const char *name, FalconVM *vm, BytecodeChunk *by
 
     /* Prints the constant */
     printf("%-16s %4d ", name, constant);
-    printValue(vm, value, true);
+    printValue(vm, value);
     printf("\n");
     return offset + 2;
 }
@@ -60,7 +60,7 @@ static int constantInstruction16(const char *name, FalconVM *vm, BytecodeChunk *
 
     /* Prints the constant */
     printf("%-16s %4d ", name, constant);
-    printValue(vm, value, true);
+    printValue(vm, value);
     printf("\n");
     return offset + 3;
 }
@@ -72,7 +72,7 @@ static int closureInstruction(const char *name, FalconVM *vm, BytecodeChunk *byt
     offset++;
     uint8_t constant = bytecode->code[offset++];
     printf("%-16s %4d ", name, constant);
-    printValue(vm, bytecode->constants.values[constant], false);
+    printValue(vm, bytecode->constants.values[constant]);
     printf("\n");
 
     ObjFunction *function = AS_FUNCTION(bytecode->constants.values[constant]);
@@ -233,7 +233,7 @@ void dumpStack(FalconVM *vm) {
     printf("Stack:  ");
     for (FalconValue *slot = vm->stack; slot < vm->stackTop; slot++) {
         printf("[ ");
-        printValue(vm, *slot, false);
+        printValue(vm, *slot);
         printf(" ] ");
     }
     printf("\n");

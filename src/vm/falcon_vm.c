@@ -690,7 +690,7 @@ static FalconResultCode run(FalconVM *vm) {
             case POP_TOP_EXPR: {
                 FalconValue result = VMPeek(vm, 0);
                 if (!IS_NULL(result)) {
-                    printValue(vm, result, true);
+                    printValue(vm, result);
                     printf("\n");
                 }
 
