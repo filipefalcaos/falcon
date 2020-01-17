@@ -76,6 +76,7 @@ void falconFreeVM(FalconVM *vm);
 void resetVMStack(FalconVM *vm);
 bool VMPush(FalconVM *vm, FalconValue value);
 FalconValue VMPop(FalconVM *vm);
+void VMPop2(FalconVM *vm);
 FalconResultCode falconInterpret(FalconVM *vm, const char *source);
 
 /* The initial allocation size for the heap, in bytes */

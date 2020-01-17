@@ -7,6 +7,7 @@
 #include "falcon_vm.h"
 #include "../compiler/falcon_compiler.h"
 #include "../lib/falcon_error.h"
+#include "../lib/falcon_list.h"
 #include "../lib/falcon_natives.h"
 #include "../lib/falcon_string.h"
 #include "falcon_memory.h"
@@ -79,6 +80,14 @@ bool VMPush(FalconVM *vm, FalconValue value) {
 FalconValue VMPop(FalconVM *vm) {
     vm->stackTop--;
     return *vm->stackTop;
+}
+
+/**
+ * Pops and discard the two value from the top of the Falcon's virtual machine stack.
+ */
+void VMPop2(FalconVM *vm) {
+    VMPop(vm);
+    VMPop(vm);
 }
 
 /**
@@ -222,8 +231,7 @@ static void defineMethod(FalconVM *vm, ObjString *name) {
     FalconValue method = VMPeek(vm, 0);           /* Avoids GC */
     ObjClass *class_ = AS_CLASS(VMPeek(vm, 1));   /* Avoids GC */
     tableSet(vm, &class_->methods, name, method); /* Sets the new method */
-    VMPop(vm);
-    VMPop(vm);
+    VMPop2(vm);
 }
 
 /**
@@ -242,10 +250,21 @@ static void concatenateStrings(FalconVM *vm) {
     ObjString *b = AS_STRING(VMPeek(vm, 0));     /* Avoids GC */
     ObjString *a = AS_STRING(VMPeek(vm, 1));     /* Avoids GC */
     ObjString *result = concatStrings(vm, b, a); /* Concatenates both strings */
-    VMPop(vm);
-    VMPop(vm);
+    VMPop2(vm);
     VMPush(vm, OBJ_VAL(result));                  /* Pushes concatenated string */
     tableSet(vm, &vm->strings, result, NULL_VAL); /* Interns the string */
+}
+
+/**
+ * Concatenates the two list values on the top of the virtual machine stack. Then, pushes the new
+ * list to the stack.
+ */
+static void concatenateLists(FalconVM *vm) {
+    ObjList *b = AS_LIST(VMPeek(vm, 0));     /* Avoids GC */
+    ObjList *a = AS_LIST(VMPeek(vm, 1));     /* Avoids GC */
+    ObjList *result = concatLists(vm, b, a); /* Concatenates both lists */
+    VMPop2(vm);
+    VMPush(vm, OBJ_VAL(result)); /* Pushes concatenated list */
 }
 
 /**
@@ -486,6 +505,8 @@ static FalconResultCode run(FalconVM *vm) {
             case BIN_ADD: {
                 if (IS_STRING(VMPeek(vm, 0)) && IS_STRING(VMPeek(vm, 1))) {
                     concatenateStrings(vm);
+                } else if (IS_LIST(VMPeek(vm, 0)) && IS_LIST(VMPeek(vm, 1))) {
+                    concatenateLists(vm);
                 } else if (IS_NUM(VMPeek(vm, 0)) && IS_NUM(VMPeek(vm, 1))) {
                     double a = AS_NUM(VMPop(vm));
                     vm->stackTop[-1] = NUM_VAL(AS_NUM(vm->stackTop[-1]) + a);

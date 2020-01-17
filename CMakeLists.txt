@@ -58,14 +58,16 @@ add_executable(
     # Standard Lib
     src/lib/falcon_error.h
     src/lib/falcon_error.c
-    src/lib/falcon_natives.h
-    src/lib/falcon_natives.c
-    src/lib/falcon_table.h
-    src/lib/falcon_table.c
     src/lib/falcon_io.h
     src/lib/falcon_io.c
+    src/lib/falcon_list.h
+    src/lib/falcon_list.c
+    src/lib/falcon_natives.h
+    src/lib/falcon_natives.c
     src/lib/falcon_string.h
     src/lib/falcon_string.c
+    src/lib/falcon_table.h
+    src/lib/falcon_table.c
 
     # Virtual Machine
     src/vm/falcon_bytecode.h

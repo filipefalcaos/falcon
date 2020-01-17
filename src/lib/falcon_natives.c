@@ -393,8 +393,7 @@ static void defNative(FalconVM *vm, const char *name, FalconNativeFn function) {
     VMPush(vm, OBJ_VAL(copyString(vm, name, (int) strlen(name)))); /* Avoids GC */
     VMPush(vm, OBJ_VAL(falconNative(vm, function, name)));         /* Avoids GC */
     tableSet(vm, &vm->globals, AS_STRING(vm->stack[0]), vm->stack[1]);
-    VMPop(vm);
-    VMPop(vm);
+    VMPop2(vm);
 }
 
 /**
