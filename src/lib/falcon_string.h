@@ -12,8 +12,7 @@
 #include "../vm/falcon_vm.h"
 
 /* String operations */
-ObjString *makeString(FalconVM *vm, size_t length);
-ObjString *copyString(FalconVM *vm, const char *chars, size_t length);
+uint32_t hashString(const unsigned char *key, size_t length);
 int cmpStrings(const ObjString *str1, const ObjString *str2);
 ObjString *concatStrings(FalconVM *vm, const ObjString *str1, const ObjString *str2);
 

@@ -5,7 +5,9 @@
  */
 
 #include "falcon_object.h"
+#include "../lib/falcon_string.h"
 #include "falcon_memory.h"
+#include <string.h>
 
 /**
  * Gets the name (string) of a given Falcon Object type.
@@ -21,6 +23,38 @@ const char *getObjName(ObjType type) {
         "OBJ_NATIVE"
     };
     return objectTypeNames[type];
+}
+
+/**
+ * Creates a new ObjString by claiming ownership of the given string. In this case, the
+ * characters of a ObjString can be freed when no longer needed.
+ */
+ObjString *makeString(FalconVM *vm, size_t length) {
+    ObjString *str =
+        (ObjString *) falconAllocateObj(vm, sizeof(ObjString) + length + 1, OBJ_STRING);
+    str->length = length;
+    return str;
+}
+
+/**
+ * Copies and allocates a given string to the heap. This way, every ObjString reliably owns its
+ * character array and can free it.
+ */
+ObjString *falconString(FalconVM *vm, const char *chars, size_t length) {
+    uint32_t hash = hashString((const unsigned char *) chars, length);
+    ObjString *interned = tableFindStr(&vm->strings, chars, length, hash); /* Checks if interned */
+    if (interned != NULL) return interned;
+
+    /* Copies the characters to the ObjString */
+    ObjString *str = makeString(vm, length);
+    memcpy(str->chars, chars, length);
+    str->chars[length] = '\0';
+    str->hash = hash;
+
+    VMPush(vm, OBJ_VAL(str));                  /* Avoids GC */
+    tableSet(vm, &vm->strings, str, NULL_VAL); /* Interns the string */
+    VMPop(vm);
+    return str;
 }
 
 /**

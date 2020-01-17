@@ -114,6 +114,8 @@ typedef struct {
 
 /* Object operations */
 const char *getObjName(ObjType type);
+ObjString *makeString(FalconVM *vm, size_t length);
+ObjString *falconString(FalconVM *vm, const char *chars, size_t length);
 ObjFunction *falconFunction(FalconVM *vm);
 ObjUpvalue *falconUpvalue(FalconVM *vm, FalconValue *slot);
 ObjClosure *falconClosure(FalconVM *vm, ObjFunction *function);

@@ -365,7 +365,7 @@ static Token string(Scanner *scanner, FalconVM *vm) {
         string[oldSize] = nextChar;
     }
 
-    FalconValue value = OBJ_VAL(copyString(vm, string, currentSize));
+    FalconValue value = OBJ_VAL(falconString(vm, string, currentSize));
     return literalToken(TK_STRING, value, scanner); /* Makes a string literal token */
 }
 

@@ -215,7 +215,7 @@ static void initFunctionCompiler(FalconCompiler *compiler, FunctionCompiler *fCo
 
     Parser *parser = compiler->parser;
     if (type != TYPE_SCRIPT)
-        currentFunction(compiler->fCompiler)->name = copyString(
+        currentFunction(compiler->fCompiler)->name = falconString(
             compiler->vm, parser->previous.start, parser->previous.length); /* Sets function name */
 
     /* Set stack slot zero for the VM's internal use */
@@ -283,7 +283,7 @@ static void parsePrecedence(FalconCompiler *compiler, PrecedenceLevels precedenc
  * identifier in the global names table.
  */
 static uint8_t identifierConstant(FalconCompiler *compiler, Token *name) {
-    return makeConstant(compiler, OBJ_VAL(copyString(compiler->vm, name->start, name->length)));
+    return makeConstant(compiler, OBJ_VAL(falconString(compiler->vm, name->start, name->length)));
 }
 
 /**

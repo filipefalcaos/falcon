@@ -421,7 +421,7 @@ static FalconResultCode run(FalconVM *vm) {
                         ObjString *string = AS_STRING(subscript);
                         if (index < 0) index = (int) string->length + index;
                         if (index >= 0 && index < string->length) {
-                            VMPush(vm, OBJ_VAL(copyString(vm, &string->chars[index], 1)));
+                            VMPush(vm, OBJ_VAL(falconString(vm, &string->chars[index], 1)));
                             break;
                         }
 

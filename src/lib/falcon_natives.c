@@ -155,7 +155,7 @@ FALCON_NATIVE(type) {
             break;
     }
 
-    return OBJ_VAL(copyString(vm, typeString, typeStringLen));
+    return OBJ_VAL(falconString(vm, typeString, typeStringLen));
 }
 
 /**
@@ -205,7 +205,7 @@ FALCON_NATIVE(str) {
     ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
     if (!IS_STRING(*args)) {
         char *string = valueToString(vm, args); /* Converts value to a string */
-        return OBJ_VAL(copyString(vm, string, strlen(string)));
+        return OBJ_VAL(falconString(vm, string, strlen(string)));
     }
 
     return *args; /* Given value is already a string */
@@ -356,7 +356,7 @@ FALCON_NATIVE(input) {
     }
 
     char *inputString = readStrStdin(vm); /* Reads the input string */
-    return OBJ_VAL(copyString(vm, inputString, strlen(inputString)));
+    return OBJ_VAL(falconString(vm, inputString, strlen(inputString)));
 }
 
 /**
@@ -390,7 +390,7 @@ FALCON_NATIVE(print) {
  * Defines a new native function for Falcon.
  */
 static void defNative(FalconVM *vm, const char *name, FalconNativeFn function) {
-    VMPush(vm, OBJ_VAL(copyString(vm, name, (int) strlen(name)))); /* Avoids GC */
+    VMPush(vm, OBJ_VAL(falconString(vm, name, (int) strlen(name)))); /* Avoids GC */
     VMPush(vm, OBJ_VAL(falconNative(vm, function, name)));         /* Avoids GC */
     tableSet(vm, &vm->globals, AS_STRING(vm->stack[0]), vm->stack[1]);
     VMPop2(vm);
