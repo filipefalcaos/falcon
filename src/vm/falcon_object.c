@@ -19,9 +19,12 @@ const char *getObjName(ObjType type) {
         "OBJ_UPVALUE",
         "OBJ_CLOSURE",
         "OBJ_CLASS",
+        "OBJ_INSTANCE",
         "OBJ_LIST",
+        "OBJ_MAP",
         "OBJ_NATIVE"
     };
+
     return objectTypeNames[type];
 }
 
@@ -127,6 +130,15 @@ ObjList *falconList(FalconVM *vm, int size) {
     list->elements.capacity = size;
     list->elements.values = FALCON_ALLOCATE(vm, FalconValue, size);
     return list;
+}
+
+/**
+ * Allocates a new Falcon map object.
+ */
+ObjMap *falconMap(FalconVM *vm) {
+    ObjMap *map = FALCON_ALLOCATE_OBJ(vm, ObjMap, OBJ_MAP);
+    initTable(&map->entries);
+    return map;
 }
 
 /**

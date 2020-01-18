@@ -70,7 +70,8 @@ bool isFalsy(FalconValue value) {
     return IS_NULL(value) || (IS_BOOL(value) && !AS_BOOL(value)) ||
            (IS_NUM(value) && AS_NUM(value) == 0) ||
            (IS_STRING(value) && AS_STRING(value)->length == 0) ||
-           (IS_LIST(value) && AS_LIST(value)->elements.count == 0);
+           (IS_LIST(value) && AS_LIST(value)->elements.count == 0) ||
+           (IS_MAP(value) && AS_MAP(value)->entries.count == 0);
 }
 
 /* String conversion constants */

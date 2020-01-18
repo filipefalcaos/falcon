@@ -134,6 +134,11 @@ static void blackenObject(FalconVM *vm, FalconObj *object) {
             markArray(vm, &list->elements);
             break;
         }
+        case OBJ_MAP: {
+            ObjMap *map = (ObjMap *) object;
+            markTable(vm, &map->entries);
+            break;
+        }
         case OBJ_STRING:
         case OBJ_NATIVE:
             break;
