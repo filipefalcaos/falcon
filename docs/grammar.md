@@ -69,27 +69,23 @@ precedence levels are explicit in the grammar by setting separate rules:
 
 ```
 expr   -> assign ;
-assign -> assign_call? IDENTIFIER subscript? assign_op assign 
-       | logic_or ;
+assign -> ( call "." )? IDENTIFIER ( "[" expr "]" )? "=" assign 
+       | conditional ;
 
-assign_call -> call "." ;
-subscript   -> "[" expression "]" ;
-assign_op   -> "=" | "+=" | "-=" | "*=" | "/=" | "%=" ;
-
-logic_or   -> logic_and ( "or" logic_and )* ;
-logic_and  -> equality ( "and" equality )* ;
-equality   -> comparison ( ( "!=" | "==" ) comparison )* ;
-comparison -> addition ( ( ">" | ">=" | "<" | "<=" ) addition )* ;
+conditional -> logic_or ( "?" expr ":" conditional )? ;
+logic_or    -> logic_and ( "or" logic_and )* ;
+logic_and   -> equality ( "and" equality )* ;
+equality    -> comparison ( ( "!=" | "==" ) comparison )* ;
+comparison  -> addition ( ( ">" | ">=" | "<" | "<=" ) addition )* ;
 
 addition       -> multiplication ( ( "-" | "+" ) multiplication )* ;
 multiplication -> unary ( ( "/" | "*" | "%" ) unary )* ;
 unary          -> ( "not" | "-" ) unary | exponent ;
 exponent       -> "^" exponent | call ;
 
-call    -> primary ( "(" args? ")" | list | ( "." IDENTIFIER ) )* ;
-list    -> "[" args? "]" ;
+call    -> primary ( "(" args? ")" | "[" expr "]" | ( "." IDENTIFIER ) )* ;
 primary -> "true" | "false" | "null" | "this" | NUMBER | STRING 
-        | IDENTIFIER | "(" expr ")" | "super" "." IDENTIFIER ;
+        | IDENTIFIER | "(" expr ")" | "[" args? "]" | "super" "." IDENTIFIER ;
 ```
 
 ### Recurrent rules
