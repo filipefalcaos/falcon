@@ -1,4 +1,4 @@
-## Falcon grammar
+## Falcon Grammar
 
 This document is a draft of the reference for the Falcon programming language grammar. It provides a formal definition 
 of Falcon grammar. It is also not intended to be an introduction to the language concepts or standard library. **This 
@@ -69,7 +69,7 @@ precedence levels are explicit in the grammar by setting separate rules:
 
 ```
 expr   -> assign ;
-assign -> ( call "." )? IDENTIFIER ( "[" expr "]" )? "=" assign 
+assign -> ( call "." )? IDENTIFIER subscript? "=" assign 
        | conditional ;
 
 conditional -> logic_or ( "?" expr ":" conditional )? ;
@@ -83,9 +83,15 @@ multiplication -> unary ( ( "/" | "*" | "%" ) unary )* ;
 unary          -> ( "not" | "-" ) unary | exponent ;
 exponent       -> "^" exponent | call ;
 
-call    -> primary ( "(" args? ")" | "[" expr "]" | ( "." IDENTIFIER ) )* ;
+call    -> primary ( "(" args? ")" | subscript | ( "." IDENTIFIER ) )* ;
 primary -> "true" | "false" | "null" | "this" | NUMBER | STRING 
-        | IDENTIFIER | "(" expr ")" | "[" args? "]" | "super" "." IDENTIFIER ;
+        | IDENTIFIER | grouping | list_lit | map_lit | super_id ;
+
+grouping  -> "(" expr ")"
+list_lit  -> "[" args? "]"
+map_lit   -> "{" ( key_value ( "," key_value )* )? "}"
+key_value -> STRING ":" expr
+super_id  -> "super" "." IDENTIFIER
 ```
 
 ### Recurrent rules
@@ -93,9 +99,10 @@ primary -> "true" | "false" | "null" | "this" | NUMBER | STRING
 Some recurrent rules not defined in the sections above are:
 
 ```
-function -> IDENTIFIER "(" params? ")" block ;
-params   -> IDENTIFIER ( "," IDENTIFIER )* ;
-args     -> expr ( "," expr )* ;
+function  -> IDENTIFIER "(" params? ")" block ;
+params    -> IDENTIFIER ( "," IDENTIFIER )* ;
+args      -> expr ( "," expr )* ;
+subscript -> "[" ( NUMBER | STRING ) "]"
 ```
 
 ## Lexical Grammar
