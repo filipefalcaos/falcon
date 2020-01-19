@@ -606,8 +606,7 @@ PARSE_RULE(grouping) {
 }
 
 /**
- * Handles a list literal expression by creating a new Falcon native List and compiling each of
- * its elements.
+ * Handles a list literal by creating a new Falcon list and compiling each of its elements.
  */
 PARSE_RULE(list) {
     (void) canAssign;                                 /* Unused */
@@ -644,8 +643,7 @@ PARSE_RULE(literal) {
 }
 
 /**
- * Handles a numeric expression by converting a string to a double number and then generates the
- * code to load that value by calling "emitConstant".
+ * Handles a number literal by adding it to the constants table.
  */
 PARSE_RULE(number) {
     (void) canAssign; /* Unused */
@@ -653,8 +651,7 @@ PARSE_RULE(number) {
 }
 
 /**
- * Handles a string expression by creating a string object, wrapping it in a Value, and then
- * adding it to the constants table.
+ * Handles a string literal by adding it to the constants table.
  */
 PARSE_RULE(string) {
     (void) canAssign; /* Unused */
