@@ -11,12 +11,12 @@
 typedef enum {
 
     /* Symbols */
-    TK_LEFT_PAREN,
-    TK_RIGHT_PAREN,
-    TK_LEFT_BRACE,
-    TK_RIGHT_BRACE,
-    TK_LEFT_BRACKET,
-    TK_RIGHT_BRACKET,
+    TK_LPAREN,
+    TK_RPAREN,
+    TK_LBRACE,
+    TK_RBRACE,
+    TK_LBRACKET,
+    TK_RBRACKET,
     TK_COMMA,
     TK_DOT,
     TK_COLON,
@@ -26,21 +26,21 @@ typedef enum {
     /* Operators */
     TK_MINUS,
     TK_PLUS,
-    TK_DIV,
-    TK_MOD,
-    TK_MULTIPLY,
-    TK_POW,
+    TK_SLASH,
+    TK_PERCENT,
+    TK_STAR,
+    TK_CIRCUMFLEX,
     TK_NOT,
-    TK_NOT_EQUAL,
+    TK_NOTEQUAL,
     TK_EQUAL,
-    TK_EQUAL_EQUAL,
+    TK_EQEQUAL,
     TK_GREATER,
-    TK_GREATER_EQUAL,
+    TK_GREATEREQUAL,
     TK_LESS,
-    TK_LESS_EQUAL,
+    TK_LESSEQUAL,
     TK_AND, /* Also a keyword */
     TK_OR,  /* Also a keyword */
-    TK_TERNARY,
+    TK_QUESTION,
 
     /* Identifier and Literals */
     TK_IDENTIFIER,

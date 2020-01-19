@@ -11,66 +11,66 @@
 typedef enum {
 
     /* Constants and literals */
-    LOAD_CONST, /* 2 bytes constant */
-    LOAD_FALSE, /* "false" literal */
-    LOAD_TRUE,  /* "true" literal */
-    LOAD_NULL,  /* "null" literal */
+    OP_LOADCONST, /* 2 bytes constant */
+    OP_LOADFALSE, /* "false" literal */
+    OP_LOADTRUE,  /* "true" literal */
+    OP_LOADNULL,  /* "null" literal */
 
     /* Lists and subscripts */
-    DEF_LIST,      /* Define a new list */
-    PUSH_LIST,     /* Push a value to the end of a list */
-    GET_SUBSCRIPT, /* Get a list/string element by index */
-    SET_SUBSCRIPT, /* Set a list/string element by index */
+    OP_DEFLIST,  /* Define a new list */
+    OP_PUSHLIST, /* Push a value to the end of a list */
+    OP_GETSUB,   /* Get a list/string element by index */
+    OP_SETSUB,   /* Set a list/string element by index */
 
     /* Relational operations */
-    BIN_AND,     /* "and" logical operator */
-    BIN_OR,      /* "or" logical operator */
-    UN_NOT,      /* "!" operator */
-    BIN_EQUAL,   /* "==" operator */
-    BIN_GREATER, /* ">" operator */
-    BIN_LESS,    /* "<" operator */
+    OP_AND,     /* "and" logical operator */
+    OP_OR,      /* "or" logical operator */
+    OP_NOT,     /* "not" operator */
+    OP_EQUAL,   /* "==" operator */
+    OP_GREATER, /* ">" operator */
+    OP_LESS,    /* "<" operator */
 
     /* Arithmetic operations */
-    BIN_ADD,  /* "+" operator */
-    BIN_SUB,  /* "-" binary operator */
-    UN_NEG,   /* "-" unary operator */
-    BIN_DIV,  /* "/" operator */
-    BIN_MOD,  /* "%" operator */
-    BIN_MULT, /* "*" operator */
-    BIN_POW,  /* "^" operator */
+    OP_ADD,  /* "+" operator */
+    OP_SUB,  /* "-" binary operator */
+    OP_NEG,  /* "-" unary operator */
+    OP_DIV,  /* "/" operator */
+    OP_MOD,  /* "%" operator */
+    OP_MULT, /* "*" operator */
+    OP_POW,  /* "^" operator */
 
     /* Variable operations */
-    DEF_GLOBAL,  /* Define a global variable */
-    GET_GLOBAL,  /* Get the value of a global variable */
-    SET_GLOBAL,  /* Set the value of a global variable */
-    GET_UPVALUE, /* Get the value of a upvalue */
-    SET_UPVALUE, /* Set the value of a upvalue */
-    CLS_UPVALUE, /* Close a upvalue */
-    GET_LOCAL,   /* Get the value of a local variable */
-    SET_LOCAL,   /* Set the value of a local variable */
+    OP_DEFGLOBAL,  /* Define a global variable */
+    OP_GETGLOBAL,  /* Get the value of a global variable */
+    OP_SETGLOBAL,  /* Set the value of a global variable */
+    OP_GETUPVAL,   /* Get the value of a upvalue */
+    OP_SETUPVAL,   /* Set the value of a upvalue */
+    OP_CLOSEUPVAL, /* Close a upvalue */
+    OP_GETLOCAL,   /* Get the value of a local variable */
+    OP_SETLOCAL,   /* Set the value of a local variable */
 
     /* Jump/loop operations */
-    JUMP_FWR,      /* Jump an instruction on the VM */
-    JUMP_IF_FALSE, /* Jump an instruction if falsy on the VM */
-    LOOP_BACK,     /* Loop backwards to a instruction on the VM */
+    OP_JUMP,        /* Jump an instruction on the VM */
+    OP_JUMPIFFALSE, /* Jump an instruction if falsy on the VM */
+    OP_LOOP,        /* Loop backwards to a instruction on the VM */
 
     /* Closures/functions operations */
-    FN_CLOSURE, /* Closure declaration */
-    FN_CALL,    /* Perform a function call */
-    FN_RETURN,  /* "return" statement */
+    OP_CLOSURE, /* Closure declaration */
+    OP_CALL,    /* Perform a function call */
+    OP_RETURN,  /* "return" statement */
 
     /* Class operations */
-    DEF_CLASS,   /* Define a new class */
-    DEF_METHOD,  /* Define a new method in a class */
-    GET_PROP,    /* Get the value of a property */
-    SET_PROP,    /* Set the value of a property */
-    INVOKE_PROP, /* Perform a invocation on a property */
+    OP_DEFCLASS,  /* Define a new class */
+    OP_DEFMETHOD, /* Define a new method in a class */
+    OP_GETPROP,   /* Get the value of a property */
+    OP_SETPROP,   /* Set the value of a property */
+    OP_INVPROP,   /* Perform a invocation on a property */
 
     /* VM operations */
-    DUP_TOP,      /* Duplicate the top of the VM stack */
-    POP_TOP,      /* Pop from the VM stack */
-    POP_TOP_EXPR, /* Pop from the VM stack and print the top value */
-    TEMP_MARK     /* Mark a temporary value */
+    OP_DUPTOP,     /* Duplicate the top of the VM stack */
+    OP_POPTOP,     /* Pop from the VM stack */
+    OP_POPTOPEXPR, /* Pop from the VM stack and print the top value */
+    OP_TEMP        /* Mark a temporary value */
 
 } FalconOpCodes;
 

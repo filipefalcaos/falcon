@@ -383,19 +383,19 @@ Token scanToken(Scanner *scanner, FalconVM *vm) {
 
     switch (nextChar) { /* Checks for lexemes matching */
         case '(':
-            return simpleToken(TK_LEFT_PAREN, scanner);
+            return simpleToken(TK_LPAREN, scanner);
         case ')':
-            return simpleToken(TK_RIGHT_PAREN, scanner);
+            return simpleToken(TK_RPAREN, scanner);
         case '{':
-            return simpleToken(TK_LEFT_BRACE, scanner);
+            return simpleToken(TK_LBRACE, scanner);
         case '}':
-            return simpleToken(TK_RIGHT_BRACE, scanner);
+            return simpleToken(TK_RBRACE, scanner);
         case '[':
-            return simpleToken(TK_LEFT_BRACKET, scanner);
+            return simpleToken(TK_LBRACKET, scanner);
         case ']':
-            return simpleToken(TK_RIGHT_BRACKET, scanner);
+            return simpleToken(TK_RBRACKET, scanner);
         case '?':
-            return simpleToken(TK_TERNARY, scanner);
+            return simpleToken(TK_QUESTION, scanner);
         case ':':
             return simpleToken(TK_COLON, scanner);
         case ';':
@@ -412,22 +412,22 @@ Token scanToken(Scanner *scanner, FalconVM *vm) {
         case '+':
             return simpleToken(TK_PLUS, scanner);
         case '/':
-            return simpleToken(TK_DIV, scanner);
+            return simpleToken(TK_SLASH, scanner);
         case '%':
-            return simpleToken(TK_MOD, scanner);
+            return simpleToken(TK_PERCENT, scanner);
         case '*':
-            return simpleToken(TK_MULTIPLY, scanner);
+            return simpleToken(TK_STAR, scanner);
         case '^':
-            return simpleToken(TK_POW, scanner);
+            return simpleToken(TK_CIRCUMFLEX, scanner);
         case '!':
             if (match('=', scanner)) /* Logical not operator is "not" instead of "!" */
-                return simpleToken(TK_NOT_EQUAL, scanner);
+                return simpleToken(TK_NOTEQUAL, scanner);
         case '=':
-            return simpleToken(match('=', scanner) ? TK_EQUAL_EQUAL : TK_EQUAL, scanner);
+            return simpleToken(match('=', scanner) ? TK_EQEQUAL : TK_EQUAL, scanner);
         case '<':
-            return simpleToken(match('=', scanner) ? TK_LESS_EQUAL : TK_LESS, scanner);
+            return simpleToken(match('=', scanner) ? TK_LESSEQUAL : TK_LESS, scanner);
         case '>':
-            return simpleToken(match('=', scanner) ? TK_GREATER_EQUAL : TK_GREATER, scanner);
+            return simpleToken(match('=', scanner) ? TK_GREATEREQUAL : TK_GREATER, scanner);
         case '"':
             return string(scanner, vm);
         default:

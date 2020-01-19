@@ -102,7 +102,7 @@ int addConstant(FalconVM *vm, BytecodeChunk *bytecode, FalconValue value) {
  * Writes a 2 bytes constant to the bytecode chunk.
  */
 void writeConstant(FalconVM *vm, BytecodeChunk *bytecode, uint16_t index, int line) {
-    writeBytecode(vm, bytecode, LOAD_CONST, line);
+    writeBytecode(vm, bytecode, OP_LOADCONST, line);
     writeBytecode(vm, bytecode, (uint8_t)(index & 0xffu), line);
     writeBytecode(vm, bytecode, (uint8_t)((uint16_t)(index >> 8u) & 0xffu), line);
 }
