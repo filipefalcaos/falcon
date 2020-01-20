@@ -157,6 +157,7 @@ ObjFunction *falconCompile(FalconVM *vm, const char *source);
 #define COMP_CONST_LIMIT_ERR   "Limit of 65535 constants reached."
 #define COMP_LOOP_LIMIT_ERR    "Limit of 65535 instructions in loop body reached."
 #define COMP_JUMP_LIMIT_ERR    "Limit of 65535 instructions in conditional branch reached."
+#define COMP_LIST_LIMIT_ERR    "Limit of 65535 elements in a list reached."
 #define COMP_VAR_LIMIT_ERR     "Limit of 255 local variables in scope reached."
 #define COMP_CLOSURE_LIMIT_ERR "Limit of 255 closure variables reached."
 #define COMP_ARGS_LIMIT_ERR    "Limit of 255 arguments reached."

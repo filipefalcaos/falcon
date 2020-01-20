@@ -121,11 +121,12 @@ ObjInstance *falconInstance(FalconVM *vm, ObjClass *class_) {
 /**
  * Allocates a new Falcon list object.
  */
-ObjList *falconList(FalconVM *vm, int size) {
+ObjList *falconList(FalconVM *vm, uint16_t size) {
+    FalconValue *elements = FALCON_ALLOCATE(vm, FalconValue, size); /* Avoids GC */
     ObjList *list = FALCON_ALLOCATE_OBJ(vm, ObjList, OBJ_LIST);
-    list->elements.count = 0;
+    list->elements.count = size;
     list->elements.capacity = size;
-    list->elements.values = FALCON_ALLOCATE(vm, FalconValue, size);
+    list->elements.values = elements;
     return list;
 }
 

@@ -91,6 +91,15 @@ void VMPop2(FalconVM *vm) {
 }
 
 /**
+ * Pops and discard "n" values from the top of the Falcon's virtual machine stack.
+ */
+void VMPopN(FalconVM *vm, long int n) {
+    for (long int i = 0; i < n; i++) {
+        VMPop(vm);
+    }
+}
+
+/**
  * Peeks a element on the Falcon's virtual machine stack.
  */
 static FalconValue VMPeek(FalconVM *vm, int distance) { return vm->stackTop[-1 - distance]; }
@@ -256,18 +265,6 @@ static void concatenateStrings(FalconVM *vm) {
 }
 
 /**
- * Concatenates the two list values on the top of the virtual machine stack. Then, pushes the new
- * list to the stack.
- */
-static void concatenateLists(FalconVM *vm) {
-    ObjList *b = AS_LIST(VMPeek(vm, 0));     /* Avoids GC */
-    ObjList *a = AS_LIST(VMPeek(vm, 1));     /* Avoids GC */
-    ObjList *result = concatLists(vm, b, a); /* Concatenates both lists */
-    VMPop2(vm);
-    VMPush(vm, OBJ_VAL(result)); /* Pushes concatenated list */
-}
-
-/**
  * Loops through all the instructions in a bytecode chunk. Each turn through the loop, it reads and
  * executes the current instruction.
  */
@@ -382,15 +379,16 @@ static FalconResultCode run(FalconVM *vm) {
 
             /* Lists */
             case DEF_LIST: {
-                ObjList *list = falconList(vm, READ_BYTE());
-                VMPush(vm, OBJ_VAL(list));
-                break;
-            }
-            case PUSH_LIST: {
-                FalconValue element = VMPeek(vm, 0); /* Avoids GC */
-                ObjList *list = AS_LIST(VMPeek(vm, 1));
-                writeValArray(vm, &list->elements, element);
-                VMPop(vm);
+                uint16_t elementsCount = READ_SHORT();
+                ObjList list = *falconList(vm, elementsCount);
+
+                /* Adds the elements to the list */
+                for (uint16_t i = 0; i < elementsCount; i++) {
+                    list.elements.values[i] = VMPeek(vm, elementsCount - i - 1);
+                }
+
+                VMPopN(vm, elementsCount); /* Discards the elements */
+                VMPush(vm, OBJ_VAL(&list));
                 break;
             }
             case GET_SUBSCRIPT: {
@@ -505,8 +503,6 @@ static FalconResultCode run(FalconVM *vm) {
             case BIN_ADD: {
                 if (IS_STRING(VMPeek(vm, 0)) && IS_STRING(VMPeek(vm, 1))) {
                     concatenateStrings(vm);
-                } else if (IS_LIST(VMPeek(vm, 0)) && IS_LIST(VMPeek(vm, 1))) {
-                    concatenateLists(vm);
                 } else if (IS_NUM(VMPeek(vm, 0)) && IS_NUM(VMPeek(vm, 1))) {
                     double a = AS_NUM(VMPop(vm));
                     vm->stackTop[-1] = NUM_VAL(AS_NUM(vm->stackTop[-1]) + a);
@@ -514,6 +510,7 @@ static FalconResultCode run(FalconVM *vm) {
                     falconVMError(vm, VM_OPR_NOT_NUM_STR_ERR);
                     return FALCON_RUNTIME_ERROR;
                 }
+
                 break;
             }
             case BIN_SUB:

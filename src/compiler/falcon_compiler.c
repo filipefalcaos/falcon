@@ -143,9 +143,18 @@ static int emitJump(FalconCompiler *compiler, uint8_t instruction) {
 }
 
 /**
- * Emits the FN_RETURN bytecode instruction.
+ * Emits the "RETURN" bytecode instruction.
  */
 static void emitReturn(FalconCompiler *compiler) { emitBytes(compiler, LOAD_NULL, FN_RETURN); }
+
+/**
+ * Emits the bytecode for a "DEFLIST" instruction.
+ */
+static void emitList(FalconCompiler *compiler, uint16_t elementsCount) {
+    emitByte(compiler, DEF_LIST);
+    emitByte(compiler, (uint8_t)((uint64_t)(elementsCount >> 8u) & 0xffu));
+    emitByte(compiler, (uint8_t)(elementsCount & 0xffu));
+}
 
 /**
  * Adds a constant to the bytecode chunk constants table.
@@ -436,7 +445,7 @@ static uint8_t argumentList(FalconCompiler *compiler) {
     if (!check(compiler->parser, TK_RIGHT_PAREN)) {
         do {
             expression(compiler);
-            if (argCount == UINT8_MAX)
+            if (argCount == UINT8_MAX) /* Reached max args? */
                 falconCompilerError(compiler, &compiler->parser->previous, COMP_ARGS_LIMIT_ERR);
             argCount++;
         } while (match(compiler, TK_COMMA));
@@ -611,17 +620,21 @@ PARSE_RULE(grouping) {
  * its elements.
  */
 PARSE_RULE(list) {
-    (void) canAssign;                               /* Unused */
-    emitBytes(compiler, DEF_LIST, FALCON_MIN_LIST); /* Creates a new list with default size */
+    (void) canAssign; /* Unused */
+    uint16_t elementsCount = 0;
 
+    /* Parses the list elements */
     if (!check(compiler->parser, TK_RIGHT_BRACKET)) {
         do {
             expression(compiler);
-            emitByte(compiler, PUSH_LIST);
+            if (elementsCount == UINT16_MAX) /* Reached max elements? */
+                falconCompilerError(compiler, &compiler->parser->previous, COMP_LIST_LIMIT_ERR);
+            elementsCount++;
         } while (match(compiler, TK_COMMA));
     }
 
     consume(compiler, TK_RIGHT_BRACKET, COMP_LIST_BRACKET_ERR);
+    emitList(compiler, elementsCount); /* Creates the new list */
 }
 
 /**
@@ -1112,7 +1125,6 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case LOAD_FALSE:
         case LOAD_TRUE:
         case LOAD_NULL:
-        case PUSH_LIST:
         case GET_SUBSCRIPT:
         case SET_SUBSCRIPT:
         case UN_NOT:
@@ -1134,7 +1146,6 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case TEMP_MARK:
             return 0; /* Instructions with no arguments */
 
-        case DEF_LIST:
         case DEF_GLOBAL:
         case GET_GLOBAL:
         case SET_GLOBAL:
@@ -1156,6 +1167,7 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case JUMP_FWR:
         case JUMP_IF_FALSE:
         case LOOP_BACK:
+        case DEF_LIST:
             return 2; /* Instructions with 2 bytes as arguments */
 
         case FN_CLOSURE: {

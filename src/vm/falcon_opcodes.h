@@ -18,7 +18,6 @@ typedef enum {
 
     /* Lists and subscripts */
     DEF_LIST,      /* Define a new list */
-    PUSH_LIST,     /* Push a value to the end of a list */
     GET_SUBSCRIPT, /* Get a list/string element by index */
     SET_SUBSCRIPT, /* Set a list/string element by index */
 

@@ -116,8 +116,6 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
         /* Lists */
         case DEF_LIST:
             return byteInstruction("DEF_LIST", bytecode, offset);
-        case PUSH_LIST:
-            return simpleInstruction("PUSH_LIST", offset);
         case GET_SUBSCRIPT:
             return simpleInstruction("GET_SUBSCRIPT", offset);
         case SET_SUBSCRIPT:

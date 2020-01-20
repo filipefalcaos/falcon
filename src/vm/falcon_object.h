@@ -121,7 +121,7 @@ ObjUpvalue *falconUpvalue(FalconVM *vm, FalconValue *slot);
 ObjClosure *falconClosure(FalconVM *vm, ObjFunction *function);
 ObjClass *falconClass(FalconVM *vm, ObjString *name);
 ObjInstance *falconInstance(FalconVM *vm, ObjClass *class_);
-ObjList *falconList(FalconVM *vm, int size);
+ObjList *falconList(FalconVM *vm, uint16_t size);
 ObjNative *falconNative(FalconVM *vm, FalconNativeFn function, const char *name);
 
 /**
