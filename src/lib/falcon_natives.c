@@ -5,9 +5,9 @@
  */
 
 #include "falcon_natives.h"
+#include "../vm/falcon_memory.h"
 #include "falcon_error.h"
 #include "falcon_io.h"
-#include "falcon_string.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -140,6 +140,10 @@ FALCON_NATIVE(type) {
                 case OBJ_LIST:
                     typeString = "<list>";
                     typeStringLen = 6;
+                    break;
+                case OBJ_MAP:
+                    typeString = "<map>";
+                    typeStringLen = 5;
                     break;
                 case OBJ_CLOSURE:
                 case OBJ_FUNCTION:

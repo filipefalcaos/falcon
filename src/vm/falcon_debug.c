@@ -104,108 +104,110 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
     switch (instruction) {                        /* Verifies the instruction type */
 
         /* Constants and literals */
-        case LOAD_CONST:
-            return constantInstruction16("LOAD_CONST", vm, bytecode, offset);
-        case LOAD_FALSE:
-            return simpleInstruction("LOAD_FALSE", offset);
-        case LOAD_TRUE:
-            return simpleInstruction("LOAD_TRUE", offset);
-        case LOAD_NULL:
-            return simpleInstruction("LOAD_NULL", offset);
+        case OP_LOADCONST:
+            return constantInstruction16("LOADCONST", vm, bytecode, offset);
+        case OP_LOADFALSE:
+            return simpleInstruction("LOADFALSE", offset);
+        case OP_LOADTRUE:
+            return simpleInstruction("LOADTRUE", offset);
+        case OP_LOADNULL:
+            return simpleInstruction("LOADNULL", offset);
 
         /* Lists */
-        case DEF_LIST:
-            return byteInstruction("DEF_LIST", bytecode, offset);
-        case GET_SUBSCRIPT:
-            return simpleInstruction("GET_SUBSCRIPT", offset);
-        case SET_SUBSCRIPT:
-            return simpleInstruction("SET_SUBSCRIPT", offset);
+        case OP_DEFLIST:
+            return byteInstruction("DEFLIST", bytecode, offset);
+        case OP_PUSHLIST:
+            return simpleInstruction("PUSHLIST", offset);
+        case OP_GETSUB:
+            return simpleInstruction("GETSUB", offset);
+        case OP_SETSUB:
+            return simpleInstruction("SETSUB", offset);
 
         /* Relational operations */
-        case BIN_AND:
-            return simpleInstruction("BIN_AND", offset);
-        case BIN_OR:
-            return simpleInstruction("BIN_OR", offset);
-        case UN_NOT:
-            return simpleInstruction("UN_NOT", offset);
-        case BIN_EQUAL:
-            return simpleInstruction("BIN_EQUAL", offset);
-        case BIN_GREATER:
-            return simpleInstruction("BIN_GREATER", offset);
-        case BIN_LESS:
-            return simpleInstruction("BIN_LESS", offset);
+        case OP_AND:
+            return simpleInstruction("AND", offset);
+        case OP_OR:
+            return simpleInstruction("OR", offset);
+        case OP_NOT:
+            return simpleInstruction("NOT", offset);
+        case OP_EQUAL:
+            return simpleInstruction("EQUAL", offset);
+        case OP_GREATER:
+            return simpleInstruction("GREATER", offset);
+        case OP_LESS:
+            return simpleInstruction("LESS", offset);
 
         /* Arithmetic operations */
-        case BIN_ADD:
-            return simpleInstruction("BIN_ADD", offset);
-        case BIN_SUB:
-            return simpleInstruction("BIN_SUB", offset);
-        case UN_NEG:
-            return simpleInstruction("UN_NEG", offset);
-        case BIN_DIV:
-            return simpleInstruction("BIN_DIV", offset);
-        case BIN_MOD:
-            return simpleInstruction("BIN_MOD", offset);
-        case BIN_MULT:
-            return simpleInstruction("BIN_MULT", offset);
-        case BIN_POW:
-            return simpleInstruction("BIN_POW", offset);
+        case OP_ADD:
+            return simpleInstruction("ADD", offset);
+        case OP_SUB:
+            return simpleInstruction("SUB", offset);
+        case OP_NEG:
+            return simpleInstruction("NEG", offset);
+        case OP_DIV:
+            return simpleInstruction("DIV", offset);
+        case OP_MOD:
+            return simpleInstruction("MOD", offset);
+        case OP_MULT:
+            return simpleInstruction("MULT", offset);
+        case OP_POW:
+            return simpleInstruction("POW", offset);
 
         /* Variable operations */
-        case DEF_GLOBAL:
-            return constantInstruction("DEF_GLOBAL", vm, bytecode, offset);
-        case GET_GLOBAL:
-            return constantInstruction("GET_GLOBAL", vm, bytecode, offset);
-        case SET_GLOBAL:
-            return constantInstruction("SET_GLOBAL", vm, bytecode, offset);
-        case GET_UPVALUE:
-            return byteInstruction("GET_UPVALUE", bytecode, offset);
-        case SET_UPVALUE:
-            return byteInstruction("SET_UPVALUE", bytecode, offset);
-        case CLS_UPVALUE:
-            return simpleInstruction("CLS_UPVALUE", offset);
-        case GET_LOCAL:
-            return byteInstruction("GET_LOCAL", bytecode, offset);
-        case SET_LOCAL:
-            return byteInstruction("SET_LOCAL", bytecode, offset);
+        case OP_DEFGLOBAL:
+            return constantInstruction("DEFGLOBAL", vm, bytecode, offset);
+        case OP_GETGLOBAL:
+            return constantInstruction("GETGLOBAL", vm, bytecode, offset);
+        case OP_SETGLOBAL:
+            return constantInstruction("SETGLOBAL", vm, bytecode, offset);
+        case OP_GETUPVAL:
+            return byteInstruction("GETUPVAL", bytecode, offset);
+        case OP_SETUPVAL:
+            return byteInstruction("SETUPVAL", bytecode, offset);
+        case OP_CLOSEUPVAL:
+            return simpleInstruction("CLOSEUPVAL", offset);
+        case OP_GETLOCAL:
+            return byteInstruction("GETLOCAL", bytecode, offset);
+        case OP_SETLOCAL:
+            return byteInstruction("SETLOCAL", bytecode, offset);
 
         /* Jump/loop operations */
-        case JUMP_FWR:
-            return jumpInstruction("JUMP_FWR", 1, bytecode, offset);
-        case JUMP_IF_FALSE:
-            return jumpInstruction("JUMP_IF_FALSE", 1, bytecode, offset);
-        case LOOP_BACK:
-            return jumpInstruction("LOOP_BACK", -1, bytecode, offset);
+        case OP_JUMP:
+            return jumpInstruction("JUMP", 1, bytecode, offset);
+        case OP_JUMPIFFALSE:
+            return jumpInstruction("JUMPIFFALSE", 1, bytecode, offset);
+        case OP_LOOP:
+            return jumpInstruction("LOOP", -1, bytecode, offset);
 
         /* Closures/functions operations */
-        case FN_CLOSURE:
-            return closureInstruction("FN_CLOSURE", vm, bytecode, offset);
-        case FN_CALL:
-            return byteInstruction("FN_CALL", bytecode, offset);
-        case FN_RETURN:
-            return simpleInstruction("FN_RETURN", offset);
+        case OP_CLOSURE:
+            return closureInstruction("CLOSURE", vm, bytecode, offset);
+        case OP_CALL:
+            return byteInstruction("CALL", bytecode, offset);
+        case OP_RETURN:
+            return simpleInstruction("RETURN", offset);
 
         /* Class operations */
-        case DEF_CLASS:
-            return constantInstruction("DEF_CLASS", vm, bytecode, offset);
-        case DEF_METHOD:
-            return constantInstruction("DEF_METHOD", vm, bytecode, offset);
-        case GET_PROP:
-            return constantInstruction("GET_PROP", vm, bytecode, offset);
-        case SET_PROP:
-            return constantInstruction("SET_PROP", vm, bytecode, offset);
-        case INVOKE_PROP:
-            return constantInstruction("INVOKE_PROP", vm, bytecode, offset);
+        case OP_DEFCLASS:
+            return constantInstruction("DEFCLASS", vm, bytecode, offset);
+        case OP_DEFMETHOD:
+            return constantInstruction("DEFMETHOD", vm, bytecode, offset);
+        case OP_GETPROP:
+            return constantInstruction("GETPROP", vm, bytecode, offset);
+        case OP_SETPROP:
+            return constantInstruction("SETPROP", vm, bytecode, offset);
+        case OP_INVPROP:
+            return constantInstruction("INVPROP", vm, bytecode, offset);
 
         /* VM operations */
-        case DUP_TOP:
-            return simpleInstruction("DUP_TOP", offset);
-        case POP_TOP:
-            return simpleInstruction("POP_TOP", offset);
-        case POP_TOP_EXPR:
-            return simpleInstruction("POP_TOP_EXPR", offset);
-        case TEMP_MARK:
-            return simpleInstruction("TEMP_MARK", offset); /* Should not be reachable */
+        case OP_DUPTOP:
+            return simpleInstruction("DUPTOP", offset);
+        case OP_POPTOP:
+            return simpleInstruction("POPTOP", offset);
+        case OP_POPTOPEXPR:
+            return simpleInstruction("POPTOPEXPR", offset);
+        case OP_TEMP:
+            return simpleInstruction("TEMP", offset); /* Should not be reachable */
 
         /* Unknown opcode */
         default:

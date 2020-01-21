@@ -116,6 +116,12 @@ void falconFreeObj(FalconVM *vm, FalconObj *object) {
             FALCON_FREE(vm, ObjList, object);
             break;
         }
+        case OBJ_MAP: {
+            ObjMap *map = (ObjMap *) object;
+            freeTable(vm, &map->entries);
+            FALCON_FREE(vm, ObjMap, object);
+            break;
+        }
         case OBJ_NATIVE:
             FALCON_FREE(vm, ObjNative, object);
             break;
