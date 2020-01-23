@@ -16,11 +16,11 @@ typedef enum {
     OP_LOADTRUE,  /* "true" literal */
     OP_LOADNULL,  /* "null" literal */
 
-    /* Lists and subscripts */
-    OP_DEFLIST,  /* Define a new list */
-    OP_PUSHLIST, /* Push a value to the end of a list */
-    OP_GETSUB,   /* Get a list/string element by index */
-    OP_SETSUB,   /* Set a list/string element by index */
+    /* Lists, maps, and subscripts */
+    OP_DEFLIST, /* Define a new list */
+    OP_DEFMAP,  /* Define a new map */
+    OP_GETSUB,  /* Get a list/string element by index */
+    OP_SETSUB,  /* Set a list/string element by index */
 
     /* Relational operations */
     OP_AND,     /* "and" logical operator */

@@ -142,19 +142,15 @@ static int emitJump(FalconCompiler *compiler, uint8_t instruction) {
 }
 
 /**
-<<<<<<< HEAD
- * Emits the "RETURN" bytecode instruction.
-=======
- * Emits the OP_RETURN bytecode instruction.
->>>>>>> lang-maps
+ * Emits the "OP_RETURN" bytecode instruction.
  */
 static void emitReturn(FalconCompiler *compiler) { emitBytes(compiler, OP_LOADNULL, OP_RETURN); }
 
 /**
- * Emits the bytecode for a "DEFLIST" instruction.
+ * Emits the bytecode for the definition of a given collection type (lists or maps).
  */
-static void emitList(FalconCompiler *compiler, uint16_t elementsCount) {
-    emitByte(compiler, OP_DEFLIST);
+static void emitCollection(FalconCompiler *compiler, uint8_t opcode, uint16_t elementsCount) {
+    emitByte(compiler, opcode);
     emitByte(compiler, (uint8_t)((uint64_t)(elementsCount >> 8u) & 0xffu));
     emitByte(compiler, (uint8_t)(elementsCount & 0xffu));
 }
@@ -636,7 +632,7 @@ PARSE_RULE(list) {
     }
 
     consume(compiler, TK_RBRACKET, COMP_LIST_BRACKET_ERR);
-    emitList(compiler, elementsCount); /* Creates the new list */
+    emitCollection(compiler, OP_DEFLIST, elementsCount); /* Creates the new list */
 }
 
 /**
@@ -657,6 +653,31 @@ PARSE_RULE(literal) {
         default:
             return; /* Unreachable */
     }
+}
+
+/**
+ * Handles a list literal by creating a new Falcon list and compiling each of its elements.
+ */
+PARSE_RULE(map) {
+    (void) canAssign; /* Unused */
+    uint16_t entriesCount = 0;
+
+    /* Parses the map entries */
+    if (!check(compiler->parser, TK_RBRACE)) {
+        do {
+            expression(compiler); /* The key */
+
+            if (entriesCount == UINT16_MAX) /* Reached max entries? */
+                falconCompilerError(compiler, &compiler->parser->previous, COMP_MAP_LIMIT_ERR);
+
+            consume(compiler, TK_COLON, COMP_MAP_COLON_ERR);
+            expression(compiler); /* The value */
+            entriesCount++;
+        } while (match(compiler, TK_COMMA));
+    }
+
+    consume(compiler, TK_RBRACE, COMP_MAP_BRACE_ERR);
+    emitCollection(compiler, OP_DEFMAP, entriesCount); /* Creates the new map */
 }
 
 /**
@@ -751,7 +772,7 @@ PARSE_RULE(variable) { namedVariable(compiler, compiler->parser->previous, canAs
 ParseRule rules[] = {
     RULE(grouping, call, PREC_TOP),    /* TK_LPAREN */
     EMPTY_RULE,                        /* TK_RPAREN */
-    EMPTY_RULE,                        /* TK_LBRACE */
+    PREFIX_RULE(map),                  /* TK_LBRACE */
     EMPTY_RULE,                        /* TK_RBRACE */
     RULE(list, subscript, PREC_TOP),   /* TK_LBRACKET */
     EMPTY_RULE,                        /* TK_RBRACKET */
@@ -1125,7 +1146,6 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case OP_LOADFALSE:
         case OP_LOADTRUE:
         case OP_LOADNULL:
-        case OP_PUSHLIST:
         case OP_GETSUB:
         case OP_SETSUB:
         case OP_NOT:
@@ -1147,7 +1167,6 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case OP_TEMP:
             return 0; /* Instructions with no arguments */
 
-        case OP_DEFLIST:
         case OP_DEFGLOBAL:
         case OP_GETGLOBAL:
         case OP_SETGLOBAL:
@@ -1164,6 +1183,8 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
             return 1; /* Instructions with single byte as argument */
 
         case OP_LOADCONST:
+        case OP_DEFLIST:
+        case OP_DEFMAP:
         case OP_AND:
         case OP_OR:
         case OP_JUMP:
@@ -1363,10 +1384,6 @@ static void statement(FalconCompiler *compiler) {
         nextStatement(compiler);
     } else if (match(compiler, TK_RETURN)) {
         returnStatement(compiler);
-    } else if (match(compiler, TK_LBRACE)) {
-        beginScope(compiler->fCompiler);
-        block(compiler);
-        endScope(compiler);
     } else {
         expressionStatement(compiler);
     }

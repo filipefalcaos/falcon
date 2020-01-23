@@ -390,6 +390,8 @@ static FalconResultCode run(FalconVM *vm) {
                 VMPush(vm, OBJ_VAL(&list));
                 break;
             }
+            case OP_DEFMAP:
+                break;
             case OP_GETSUB: {
                 ASSERT_NUM(vm, 0, VM_INDEX_NOT_NUM_ERR); /* Checks if index is valid */
                 int index = (int) AS_NUM(VMPop(vm));

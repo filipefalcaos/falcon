@@ -116,8 +116,8 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
         /* Lists */
         case OP_DEFLIST:
             return byteInstruction("DEFLIST", bytecode, offset);
-        case OP_PUSHLIST:
-            return simpleInstruction("PUSHLIST", offset);
+        case OP_DEFMAP:
+            return byteInstruction("DEFMAP", bytecode, offset);
         case OP_GETSUB:
             return simpleInstruction("GETSUB", offset);
         case OP_SETSUB:
