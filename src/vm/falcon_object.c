@@ -136,9 +136,10 @@ ObjList *falconList(FalconVM *vm, uint16_t size) {
 /**
  * Allocates a new Falcon map object.
  */
-ObjMap *falconMap(FalconVM *vm) {
+ObjMap *falconMap(FalconVM *vm, uint16_t length) {
     ObjMap *map = FALCON_ALLOCATE_OBJ(vm, ObjMap, OBJ_MAP);
     initTable(&map->entries);
+    map->length = length;
     return map;
 }
 

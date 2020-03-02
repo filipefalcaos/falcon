@@ -656,7 +656,7 @@ PARSE_RULE(literal) {
 }
 
 /**
- * Handles a list literal by creating a new Falcon list and compiling each of its elements.
+ * Handles a map literal by creating a new Falcon map and compiling each of its elements.
  */
 PARSE_RULE(map) {
     (void) canAssign; /* Unused */

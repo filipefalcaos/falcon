@@ -258,6 +258,32 @@ void printValue(FalconVM *vm, FalconValue value) {
                     printf("]");
                     break;
                 }
+                case OBJ_MAP: {
+                    ObjMap *map = AS_MAP(value);
+                    uint16_t currCount = 0;
+                    Entry *currEntry = map->entries.entries;
+                    printf("{");
+
+                    /* Print elements */
+                    while (true) {
+                        if (currCount == map->length) /* All elements found? */
+                            break;
+
+                        /* Prints a key/value pair */
+                        if (currEntry->key != NULL) {
+                            printValue(vm, OBJ_VAL(currEntry->key));
+                            printf(": ");
+                            printValue(vm, currEntry->value);
+                            if (currCount != map->length - 1) printf(", ");
+                            currCount++;
+                        }
+
+                        currEntry++; /* Goes to the next slot */
+                    }
+
+                    printf("}");
+                    break;
+                }
                 case OBJ_NATIVE: {
                     ObjNative *native = AS_NATIVE(value);
                     printf("<native fn %s>", native->name);

@@ -390,8 +390,21 @@ static FalconResultCode run(FalconVM *vm) {
                 VMPush(vm, OBJ_VAL(&list));
                 break;
             }
-            case OP_DEFMAP:
+            case OP_DEFMAP: {
+                uint16_t entriesCount = READ_SHORT();
+                ObjMap map = *falconMap(vm, entriesCount);
+
+                /* Adds the entries to the map */
+                for (uint16_t i = 0; i < entriesCount; i++) {
+                    FalconValue value = VMPeek(vm, 0);
+                    FalconValue key = VMPeek(vm, 1);
+                    tableSet(vm, &map.entries, AS_STRING(key), value);
+                    VMPop2(vm); /* Discards the entry's key and value */
+                }
+
+                VMPush(vm, OBJ_VAL(&map));
                 break;
+            }
             case OP_GETSUB: {
                 ASSERT_NUM(vm, 0, VM_INDEX_NOT_NUM_ERR); /* Checks if index is valid */
                 int index = (int) AS_NUM(VMPop(vm));

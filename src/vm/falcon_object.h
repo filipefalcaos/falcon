@@ -88,6 +88,7 @@ typedef struct {
 typedef struct {
     FalconObj obj;
     Table entries;
+    uint16_t length;
 } ObjMap;
 
 /* Native functions implementations */
@@ -130,7 +131,7 @@ ObjClosure *falconClosure(FalconVM *vm, ObjFunction *function);
 ObjClass *falconClass(FalconVM *vm, ObjString *name);
 ObjInstance *falconInstance(FalconVM *vm, ObjClass *class_);
 ObjList *falconList(FalconVM *vm, uint16_t size);
-ObjMap *falconMap(FalconVM *vm);
+ObjMap *falconMap(FalconVM *vm, uint16_t length);
 ObjNative *falconNative(FalconVM *vm, FalconNativeFn function, const char *name);
 
 /**
