@@ -611,7 +611,7 @@ static FalconResultCode run(FalconVM *vm) {
                 frame->pc += offset;
                 break;
             }
-            case OP_JUMPIFFALSE: {
+            case OP_JUMPIFF: {
                 uint16_t offset = READ_SHORT();
                 if (isFalsy(VMPeek(vm, 0))) frame->pc += offset;
                 break;
@@ -713,13 +713,13 @@ static FalconResultCode run(FalconVM *vm) {
             }
 
             /* VM operations */
-            case OP_DUPTOP:
+            case OP_DUPT:
                 VMPush(vm, VMPeek(vm, 0));
                 break;
-            case OP_POPTOP:
+            case OP_POPT:
                 VMPop(vm);
                 break;
-            case OP_POPTOPEXPR: {
+            case OP_POPE: {
                 FalconValue result = VMPeek(vm, 0);
                 if (!IS_NULL(result)) {
                     printValue(vm, result);

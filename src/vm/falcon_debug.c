@@ -17,12 +17,22 @@ static int simpleInstruction(const char *name, int offset) {
 }
 
 /**
- * Displays a local variable instruction.
+ * Displays a byte instruction.
  */
 static int byteInstruction(const char *name, BytecodeChunk *bytecode, int offset) {
     uint8_t slot = bytecode->code[offset + 1];
     printf("%-16s %4d\n", name, slot);
     return offset + 2;
+}
+
+/**
+ * Displays a collection (list or maps) instruction.
+ */
+static int collectionInstruction(const char *name, BytecodeChunk *bytecode, int offset) {
+    uint16_t length = (uint16_t)(bytecode->code[offset + 1] << 8u);
+    length |= bytecode->code[offset + 2];
+    printf("%-16s %4d\n", name, length);
+    return offset + 3;
 }
 
 /**
@@ -115,9 +125,9 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
 
         /* Lists */
         case OP_DEFLIST:
-            return byteInstruction("DEFLIST", bytecode, offset);
+            return collectionInstruction("DEFLIST", bytecode, offset);
         case OP_DEFMAP:
-            return byteInstruction("DEFMAP", bytecode, offset);
+            return collectionInstruction("DEFMAP", bytecode, offset);
         case OP_GETSUB:
             return simpleInstruction("GETSUB", offset);
         case OP_SETSUB:
@@ -174,8 +184,8 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
         /* Jump/loop operations */
         case OP_JUMP:
             return jumpInstruction("JUMP", 1, bytecode, offset);
-        case OP_JUMPIFFALSE:
-            return jumpInstruction("JUMPIFFALSE", 1, bytecode, offset);
+        case OP_JUMPIFF:
+            return jumpInstruction("JUMPIFF", 1, bytecode, offset);
         case OP_LOOP:
             return jumpInstruction("LOOP", -1, bytecode, offset);
 
@@ -200,12 +210,12 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
             return constantInstruction("INVPROP", vm, bytecode, offset);
 
         /* VM operations */
-        case OP_DUPTOP:
-            return simpleInstruction("DUPTOP", offset);
-        case OP_POPTOP:
-            return simpleInstruction("POPTOP", offset);
-        case OP_POPTOPEXPR:
-            return simpleInstruction("POPTOPEXPR", offset);
+        case OP_DUPT:
+            return simpleInstruction("DUPT", offset);
+        case OP_POPT:
+            return simpleInstruction("POPT", offset);
+        case OP_POPE:
+            return simpleInstruction("POPE", offset);
         case OP_TEMP:
             return simpleInstruction("TEMP", offset); /* Should not be reachable */
 
