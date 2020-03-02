@@ -214,8 +214,8 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
             return simpleInstruction("DUPT", offset);
         case OP_POPT:
             return simpleInstruction("POPT", offset);
-        case OP_POPE:
-            return simpleInstruction("POPE", offset);
+        case OP_POPEXPR:
+            return simpleInstruction("POPEXPR", offset);
         case OP_TEMP:
             return simpleInstruction("TEMP", offset); /* Should not be reachable */
 

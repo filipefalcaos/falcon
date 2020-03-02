@@ -67,10 +67,10 @@ typedef enum {
     OP_INVPROP,   /* Perform a invocation on a property */
 
     /* VM operations */
-    OP_DUPT, /* Duplicate the top of the VM stack */
-    OP_POPT, /* Pop from the VM stack */
-    OP_POPE, /* Pop from the VM stack and print the top value */
-    OP_TEMP  /* Mark a temporary value */
+    OP_DUPT,    /* Duplicate the top of the VM stack */
+    OP_POPT,    /* Pop from the VM stack */
+    OP_POPEXPR, /* Pop from the VM stack and print the top value */
+    OP_TEMP     /* Mark a temporary value */
 
 } FalconOpCodes;
 

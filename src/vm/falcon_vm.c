@@ -719,7 +719,7 @@ static FalconResultCode run(FalconVM *vm) {
             case OP_POPT:
                 VMPop(vm);
                 break;
-            case OP_POPE: {
+            case OP_POPEXPR: {
                 FalconValue result = VMPeek(vm, 0);
                 if (!IS_NULL(result)) {
                     printValue(vm, result);

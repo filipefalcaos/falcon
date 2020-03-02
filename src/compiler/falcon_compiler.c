@@ -1016,7 +1016,7 @@ static void expressionStatement(FalconCompiler *compiler) {
     expression(compiler);
     consume(compiler, TK_SEMICOLON, COMP_EXPR_STMT_ERR);
     bool retRepl = compiler->vm->isREPL && compiler->fCompiler->scopeDepth == COMP_GLOBAL_SCOPE;
-    emitByte(compiler, retRepl ? OP_POPE : OP_POPT);
+    emitByte(compiler, retRepl ? OP_POPEXPR : OP_POPT);
 }
 
 /**
@@ -1163,7 +1163,7 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case OP_RETURN:
         case OP_DUPT:
         case OP_POPT:
-        case OP_POPE:
+        case OP_POPEXPR:
         case OP_TEMP:
             return 0; /* Instructions with no arguments */
 
