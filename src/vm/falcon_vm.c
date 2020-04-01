@@ -390,6 +390,21 @@ static FalconResultCode run(FalconVM *vm) {
                 VMPush(vm, OBJ_VAL(&list));
                 break;
             }
+            case OP_DEFMAP: {
+                uint16_t entriesCount = READ_SHORT();
+                ObjMap map = *falconMap(vm, entriesCount);
+
+                /* Adds the entries to the map */
+                for (uint16_t i = 0; i < entriesCount; i++) {
+                    FalconValue value = VMPeek(vm, 0);
+                    FalconValue key = VMPeek(vm, 1);
+                    tableSet(vm, &map.entries, AS_STRING(key), value);
+                    VMPop2(vm); /* Discards the entry's key and value */
+                }
+
+                VMPush(vm, OBJ_VAL(&map));
+                break;
+            }
             case OP_GETSUB: {
                 ASSERT_NUM(vm, 0, VM_INDEX_NOT_NUM_ERR); /* Checks if index is valid */
                 int index = (int) AS_NUM(VMPop(vm));
@@ -596,7 +611,7 @@ static FalconResultCode run(FalconVM *vm) {
                 frame->pc += offset;
                 break;
             }
-            case OP_JUMPIFFALSE: {
+            case OP_JUMPIFF: {
                 uint16_t offset = READ_SHORT();
                 if (isFalsy(VMPeek(vm, 0))) frame->pc += offset;
                 break;
@@ -698,13 +713,13 @@ static FalconResultCode run(FalconVM *vm) {
             }
 
             /* VM operations */
-            case OP_DUPTOP:
+            case OP_DUPT:
                 VMPush(vm, VMPeek(vm, 0));
                 break;
-            case OP_POPTOP:
+            case OP_POPT:
                 VMPop(vm);
                 break;
-            case OP_POPTOPEXPR: {
+            case OP_POPEXPR: {
                 FalconValue result = VMPeek(vm, 0);
                 if (!IS_NULL(result)) {
                     printValue(vm, result);

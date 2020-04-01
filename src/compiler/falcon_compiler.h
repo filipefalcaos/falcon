@@ -110,6 +110,8 @@ ObjFunction *falconCompile(FalconVM *vm, const char *source);
 #define COMP_EXPR_STMT_ERR    "Expected a ';' after expression."
 #define COMP_LIST_BRACKET_ERR "Expected a ']' after list elements."
 #define COMP_SUB_BRACKET_ERR  "Expected a ']' after subscript expression."
+#define COMP_MAP_COLON_ERR    "Expected a ':' after a map key."
+#define COMP_MAP_BRACE_ERR    "Expected a '}' after map entries."
 
 /* Conditionals and Loops */
 #define COMP_IF_STMT_ERR       "Expected a '{' after 'if' condition."
@@ -158,6 +160,7 @@ ObjFunction *falconCompile(FalconVM *vm, const char *source);
 #define COMP_LOOP_LIMIT_ERR    "Limit of 65535 instructions in loop body reached."
 #define COMP_JUMP_LIMIT_ERR    "Limit of 65535 instructions in conditional branch reached."
 #define COMP_LIST_LIMIT_ERR    "Limit of 65535 elements in a list reached."
+#define COMP_MAP_LIMIT_ERR     "Limit of 65535 elements in a map reached."
 #define COMP_VAR_LIMIT_ERR     "Limit of 255 local variables in scope reached."
 #define COMP_CLOSURE_LIMIT_ERR "Limit of 255 closure variables reached."
 #define COMP_ARGS_LIMIT_ERR    "Limit of 255 arguments reached."

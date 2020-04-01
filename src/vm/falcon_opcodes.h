@@ -16,11 +16,11 @@ typedef enum {
     OP_LOADTRUE,  /* "true" literal */
     OP_LOADNULL,  /* "null" literal */
 
-    /* Lists and subscripts */
-    OP_DEFLIST,  /* Define a new list */
-    OP_PUSHLIST, /* Push a value to the end of a list */
-    OP_GETSUB,   /* Get a list/string element by index */
-    OP_SETSUB,   /* Set a list/string element by index */
+    /* Lists, maps, and subscripts */
+    OP_DEFLIST, /* Define a new list */
+    OP_DEFMAP,  /* Define a new map */
+    OP_GETSUB,  /* Get a list/string element by index */
+    OP_SETSUB,  /* Set a list/string element by index */
 
     /* Relational operations */
     OP_AND,     /* "and" logical operator */
@@ -50,9 +50,9 @@ typedef enum {
     OP_SETLOCAL,   /* Set the value of a local variable */
 
     /* Jump/loop operations */
-    OP_JUMP,        /* Jump an instruction on the VM */
-    OP_JUMPIFFALSE, /* Jump an instruction if falsy on the VM */
-    OP_LOOP,        /* Loop backwards to a instruction on the VM */
+    OP_JUMP,    /* Jump an instruction on the VM */
+    OP_JUMPIFF, /* Jump an instruction if falsy on the VM */
+    OP_LOOP,    /* Loop backwards to a instruction on the VM */
 
     /* Closures/functions operations */
     OP_CLOSURE, /* Closure declaration */
@@ -67,10 +67,10 @@ typedef enum {
     OP_INVPROP,   /* Perform a invocation on a property */
 
     /* VM operations */
-    OP_DUPTOP,     /* Duplicate the top of the VM stack */
-    OP_POPTOP,     /* Pop from the VM stack */
-    OP_POPTOPEXPR, /* Pop from the VM stack and print the top value */
-    OP_TEMP        /* Mark a temporary value */
+    OP_DUPT,    /* Duplicate the top of the VM stack */
+    OP_POPT,    /* Pop from the VM stack */
+    OP_POPEXPR, /* Pop from the VM stack and print the top value */
+    OP_TEMP     /* Mark a temporary value */
 
 } FalconOpCodes;
 

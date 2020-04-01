@@ -43,8 +43,7 @@ stmt -> expr_stmt
      | switch_stmt
      | break_stmt
      | next_stmt
-     | return_stmt
-     | block ;
+     | return_stmt ;
 
 expr_stmt   -> expr ";" ;
 for_stmt    -> "for" single_decl "," expr "," expr block ;
@@ -56,7 +55,6 @@ else_case   -> "else" "->" stmt* ;
 break_stmt  -> "break" ";" ;
 next_stmt   -> "next" ";" ;
 return_stmt -> "return" expr? ";" ;
-block       -> "{" decl* "}" ;
 ```
 
 Note that `block` is a statement rule, but is also used as a non-terminal in another rule for function bodies. This 
@@ -90,7 +88,7 @@ primary -> "true" | "false" | "null" | "this" | NUMBER | STRING
 grouping  -> "(" expr ")"
 list_lit  -> "[" args? "]"
 map_lit   -> "{" ( key_value ( "," key_value )* )? "}"
-key_value -> STRING ":" expr
+key_value -> expr ":" expr
 super_id  -> "super" "." IDENTIFIER
 ```
 
@@ -100,6 +98,7 @@ Some recurrent rules not defined in the sections above are:
 
 ```
 function  -> IDENTIFIER "(" params? ")" block ;
+block     -> "{" decl* "}" ;
 params    -> IDENTIFIER ( "," IDENTIFIER )* ;
 args      -> expr ( "," expr )* ;
 subscript -> "[" ( NUMBER | STRING ) "]"

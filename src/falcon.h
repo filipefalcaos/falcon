@@ -42,7 +42,6 @@ void falconPrintUsage();
     " for more information."
 
 /* Values and limits */
-#define FALCON_MIN_LIST   10
 #define FALCON_REPL_MAX   500
 #define FALCON_MAX_BYTE   (UINT8_MAX + 1) /* 256 */
 #define FALCON_FRAMES_MAX 1000
