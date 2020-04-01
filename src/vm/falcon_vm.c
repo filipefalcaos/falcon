@@ -137,12 +137,15 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
                 vm->stackTop[-argCount - 1] = OBJ_VAL(falconInstance(vm, class_));
                 return true;
             }
+            case OBJ_BMETHOD: {
+                ObjBMethod *bMethod = AS_BMETHOD(callee);
+                return call(vm, bMethod->method, argCount);
+            }
             case OBJ_CLOSURE:
                 return call(vm, AS_CLOSURE(callee), argCount);
             case OBJ_NATIVE: {
                 FalconNativeFn native = AS_NATIVE(callee)->function;
-                FalconValue out =
-                    native(vm, argCount, vm->stackTop - argCount); /* Runs native function */
+                FalconValue out = native(vm, argCount, vm->stackTop - argCount);
                 if (IS_ERR(out)) return false;      /* Checks if a runtime error occurred */
                 vm->stackTop -= argCount + 1;       /* Updates the stack to where it was */
                 if (!VMPush(vm, out)) return false; /* Pushes the return value */
@@ -155,6 +158,27 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
 
     falconVMError(vm, VM_VALUE_NOT_CALL_ERR);
     return false;
+}
+
+/**
+ * Tries to bind a method to the receiver, a class instance, on the top of the stack. If the binding
+ * succeeds, "true" is returned, and otherwise, "false".
+ */
+static bool bindMethod(FalconVM *vm, ObjInstance *instance, ObjString *methodName) {
+    FalconValue method;
+    ObjClass *class_ = instance->class_;
+
+    /* Checks if the method is defined */
+    if (!tableGet(&instance->class_->methods, methodName, &method)) {
+        falconVMError(vm, VM_UNDEF_PROP_ERR, instance->class_->name->chars, methodName->chars);
+        return false;
+    }
+
+    /* Binds the method to the receiver */
+    ObjBMethod* bMethod = falconBMethod(vm, VMPeek(vm, 0), AS_CLOSURE(method));
+    VMPop(vm);
+    VMPush(vm, OBJ_VAL(bMethod));
+    return true;
 }
 
 /**
@@ -681,15 +705,18 @@ static FalconResultCode run(FalconVM *vm) {
                 ObjString *name = READ_STRING();
                 FalconValue value;
 
+                /* Looks for a valid field */
                 if (tableGet(&instance->fields, name, &value)) {
                     VMPop(vm);         /* Pops the instance */
                     VMPush(vm, value); /* Pushes the field value */
                     break;
                 }
 
-                /* Undefined field error */
-                falconVMError(vm, VM_UNDEF_PROP_ERR, instance->class_->name->chars, name->chars);
-                return FALCON_RUNTIME_ERROR;
+                /* Looks for a valid method */
+                if (!bindMethod(vm, instance, name))
+                    return FALCON_RUNTIME_ERROR; /* Undefined property error */
+
+                break;
             }
             case OP_SETPROP: {
                 if (!IS_INSTANCE(VMPeek(vm, 1))) {
