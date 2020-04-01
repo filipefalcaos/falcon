@@ -121,6 +121,7 @@ static void blackenObject(FalconVM *vm, FalconObj *object) {
         case OBJ_CLASS: {
             ObjClass *class_ = (ObjClass *) object;
             markObject(vm, (FalconObj *) class_->name);
+            markTable(vm, &class_->methods);
             break;
         }
         case OBJ_INSTANCE: {
