@@ -139,6 +139,7 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
             }
             case OBJ_BMETHOD: {
                 ObjBMethod *bMethod = AS_BMETHOD(callee);
+                vm->stackTop[-argCount - 1] = bMethod->receiver; /* Set the bound receiver */
                 return call(vm, bMethod->method, argCount);
             }
             case OBJ_CLOSURE:
@@ -169,8 +170,8 @@ static bool bindMethod(FalconVM *vm, ObjInstance *instance, ObjString *methodNam
     ObjClass *class_ = instance->class_;
 
     /* Checks if the method is defined */
-    if (!tableGet(&instance->class_->methods, methodName, &method)) {
-        falconVMError(vm, VM_UNDEF_PROP_ERR, instance->class_->name->chars, methodName->chars);
+    if (!tableGet(&class_->methods, methodName, &method)) {
+        falconVMError(vm, VM_UNDEF_PROP_ERR, class_->name->chars, methodName->chars);
         return false;
     }
 

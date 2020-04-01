@@ -230,8 +230,15 @@ static void initFunctionCompiler(FalconCompiler *compiler, FunctionCompiler *fCo
     Local *local = &compiler->fCompiler->locals[compiler->fCompiler->localCount++];
     local->depth = COMP_GLOBAL_SCOPE;
     local->isCaptured = false;
-    local->name.start = "";
-    local->name.length = 0;
+
+    /* Set slot zero for "this" if a method is being compiled */
+    if (type != TYPE_FUNCTION) {
+        local->name.start = "this";
+        local->name.length = 4;
+    } else {
+        local->name.start = "";
+        local->name.length = 0;
+    }
 }
 
 /**
@@ -567,6 +574,11 @@ PARSE_RULE(binary) {
     }
 }
 
+/**
+ * Handles a variable access.
+ */
+PARSE_RULE(variable) { namedVariable(compiler, compiler->parser->previous, canAssign); }
+
 /* Performs a function or method call based on the given opcode */
 #define PERFORM_CALL(compiler, opcode)             \
     do {                                           \
@@ -730,6 +742,18 @@ PARSE_RULE(ternary) {
 }
 
 /**
+ * Handles a "this" expression, where "this" is treated as a lexically-scoped local variable.
+ */
+PARSE_RULE(this_) {
+    if (compiler->cCompiler == NULL) { /* Checks if not inside a class */
+        falconCompilerError(compiler, &compiler->parser->previous, COMP_THIS_ERR);
+        return;
+    }
+
+    variable(compiler, false); /* "canAssign" is set to false */
+}
+
+/**
  * Handles a unary expression by compiling the operand and then emitting the bytecode to perform
  * the unary operation itself.
  */
@@ -749,11 +773,6 @@ PARSE_RULE(unary) {
             return;
     }
 }
-
-/**
- * Handles a variable access.
- */
-PARSE_RULE(variable) { namedVariable(compiler, compiler->parser->previous, canAssign); }
 
 #undef PARSE_RULE
 
@@ -813,7 +832,7 @@ ParseRule rules[] = {
     EMPTY_RULE,                        /* TK_RETURN */
     EMPTY_RULE,                        /* TK_SUPER */
     EMPTY_RULE,                        /* TK_SWITCH */
-    EMPTY_RULE,                        /* TK_THIS */
+    PREFIX_RULE(this_),                /* TK_THIS */
     PREFIX_RULE(literal),              /* TK_TRUE */
     EMPTY_RULE,                        /* TK_VAR */
     EMPTY_RULE,                        /* TK_WHEN */

@@ -154,6 +154,7 @@ ObjFunction *falconCompile(FalconVM *vm, const char *source);
 #define COMP_CLASS_BODY_BRACE_ERR  "Expected a '{' before class body."
 #define COMP_CLASS_BODY_BRACE2_ERR "Expected a '}' after class body."
 #define COMP_PROP_NAME_ERR         "Expected a property name after a '.'."
+#define COMP_THIS_ERR              "Cannot use 'this' outside of a class."
 
 /* Limits */
 #define COMP_CONST_LIMIT_ERR   "Limit of 65535 constants reached."
