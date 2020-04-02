@@ -142,9 +142,18 @@ static int emitJump(FalconCompiler *compiler, uint8_t instruction) {
 }
 
 /**
- * Emits the "OP_RETURN" bytecode instruction.
+ * Emits the "OP_RETURN" bytecode instruction. This function is called when a "return" statement
+ * does not have a return value or when there is no "return" statement at all.
  */
-static void emitReturn(FalconCompiler *compiler) { emitBytes(compiler, OP_LOADNULL, OP_RETURN); }
+static void emitReturn(FalconCompiler *compiler) {
+    if (compiler->fCompiler->type == TYPE_INIT) {
+        emitBytes(compiler, OP_GETLOCAL, 0); /* Emits the instance if in a class */
+    } else {
+        emitByte(compiler, OP_LOADNULL); /* Emits the "null" default value */
+    }
+
+    emitByte(compiler, OP_RETURN); /* Returns the value emitted before */
+}
 
 /**
  * Emits the bytecode for the definition of a given collection type (lists or maps).
@@ -1379,6 +1388,10 @@ static void returnStatement(FalconCompiler *compiler) {
     if (match(compiler, TK_SEMICOLON)) {
         emitReturn(compiler);
     } else {
+        if (compiler->fCompiler->type == TYPE_INIT) /* Checks if inside a "init" method */
+            falconCompilerError(compiler, &compiler->parser->previous, COMP_RETURN_INIT_ERR);
+
+        /* Compiles the returned value */
         expression(compiler);
         consume(compiler, TK_SEMICOLON, COMP_RETURN_STMT_ERR);
         emitByte(compiler, OP_RETURN);

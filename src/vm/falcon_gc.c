@@ -169,8 +169,9 @@ static void markRoots(FalconVM *vm) {
         markObject(vm, (FalconObj *) upvalue); /* Marks open upvalues */
     }
 
-    markTable(vm, &vm->globals); /* Marks global variables */
-    markCompilerRoots(vm);       /* Marks compilation roots */
+    markTable(vm, &vm->globals);               /* Marks global variables */
+    markCompilerRoots(vm);                     /* Marks compilation roots */
+    markObject(vm, (FalconObj *) vm->initStr); /* Marks the "init" string */
 }
 
 /**

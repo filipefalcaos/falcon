@@ -48,12 +48,17 @@ void falconInitVM(FalconVM *vm) {
     initTable(&vm->strings); /* Inits the table of interned strings */
     initTable(&vm->globals); /* Inits the table of globals */
     falconDefNatives(vm);    /* Sets native functions */
+
+    /* Defines the string for class initializers */
+    vm->initStr = NULL;
+    vm->initStr = falconString(vm, "init", 4);
 }
 
 /**
  * Frees the Falcon's virtual machine and its allocated objects.
  */
 void falconFreeVM(FalconVM *vm) {
+    vm->initStr = NULL;
     freeTable(vm, &vm->strings);
     freeTable(vm, &vm->globals);
     falconFreeObjs(vm);
@@ -133,13 +138,23 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
     if (IS_OBJ(callee)) {
         switch (OBJ_TYPE(callee)) {
             case OBJ_CLASS: {
+                FalconValue init;
                 ObjClass *class_ = AS_CLASS(callee);
                 vm->stackTop[-argCount - 1] = OBJ_VAL(falconInstance(vm, class_));
+
+                /* Calls the class "init" method, if existent */
+                if (tableGet(&class_->methods, vm->initStr, &init)) {
+                    return call(vm, AS_CLOSURE(init), argCount);
+                } else if (argCount != 0) {
+                    falconVMError(vm, VM_INIT_ERR, argCount);
+                    return false;
+                }
+
                 return true;
             }
             case OBJ_BMETHOD: {
                 ObjBMethod *bMethod = AS_BMETHOD(callee);
-                vm->stackTop[-argCount - 1] = bMethod->receiver; /* Set the bound receiver */
+                vm->stackTop[-argCount - 1] = bMethod->receiver; /* Set the "this" bound receiver */
                 return call(vm, bMethod->method, argCount);
             }
             case OBJ_CLOSURE:
