@@ -54,9 +54,9 @@ static int constantInstruction(const char *name, FalconVM *vm, BytecodeChunk *by
     FalconValue value = bytecode->constants.values[constant];
 
     /* Prints the constant */
-    printf("%-16s %4d ", name, constant);
+    printf("%-16s %4d '", name, constant);
     printValue(vm, value);
-    printf("\n");
+    printf("'\n");
     return offset + 2;
 }
 
@@ -69,9 +69,9 @@ static int constantInstruction16(const char *name, FalconVM *vm, BytecodeChunk *
     FalconValue value = bytecode->constants.values[constant];
 
     /* Prints the constant */
-    printf("%-16s %4d ", name, constant);
+    printf("%-16s %4d '", name, constant);
     printValue(vm, value);
-    printf("\n");
+    printf("'\n");
     return offset + 3;
 }
 
@@ -81,9 +81,9 @@ static int constantInstruction16(const char *name, FalconVM *vm, BytecodeChunk *
 static int invokeInstruction(const char *name, FalconVM *vm, BytecodeChunk *bytecode, int offset) {
     uint8_t argCount = bytecode->code[offset + 1];
     uint8_t constant = bytecode->code[offset + 2];
-    printf("%-19s %d %d ", name, argCount, constant);
+    printf("%-19s %d %d '", name, argCount, constant);
     printValue(vm, bytecode->constants.values[constant]);
-    printf("\n");
+    printf("'\n");
     return offset + 3;
 }
 
@@ -93,9 +93,9 @@ static int invokeInstruction(const char *name, FalconVM *vm, BytecodeChunk *byte
 static int closureInstruction(const char *name, FalconVM *vm, BytecodeChunk *bytecode, int offset) {
     offset++;
     uint8_t constant = bytecode->code[offset++];
-    printf("%-16s %4d ", name, constant);
+    printf("%-16s %4d '", name, constant);
     printValue(vm, bytecode->constants.values[constant]);
-    printf("\n");
+    printf("'\n");
 
     ObjFunction *function = AS_FUNCTION(bytecode->constants.values[constant]);
     for (int i = 0; i < function->upvalueCount; i++) {
@@ -254,9 +254,9 @@ void dumpBytecode(FalconVM *vm, BytecodeChunk *bytecode, const char *name) {
 void dumpStack(FalconVM *vm) {
     printf("Stack:  ");
     for (FalconValue *slot = vm->stack; slot < vm->stackTop; slot++) {
-        printf("[ ");
+        printf("[ '");
         printValue(vm, *slot);
-        printf(" ] ");
+        printf("' ] ");
     }
     printf("\n");
 }
