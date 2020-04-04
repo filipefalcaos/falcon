@@ -102,6 +102,7 @@ FalconResultCode falconInterpret(FalconVM *vm, const char *source);
 #define VM_UNDEF_PROP_ERR   "Undefined property '%s.%s'."
 #define VM_NOT_INSTANCE_ERR "Only instances of classes have properties."
 #define VM_INIT_ERR         "Class has no initializer, but %d arguments were given."
+#define VM_INHERITANCE_ERR  "Cannot inherit from a value that is not a class."
 
 /* Functions */
 #define VM_ARGS_COUNT_ERR     "Expected %d arguments, but got %d."

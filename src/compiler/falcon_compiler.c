@@ -500,6 +500,17 @@ static void namedVariable(FalconCompiler *compiler, Token name, bool canAssign) 
     }
 }
 
+/**
+ * Creates a synthetic token (i.e., a token not listed on "compiler/falcon_tokens.h") for a given
+ * constant string.
+ */
+static Token syntheticToken(const char *constant) {
+    Token token;
+    token.start = constant;
+    token.length = (int) strlen(constant);
+    return token;
+}
+
 /* Common interface to all parsing rules */
 #define PARSE_RULE(name) static void name(FalconCompiler *compiler, bool canAssign)
 
@@ -984,17 +995,40 @@ static void classDeclaration(FalconCompiler *compiler) {
     /* Sets a new class compiler */
     ClassCompiler classCompiler;
     classCompiler.name = className;
+    classCompiler.hasSuper = false;
     classCompiler.enclosing = compiler->cCompiler;
     compiler->cCompiler = &classCompiler;
 
+    /* Parses a inheritance definition before the class body, so that the subclass can correctly
+     * override inherited methods */
+    if (match(compiler, TK_LESS)) {
+        consume(compiler, TK_IDENTIFIER, COMP_SUPERCLASS_NAME_ERR);
+        variable(compiler, false); /* Loads the superclass as a variable */
+
+        if (identifiersEqual(&className, &parser->previous))
+            falconCompilerError(compiler, &parser->previous, COMP_INHERIT_SELF_ERR);
+
+        /* Creates a new scope and make the superclass a local variable */
+        beginScope(compiler->fCompiler);
+        addLocal(compiler, syntheticToken("super")); /* Creates a synthetic token for super */
+        defineVariable(compiler, 0);
+
+        namedVariable(compiler, className, false); /* Loads subclass as a variable too */
+        emitByte(compiler, OP_INHERIT);            /* Applies inheritance to the subclass */
+        classCompiler.hasSuper = true;
+    }
+
     /* Parses the class body and its methods */
+    namedVariable(compiler, className, false);
     consume(compiler, TK_LBRACE, COMP_CLASS_BODY_BRACE_ERR);
+
     while (!check(parser, TK_RBRACE) && !check(parser, TK_EOF)) {
-        namedVariable(compiler, className, false);
         method(compiler);
     }
 
     consume(compiler, TK_RBRACE, COMP_CLASS_BODY_BRACE2_ERR);
+    emitByte(compiler, OP_POPT);
+    if (classCompiler.hasSuper) endScope(compiler);
     compiler->cCompiler = compiler->cCompiler->enclosing;
 }
 

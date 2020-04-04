@@ -114,8 +114,8 @@ typedef struct {
 
 /* Checks if a Value is an FalconObj type */
 #define IS_STRING(value)   isObjType(value, OBJ_STRING)
+#define IS_CLASS(value)    isObjType(value, OBJ_CLASS)
 #define IS_INSTANCE(value) isObjType(value, OBJ_INSTANCE)
-#define IS_BMETHOD(value)  isObjType(value, OBJ_BMETHOD)
 #define IS_LIST(value)     isObjType(value, OBJ_LIST)
 #define IS_MAP(value)      isObjType(value, OBJ_MAP)
 

@@ -30,5 +30,6 @@ bool tableGet(Table *table, ObjString *key, FalconValue *value);
 bool tableSet(FalconVM *vm, Table *table, ObjString *key, FalconValue value);
 bool tableDelete(Table *table, ObjString *key);
 ObjString *tableFindStr(Table *table, const char *chars, size_t length, uint32_t hash);
+void copyEntries(FalconVM *vm, Table *from, Table *to);
 
 #endif // FALCON_TABLE_H

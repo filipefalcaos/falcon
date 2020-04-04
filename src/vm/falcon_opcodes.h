@@ -61,6 +61,7 @@ typedef enum {
 
     /* Class operations */
     OP_DEFCLASS,  /* Define a new class */
+    OP_INHERIT,   /* Apply inheritance effects */
     OP_DEFMETHOD, /* Define a new method in a class */
     OP_GETPROP,   /* Get the value of a property */
     OP_SETPROP,   /* Set the value of a property */

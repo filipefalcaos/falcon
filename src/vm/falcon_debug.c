@@ -212,6 +212,8 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
         /* Class operations */
         case OP_DEFCLASS:
             return constantInstruction("DEFCLASS", vm, bytecode, offset);
+        case OP_INHERIT:
+            return simpleInstruction("INHERIT", offset);
         case OP_DEFMETHOD:
             return constantInstruction("DEFMETHOD", vm, bytecode, offset);
         case OP_GETPROP:

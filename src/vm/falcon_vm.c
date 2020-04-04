@@ -279,7 +279,7 @@ static void defineMethod(FalconVM *vm, ObjString *name) {
     FalconValue method = VMPeek(vm, 0);           /* Avoids GC */
     ObjClass *class_ = AS_CLASS(VMPeek(vm, 1));   /* Avoids GC */
     tableSet(vm, &class_->methods, name, method); /* Sets the new method */
-    VMPop2(vm);
+    VMPop(vm);
 }
 
 /**
@@ -708,6 +708,19 @@ static FalconResultCode run(FalconVM *vm) {
             case OP_DEFCLASS:
                 VMPush(vm, OBJ_VAL(falconClass(vm, READ_STRING())));
                 break;
+            case OP_INHERIT: {
+                FalconValue superclass = VMPeek(vm, 1);
+                if (!IS_CLASS(superclass)) { /* Checks if superclass value is valid */
+                    falconVMError(vm, VM_INHERITANCE_ERR);
+                    return FALCON_RUNTIME_ERROR;
+                }
+
+                /* Applies the inheritance effect */
+                ObjClass *subclass = AS_CLASS(VMPeek(vm, 0));
+                copyEntries(vm, &AS_CLASS(superclass)->methods, &subclass->methods);
+                VMPop(vm);
+                break;
+            }
             case OP_DEFMETHOD:
                 defineMethod(vm, READ_STRING());
                 break;
