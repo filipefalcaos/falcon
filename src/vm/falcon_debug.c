@@ -54,9 +54,9 @@ static int constantInstruction(const char *name, FalconVM *vm, BytecodeChunk *by
     FalconValue value = bytecode->constants.values[constant];
 
     /* Prints the constant */
-    printf("%-16s %4d ", name, constant);
+    printf("%-16s %4d '", name, constant);
     printValue(vm, value);
-    printf("\n");
+    printf("'\n");
     return offset + 2;
 }
 
@@ -69,9 +69,21 @@ static int constantInstruction16(const char *name, FalconVM *vm, BytecodeChunk *
     FalconValue value = bytecode->constants.values[constant];
 
     /* Prints the constant */
-    printf("%-16s %4d ", name, constant);
+    printf("%-16s %4d '", name, constant);
     printValue(vm, value);
-    printf("\n");
+    printf("'\n");
+    return offset + 3;
+}
+
+/**
+ * Displays a method invocation instruction.
+ */
+static int invokeInstruction(const char *name, FalconVM *vm, BytecodeChunk *bytecode, int offset) {
+    uint8_t constant = bytecode->code[offset + 1];
+    uint8_t argCount = bytecode->code[offset + 2];
+    printf("%-19s %d %d '", name, argCount, constant);
+    printValue(vm, bytecode->constants.values[constant]);
+    printf("'\n");
     return offset + 3;
 }
 
@@ -81,9 +93,9 @@ static int constantInstruction16(const char *name, FalconVM *vm, BytecodeChunk *
 static int closureInstruction(const char *name, FalconVM *vm, BytecodeChunk *bytecode, int offset) {
     offset++;
     uint8_t constant = bytecode->code[offset++];
-    printf("%-16s %4d ", name, constant);
+    printf("%-16s %4d '", name, constant);
     printValue(vm, bytecode->constants.values[constant]);
-    printf("\n");
+    printf("'\n");
 
     ObjFunction *function = AS_FUNCTION(bytecode->constants.values[constant]);
     for (int i = 0; i < function->upvalueCount; i++) {
@@ -200,14 +212,20 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
         /* Class operations */
         case OP_DEFCLASS:
             return constantInstruction("DEFCLASS", vm, bytecode, offset);
+        case OP_INHERIT:
+            return simpleInstruction("INHERIT", offset);
         case OP_DEFMETHOD:
             return constantInstruction("DEFMETHOD", vm, bytecode, offset);
+        case OP_INVPROP:
+            return invokeInstruction("INVPROP", vm, bytecode, offset);
         case OP_GETPROP:
             return constantInstruction("GETPROP", vm, bytecode, offset);
         case OP_SETPROP:
             return constantInstruction("SETPROP", vm, bytecode, offset);
-        case OP_INVPROP:
-            return constantInstruction("INVPROP", vm, bytecode, offset);
+        case OP_SUPER:
+            return constantInstruction("SUPER", vm, bytecode, offset);
+        case OP_INVSUPER:
+            return invokeInstruction("INVSUPER", vm, bytecode, offset);
 
         /* VM operations */
         case OP_DUPT:
@@ -242,9 +260,9 @@ void dumpBytecode(FalconVM *vm, BytecodeChunk *bytecode, const char *name) {
 void dumpStack(FalconVM *vm) {
     printf("Stack:  ");
     for (FalconValue *slot = vm->stack; slot < vm->stackTop; slot++) {
-        printf("[ ");
+        printf("[ '");
         printValue(vm, *slot);
-        printf(" ] ");
+        printf("' ] ");
     }
     printf("\n");
 }

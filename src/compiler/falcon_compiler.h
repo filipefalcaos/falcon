@@ -74,6 +74,9 @@ typedef struct cCompiler {
     /* The name of the class being compiled */
     Token name;
 
+    /* Whether the class being compiled has a superclass */
+    bool hasSuper;
+
 } ClassCompiler;
 
 /* Parser representation */
@@ -150,10 +153,18 @@ ObjFunction *falconCompile(FalconVM *vm, const char *source);
 
 /* Classes */
 #define COMP_CLASS_NAME_ERR        "Expected a class name."
+#define COMP_SUPERCLASS_NAME_ERR   "Expected a superclass name."
 #define COMP_METHOD_NAME_ERR       "Expected a method name."
 #define COMP_CLASS_BODY_BRACE_ERR  "Expected a '{' before class body."
 #define COMP_CLASS_BODY_BRACE2_ERR "Expected a '}' after class body."
 #define COMP_PROP_NAME_ERR         "Expected a property name after a '.'."
+#define COMP_THIS_ERR              "Cannot use 'this' outside of a class."
+#define COMP_RETURN_INIT_ERR       "Cannot return from a 'init' method."
+#define COMP_INHERIT_SELF_ERR      "A class cannot inherit from itself."
+#define COMP_SUPER_ERR             "Cannot use 'super' outside of a class."
+#define COMP_NO_SUPER_ERR          "Cannot use 'super' in a class that has no superclass."
+#define COMP_SUPER_DOT_ERR         "Expected a '.' after 'super'."
+#define COMP_SUPER_METHOD_ERR      "Expected a superclass method after 'super'."
 
 /* Limits */
 #define COMP_CONST_LIMIT_ERR   "Limit of 65535 constants reached."

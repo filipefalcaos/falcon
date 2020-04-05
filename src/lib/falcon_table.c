@@ -139,3 +139,15 @@ ObjString *tableFindStr(Table *table, const char *chars, size_t length, uint32_t
         index = (index + 1) % table->capacity;
     }
 }
+
+/**
+ * Copies all the entries from one hashtable to another.
+ */
+void copyEntries(FalconVM *vm, Table *from, Table *to) {
+    for (int i = 0; i < from->capacity; i++) {
+        Entry *entry = &from->entries[i];
+        if (entry->key != NULL) {
+            tableSet(vm, to, entry->key, entry->value);
+        }
+    }
+}

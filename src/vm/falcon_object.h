@@ -19,6 +19,7 @@ typedef enum {
     OBJ_CLOSURE,
     OBJ_CLASS,
     OBJ_INSTANCE,
+    OBJ_BMETHOD,
     OBJ_LIST,
     OBJ_MAP,
     OBJ_NATIVE
@@ -78,6 +79,13 @@ typedef struct {
     Table fields;
 } ObjInstance;
 
+/* Falcon's bound method object */
+typedef struct {
+    FalconObj obj;
+    FalconValue receiver;
+    ObjClosure* method;
+} ObjBMethod;
+
 /* Falcon's list object */
 typedef struct {
     FalconObj obj;
@@ -106,6 +114,7 @@ typedef struct {
 
 /* Checks if a Value is an FalconObj type */
 #define IS_STRING(value)   isObjType(value, OBJ_STRING)
+#define IS_CLASS(value)    isObjType(value, OBJ_CLASS)
 #define IS_INSTANCE(value) isObjType(value, OBJ_INSTANCE)
 #define IS_LIST(value)     isObjType(value, OBJ_LIST)
 #define IS_MAP(value)      isObjType(value, OBJ_MAP)
@@ -117,6 +126,7 @@ typedef struct {
 #define AS_CLOSURE(value)  ((ObjClosure *) AS_OBJ(value))
 #define AS_CLASS(value)    ((ObjClass *) AS_OBJ(value))
 #define AS_INSTANCE(value) ((ObjInstance *) AS_OBJ(value))
+#define AS_BMETHOD(value)  ((ObjBMethod *) AS_OBJ(value))
 #define AS_LIST(value)     ((ObjList *) AS_OBJ(value))
 #define AS_MAP(value)      ((ObjMap *) AS_OBJ(value))
 #define AS_NATIVE(value)   ((ObjNative *) AS_OBJ(value))
@@ -130,6 +140,7 @@ ObjUpvalue *falconUpvalue(FalconVM *vm, FalconValue *slot);
 ObjClosure *falconClosure(FalconVM *vm, ObjFunction *function);
 ObjClass *falconClass(FalconVM *vm, ObjString *name);
 ObjInstance *falconInstance(FalconVM *vm, ObjClass *class_);
+ObjBMethod *falconBMethod(FalconVM *vm, FalconValue receiver, ObjClosure *method);
 ObjList *falconList(FalconVM *vm, uint16_t size);
 ObjMap *falconMap(FalconVM *vm, uint16_t length);
 ObjNative *falconNative(FalconVM *vm, FalconNativeFn function, const char *name);

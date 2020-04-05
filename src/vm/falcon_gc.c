@@ -121,12 +121,19 @@ static void blackenObject(FalconVM *vm, FalconObj *object) {
         case OBJ_CLASS: {
             ObjClass *class_ = (ObjClass *) object;
             markObject(vm, (FalconObj *) class_->name);
+            markTable(vm, &class_->methods);
             break;
         }
         case OBJ_INSTANCE: {
             ObjInstance *instance = (ObjInstance *) object;
             markObject(vm, (FalconObj *) instance->class_);
             markTable(vm, &instance->fields);
+            break;
+        }
+        case OBJ_BMETHOD: {
+            ObjBMethod* bound = (ObjBMethod *) object;
+            markValue(vm, bound->receiver);
+            markObject(vm, (FalconObj *)bound->method);
             break;
         }
         case OBJ_LIST: {
@@ -162,8 +169,9 @@ static void markRoots(FalconVM *vm) {
         markObject(vm, (FalconObj *) upvalue); /* Marks open upvalues */
     }
 
-    markTable(vm, &vm->globals); /* Marks global variables */
-    markCompilerRoots(vm);       /* Marks compilation roots */
+    markTable(vm, &vm->globals);               /* Marks global variables */
+    markCompilerRoots(vm);                     /* Marks compilation roots */
+    markObject(vm, (FalconObj *) vm->initStr); /* Marks the "init" string */
 }
 
 /**

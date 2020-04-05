@@ -122,6 +122,16 @@ ObjInstance *falconInstance(FalconVM *vm, ObjClass *class_) {
 }
 
 /**
+ * Allocates a new Falcon bound method object.
+ */
+ObjBMethod *falconBMethod(FalconVM *vm, FalconValue receiver, ObjClosure *method) {
+    ObjBMethod *bound = FALCON_ALLOCATE_OBJ(vm, ObjBMethod, OBJ_BMETHOD);
+    bound->receiver = receiver;
+    bound->method = method;
+    return bound;
+}
+
+/**
  * Allocates a new Falcon list object.
  */
 ObjList *falconList(FalconVM *vm, uint16_t size) {

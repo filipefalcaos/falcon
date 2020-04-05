@@ -101,15 +101,21 @@ void falconFreeObj(FalconVM *vm, FalconObj *object) {
             FALCON_FREE(vm, ObjClosure, object);
             break;
         }
-        case OBJ_CLASS:
+        case OBJ_CLASS: {
+            ObjClass *class_ = (ObjClass *) object;
+            freeTable(vm, &class_->methods);
             FALCON_FREE(vm, ObjClass, object);
             break;
+        }
         case OBJ_INSTANCE: {
             ObjInstance *instance = (ObjInstance *) object;
             freeTable(vm, &instance->fields);
             FALCON_FREE(vm, ObjInstance, object);
             break;
         }
+        case OBJ_BMETHOD:
+            FALCON_FREE(vm, ObjBMethod, object);
+            break;
         case OBJ_LIST: {
             ObjList *list = (ObjList *) object;
             FALCON_FREE_ARRAY(vm, FalconValue, list->elements.values, list->elements.capacity);

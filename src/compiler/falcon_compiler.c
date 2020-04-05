@@ -142,9 +142,18 @@ static int emitJump(FalconCompiler *compiler, uint8_t instruction) {
 }
 
 /**
- * Emits the "OP_RETURN" bytecode instruction.
+ * Emits the "OP_RETURN" bytecode instruction. This function is called when a "return" statement
+ * does not have a return value or when there is no "return" statement at all.
  */
-static void emitReturn(FalconCompiler *compiler) { emitBytes(compiler, OP_LOADNULL, OP_RETURN); }
+static void emitReturn(FalconCompiler *compiler) {
+    if (compiler->fCompiler->type == TYPE_INIT) {
+        emitBytes(compiler, OP_GETLOCAL, 0); /* Emits the instance if in a class */
+    } else {
+        emitByte(compiler, OP_LOADNULL); /* Emits the "null" default value */
+    }
+
+    emitByte(compiler, OP_RETURN); /* Returns the value emitted before */
+}
 
 /**
  * Emits the bytecode for the definition of a given collection type (lists or maps).
@@ -230,8 +239,15 @@ static void initFunctionCompiler(FalconCompiler *compiler, FunctionCompiler *fCo
     Local *local = &compiler->fCompiler->locals[compiler->fCompiler->localCount++];
     local->depth = COMP_GLOBAL_SCOPE;
     local->isCaptured = false;
-    local->name.start = "";
-    local->name.length = 0;
+
+    /* Set slot zero for "this" if a method is being compiled */
+    if (type != TYPE_FUNCTION) {
+        local->name.start = "this";
+        local->name.length = 4;
+    } else {
+        local->name.start = "";
+        local->name.length = 0;
+    }
 }
 
 /**
@@ -484,6 +500,17 @@ static void namedVariable(FalconCompiler *compiler, Token name, bool canAssign) 
     }
 }
 
+/**
+ * Creates a synthetic token (i.e., a token not listed on "compiler/falcon_tokens.h") for a given
+ * constant string.
+ */
+static Token syntheticToken(const char *constant) {
+    Token token;
+    token.start = constant;
+    token.length = (int) strlen(constant);
+    return token;
+}
+
 /* Common interface to all parsing rules */
 #define PARSE_RULE(name) static void name(FalconCompiler *compiler, bool canAssign)
 
@@ -567,12 +594,10 @@ PARSE_RULE(binary) {
     }
 }
 
-/* Performs a function or method call based on the given opcode */
-#define PERFORM_CALL(compiler, opcode)             \
-    do {                                           \
-        uint8_t argCount = argumentList(compiler); \
-        emitBytes(compiler, opcode, argCount);     \
-    } while (false)
+/**
+ * Handles a variable access.
+ */
+PARSE_RULE(variable) { namedVariable(compiler, compiler->parser->previous, canAssign); }
 
 /**
  * Handles a function call expression by parsing its arguments list and emitting the instruction to
@@ -580,11 +605,13 @@ PARSE_RULE(binary) {
  */
 PARSE_RULE(call) {
     (void) canAssign; /* Unused */
-    PERFORM_CALL(compiler, OP_CALL);
+    uint8_t argCount = argumentList(compiler);
+    emitBytes(compiler, OP_CALL, argCount);
 }
 
 /**
- * Handles the "dot" syntax for get and set expressions on a class instance.
+ * Handles the "dot" syntax for get and set expressions, and method calls, on a class instance. If
+ * the expression is a direct method call, the more efficient "OP_INVPROP" instruction is emitted.
  */
 PARSE_RULE(dot) {
     consume(compiler, TK_IDENTIFIER, COMP_PROP_NAME_ERR);
@@ -595,14 +622,13 @@ PARSE_RULE(dot) {
         expression(compiler);
         emitBytes(compiler, OP_SETPROP, name);
     } else if (match(compiler, TK_LPAREN)) { /* Method call */
-        PERFORM_CALL(compiler, OP_INVPROP);
-        emitByte(compiler, name);
+        uint8_t argCount = argumentList(compiler);
+        emitBytes(compiler, OP_INVPROP, name);
+        emitByte(compiler, argCount);
     } else { /* Access field */
         emitBytes(compiler, OP_GETPROP, name);
     }
 }
-
-#undef PERFORM_CALL
 
 /**
  * Handles the opening parenthesis by compiling the expression between the parentheses, and then
@@ -713,20 +739,62 @@ PARSE_RULE(subscript) {
 }
 
 /**
+ * Handles a "super" access expression. Both the current receiver and the superclass are looked up,
+ * and pushed onto the stack. If the expression is a direct "super" call, the more efficient
+ * "OP_INVSUPER" instruction is emitted.
+ */
+PARSE_RULE(super_) {
+    if (compiler->cCompiler == NULL) { /* Checks if not inside a class */
+        falconCompilerError(compiler, &compiler->parser->previous, COMP_SUPER_ERR);
+    } else if (!compiler->cCompiler->hasSuper) { /* Checks if there is no superclass */
+        falconCompilerError(compiler, &compiler->parser->previous, COMP_NO_SUPER_ERR);
+    }
+
+    /* Compiles the identifier after "super." */
+    consume(compiler, TK_DOT, COMP_SUPER_DOT_ERR);
+    consume(compiler, TK_IDENTIFIER, COMP_SUPER_METHOD_ERR);
+    uint8_t name = identifierConstant(compiler, &compiler->parser->previous);
+    namedVariable(compiler, syntheticToken("this"), false); /* Looks up the receiver */
+
+    /* Compiles the "super" expression as a call or as an access */
+    if (match(compiler, TK_LPAREN)) {
+        uint8_t argCount = argumentList(compiler);
+        namedVariable(compiler, syntheticToken("super"), false);
+        emitBytes(compiler, OP_INVSUPER, name);
+        emitByte(compiler, argCount);
+    } else {
+        namedVariable(compiler, syntheticToken("super"), false);
+        emitBytes(compiler, OP_SUPER, name); /* Performs the "super" access */
+    }
+}
+
+/**
  * Handles the ternary "?:" conditional operator expression.
  */
 PARSE_RULE(ternary) {
-    (void) canAssign;                                /* Unused */
+    (void) canAssign;                            /* Unused */
     int ifJump = emitJump(compiler, OP_JUMPIFF); /* Jumps if the condition is false */
-    emitByte(compiler, OP_POPT);                   /* Pops the condition result */
-    parsePrecedence(compiler, PREC_TERNARY);         /* Compiles the first branch */
+    emitByte(compiler, OP_POPT);                 /* Pops the condition result */
+    parsePrecedence(compiler, PREC_TERNARY);     /* Compiles the first branch */
     consume(compiler, TK_COLON, COMP_TERNARY_EXPR_ERR);
 
     int elseJump = emitJump(compiler, OP_JUMP); /* Jumps the second branch if first was taken */
     patchJump(compiler, ifJump);                /* Patches the jump over the first branch */
-    emitByte(compiler, OP_POPT);              /* Pops the condition result */
+    emitByte(compiler, OP_POPT);                /* Pops the condition result */
     parsePrecedence(compiler, PREC_ASSIGN);     /* Compiles the second branch */
     patchJump(compiler, elseJump);              /* Patches the jump over the second branch */
+}
+
+/**
+ * Handles a "this" expression, where "this" is treated as a lexically-scoped local variable.
+ */
+PARSE_RULE(this_) {
+    if (compiler->cCompiler == NULL) { /* Checks if not inside a class */
+        falconCompilerError(compiler, &compiler->parser->previous, COMP_THIS_ERR);
+        return;
+    }
+
+    variable(compiler, false); /* "canAssign" is set to false */
 }
 
 /**
@@ -749,11 +817,6 @@ PARSE_RULE(unary) {
             return;
     }
 }
-
-/**
- * Handles a variable access.
- */
-PARSE_RULE(variable) { namedVariable(compiler, compiler->parser->previous, canAssign); }
 
 #undef PARSE_RULE
 
@@ -811,9 +874,9 @@ ParseRule rules[] = {
     EMPTY_RULE,                        /* TK_NEXT */
     PREFIX_RULE(literal),              /* TK_NULL */
     EMPTY_RULE,                        /* TK_RETURN */
-    EMPTY_RULE,                        /* TK_SUPER */
+    PREFIX_RULE(super_),               /* TK_SUPER */
     EMPTY_RULE,                        /* TK_SWITCH */
-    EMPTY_RULE,                        /* TK_THIS */
+    PREFIX_RULE(this_),                /* TK_THIS */
     PREFIX_RULE(literal),              /* TK_TRUE */
     EMPTY_RULE,                        /* TK_VAR */
     EMPTY_RULE,                        /* TK_WHEN */
@@ -956,17 +1019,40 @@ static void classDeclaration(FalconCompiler *compiler) {
     /* Sets a new class compiler */
     ClassCompiler classCompiler;
     classCompiler.name = className;
+    classCompiler.hasSuper = false;
     classCompiler.enclosing = compiler->cCompiler;
     compiler->cCompiler = &classCompiler;
 
+    /* Parses a inheritance definition before the class body, so that the subclass can correctly
+     * override inherited methods */
+    if (match(compiler, TK_LESS)) {
+        consume(compiler, TK_IDENTIFIER, COMP_SUPERCLASS_NAME_ERR);
+        variable(compiler, false); /* Loads the superclass as a variable */
+
+        if (identifiersEqual(&className, &parser->previous))
+            falconCompilerError(compiler, &parser->previous, COMP_INHERIT_SELF_ERR);
+
+        /* Creates a new scope and make the superclass a local variable */
+        beginScope(compiler->fCompiler);
+        addLocal(compiler, syntheticToken("super")); /* Creates a synthetic token for super */
+        defineVariable(compiler, 0);
+
+        namedVariable(compiler, className, false); /* Loads subclass as a variable too */
+        emitByte(compiler, OP_INHERIT);            /* Applies inheritance to the subclass */
+        classCompiler.hasSuper = true;
+    }
+
     /* Parses the class body and its methods */
+    namedVariable(compiler, className, false);
     consume(compiler, TK_LBRACE, COMP_CLASS_BODY_BRACE_ERR);
+
     while (!check(parser, TK_RBRACE) && !check(parser, TK_EOF)) {
-        namedVariable(compiler, className, false);
         method(compiler);
     }
 
     consume(compiler, TK_RBRACE, COMP_CLASS_BODY_BRACE2_ERR);
+    emitByte(compiler, OP_POPT);
+    if (classCompiler.hasSuper) endScope(compiler);
     compiler->cCompiler = compiler->cCompiler->enclosing;
 }
 
@@ -1360,6 +1446,10 @@ static void returnStatement(FalconCompiler *compiler) {
     if (match(compiler, TK_SEMICOLON)) {
         emitReturn(compiler);
     } else {
+        if (compiler->fCompiler->type == TYPE_INIT) /* Checks if inside a "init" method */
+            falconCompilerError(compiler, &compiler->parser->previous, COMP_RETURN_INIT_ERR);
+
+        /* Compiles the returned value */
         expression(compiler);
         consume(compiler, TK_SEMICOLON, COMP_RETURN_STMT_ERR);
         emitByte(compiler, OP_RETURN);

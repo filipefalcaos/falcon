@@ -246,6 +246,9 @@ void printValue(FalconVM *vm, FalconValue value) {
                 case OBJ_INSTANCE:
                     printf("<instance of %s>", AS_INSTANCE(value)->class_->name->chars);
                     break;
+                case OBJ_BMETHOD:
+                    printFunction(AS_BMETHOD(value)->method->function);
+                    break;
                 case OBJ_LIST: {
                     ObjList *list = AS_LIST(value);
                     printf("[");

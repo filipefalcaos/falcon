@@ -48,12 +48,17 @@ void falconInitVM(FalconVM *vm) {
     initTable(&vm->strings); /* Inits the table of interned strings */
     initTable(&vm->globals); /* Inits the table of globals */
     falconDefNatives(vm);    /* Sets native functions */
+
+    /* Defines the string for class initializers */
+    vm->initStr = NULL;
+    vm->initStr = falconString(vm, "init", 4);
 }
 
 /**
  * Frees the Falcon's virtual machine and its allocated objects.
  */
 void falconFreeVM(FalconVM *vm) {
+    vm->initStr = NULL;
     freeTable(vm, &vm->strings);
     freeTable(vm, &vm->globals);
     falconFreeObjs(vm);
@@ -133,16 +138,30 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
     if (IS_OBJ(callee)) {
         switch (OBJ_TYPE(callee)) {
             case OBJ_CLASS: {
+                FalconValue init;
                 ObjClass *class_ = AS_CLASS(callee);
                 vm->stackTop[-argCount - 1] = OBJ_VAL(falconInstance(vm, class_));
+
+                /* Calls the class "init" method, if existent */
+                if (tableGet(&class_->methods, vm->initStr, &init)) {
+                    return call(vm, AS_CLOSURE(init), argCount); /* Calls "init" as a closure */
+                } else if (argCount != 0) {
+                    falconVMError(vm, VM_INIT_ERR, argCount);
+                    return false;
+                }
+
                 return true;
+            }
+            case OBJ_BMETHOD: {
+                ObjBMethod *bMethod = AS_BMETHOD(callee);
+                vm->stackTop[-argCount - 1] = bMethod->receiver; /* Set the "this" bound receiver */
+                return call(vm, bMethod->method, argCount);      /* Calls the method as a closure */
             }
             case OBJ_CLOSURE:
                 return call(vm, AS_CLOSURE(callee), argCount);
             case OBJ_NATIVE: {
                 FalconNativeFn native = AS_NATIVE(callee)->function;
-                FalconValue out =
-                    native(vm, argCount, vm->stackTop - argCount); /* Runs native function */
+                FalconValue out = native(vm, argCount, vm->stackTop - argCount);
                 if (IS_ERR(out)) return false;      /* Checks if a runtime error occurred */
                 vm->stackTop -= argCount + 1;       /* Updates the stack to where it was */
                 if (!VMPush(vm, out)) return false; /* Pushes the return value */
@@ -158,10 +177,28 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
 }
 
 /**
- * Tries to call a given method of a class instance. If the invocation succeeds, "true" is
+ * Tries to bind a method to the receiver, a class instance, on the top of the stack. If the binding
+ * succeeds, "true" is returned, and otherwise, "false".
+ */
+static bool bindMethod(FalconVM *vm, ObjClass *class_, ObjString *methodName) {
+    FalconValue method;
+    if (!tableGet(&class_->methods, methodName, &method)) { /* Checks if the method is defined */
+        falconVMError(vm, VM_UNDEF_PROP_ERR, class_->name->chars, methodName->chars);
+        return false;
+    }
+
+    /* Binds the method to the receiver */
+    ObjBMethod* bMethod = falconBMethod(vm, VMPeek(vm, 0), AS_CLOSURE(method));
+    VMPop(vm);
+    VMPush(vm, OBJ_VAL(bMethod));
+    return true;
+}
+
+/**
+ * Tries to invoke a given method of a class instance. If the invocation succeeds, "true" is
  * returned, and otherwise, "false".
  */
-static bool callMethod(FalconVM *vm, ObjClass *class_, ObjString *methodName, int argCount) {
+static bool invokeFromClass(FalconVM *vm, ObjClass *class_, ObjString *methodName, int argCount) {
     FalconValue method;
     if (!tableGet(&class_->methods, methodName, &method)) { /* Checks if method is defined */
         falconVMError(vm, VM_UNDEF_PROP_ERR);
@@ -189,7 +226,7 @@ static bool invoke(FalconVM *vm, ObjString *calleeName, int argCount) {
         return callValue(vm, property, argCount); /* Tries to execute the field as a function */
     }
 
-    return callMethod(vm, instance->class_, calleeName, argCount); /* Invokes the method */
+    return invokeFromClass(vm, instance->class_, calleeName, argCount); /* Invokes the method */
 }
 
 /**
@@ -239,7 +276,7 @@ static void defineMethod(FalconVM *vm, ObjString *name) {
     FalconValue method = VMPeek(vm, 0);           /* Avoids GC */
     ObjClass *class_ = AS_CLASS(VMPeek(vm, 1));   /* Avoids GC */
     tableSet(vm, &class_->methods, name, method); /* Sets the new method */
-    VMPop2(vm);
+    VMPop(vm);
 }
 
 /**
@@ -668,9 +705,29 @@ static FalconResultCode run(FalconVM *vm) {
             case OP_DEFCLASS:
                 VMPush(vm, OBJ_VAL(falconClass(vm, READ_STRING())));
                 break;
+            case OP_INHERIT: {
+                FalconValue superclass = VMPeek(vm, 1);
+                if (!IS_CLASS(superclass)) { /* Checks if superclass value is valid */
+                    falconVMError(vm, VM_INHERITANCE_ERR);
+                    return FALCON_RUNTIME_ERROR;
+                }
+
+                /* Applies the inheritance effect */
+                ObjClass *subclass = AS_CLASS(VMPeek(vm, 0));
+                copyEntries(vm, &AS_CLASS(superclass)->methods, &subclass->methods);
+                VMPop(vm);
+                break;
+            }
             case OP_DEFMETHOD:
                 defineMethod(vm, READ_STRING());
                 break;
+            case OP_INVPROP: {
+                ObjString *name = READ_STRING();
+                int argCount = READ_BYTE();
+                if (!invoke(vm, name, argCount)) return FALCON_RUNTIME_ERROR;
+                frame = &vm->frames[vm->frameCount - 1]; /* Updates the current frame */
+                break;
+            }
             case OP_GETPROP: {
                 if (!IS_INSTANCE(VMPeek(vm, 0))) {
                     falconVMError(vm, VM_NOT_INSTANCE_ERR);
@@ -681,15 +738,18 @@ static FalconResultCode run(FalconVM *vm) {
                 ObjString *name = READ_STRING();
                 FalconValue value;
 
+                /* Looks for a valid field */
                 if (tableGet(&instance->fields, name, &value)) {
                     VMPop(vm);         /* Pops the instance */
                     VMPush(vm, value); /* Pushes the field value */
                     break;
                 }
 
-                /* Undefined field error */
-                falconVMError(vm, VM_UNDEF_PROP_ERR, instance->class_->name->chars, name->chars);
-                return FALCON_RUNTIME_ERROR;
+                /* Looks for a valid method, leaving it on the stack top */
+                if (!bindMethod(vm, instance->class_, name))
+                    return FALCON_RUNTIME_ERROR; /* Undefined property */
+
+                break;
             }
             case OP_SETPROP: {
                 if (!IS_INSTANCE(VMPeek(vm, 1))) {
@@ -705,10 +765,26 @@ static FalconResultCode run(FalconVM *vm) {
                 VMPush(vm, value);             /* Pushes the new field value */
                 break;
             }
-            case OP_INVPROP: {
+            case OP_SUPER: {
+                ObjString *name = READ_STRING();
+                ObjClass *superclass = AS_CLASS(VMPop(vm));
+
+                /* Tries to look for the method on the superclass, leaving it on the stack top */
+                if (!bindMethod(vm, superclass, name))
+                    return FALCON_RUNTIME_ERROR; /* Undefined superclass method */
+
+                break;
+            }
+            case OP_INVSUPER: {
+                ObjString *name = READ_STRING();
                 int argCount = READ_BYTE();
-                if (!invoke(vm, READ_STRING(), argCount)) return FALCON_RUNTIME_ERROR;
-                frame = &vm->frames[vm->frameCount - 1]; /* Updates the current frame */
+                ObjClass *superclass = AS_CLASS(VMPop(vm));
+
+                /* Tries to invoke the method from the superclass */
+                if (!invokeFromClass(vm, superclass, name, argCount))
+                    return FALCON_RUNTIME_ERROR;
+
+                frame = &vm->frames[vm->frameCount - 1];
                 break;
             }
 
