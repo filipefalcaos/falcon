@@ -745,18 +745,38 @@ PARSE_RULE(subscript) {
 }
 
 /**
+ * Handles a "super" access expression.
+ */
+PARSE_RULE(super_) {
+    if (compiler->cCompiler == NULL) { /* Checks if not inside a class */
+        falconCompilerError(compiler, &compiler->parser->previous, COMP_SUPER_ERR);
+    } else if (!compiler->cCompiler->hasSuper) { /* Checks if there is no superclass */
+        falconCompilerError(compiler, &compiler->parser->previous, COMP_NO_SUPER_ERR);
+    }
+
+    consume(compiler, TK_DOT, COMP_SUPER_DOT_ERR);
+    consume(compiler, TK_IDENTIFIER, COMP_SUPER_METHOD_ERR);
+    uint8_t name = identifierConstant(compiler, &compiler->parser->previous);
+
+    /* Looks up both the current receiver and the superclass, and push them onto the stack */
+    namedVariable(compiler, syntheticToken("this"), false);
+    namedVariable(compiler, syntheticToken("super"), false);
+    emitBytes(compiler, OP_SUPER, name); /* Perform the super access */
+}
+
+/**
  * Handles the ternary "?:" conditional operator expression.
  */
 PARSE_RULE(ternary) {
-    (void) canAssign;                                /* Unused */
+    (void) canAssign;                            /* Unused */
     int ifJump = emitJump(compiler, OP_JUMPIFF); /* Jumps if the condition is false */
-    emitByte(compiler, OP_POPT);                   /* Pops the condition result */
-    parsePrecedence(compiler, PREC_TERNARY);         /* Compiles the first branch */
+    emitByte(compiler, OP_POPT);                 /* Pops the condition result */
+    parsePrecedence(compiler, PREC_TERNARY);     /* Compiles the first branch */
     consume(compiler, TK_COLON, COMP_TERNARY_EXPR_ERR);
 
     int elseJump = emitJump(compiler, OP_JUMP); /* Jumps the second branch if first was taken */
     patchJump(compiler, ifJump);                /* Patches the jump over the first branch */
-    emitByte(compiler, OP_POPT);              /* Pops the condition result */
+    emitByte(compiler, OP_POPT);                /* Pops the condition result */
     parsePrecedence(compiler, PREC_ASSIGN);     /* Compiles the second branch */
     patchJump(compiler, elseJump);              /* Patches the jump over the second branch */
 }
@@ -850,7 +870,7 @@ ParseRule rules[] = {
     EMPTY_RULE,                        /* TK_NEXT */
     PREFIX_RULE(literal),              /* TK_NULL */
     EMPTY_RULE,                        /* TK_RETURN */
-    EMPTY_RULE,                        /* TK_SUPER */
+    PREFIX_RULE(super_),               /* TK_SUPER */
     EMPTY_RULE,                        /* TK_SWITCH */
     PREFIX_RULE(this_),                /* TK_THIS */
     PREFIX_RULE(literal),              /* TK_TRUE */

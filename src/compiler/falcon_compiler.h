@@ -161,6 +161,10 @@ ObjFunction *falconCompile(FalconVM *vm, const char *source);
 #define COMP_THIS_ERR              "Cannot use 'this' outside of a class."
 #define COMP_RETURN_INIT_ERR       "Cannot return from a 'init' method."
 #define COMP_INHERIT_SELF_ERR      "A class cannot inherit from itself."
+#define COMP_SUPER_ERR             "Cannot use 'super' outside of a class."
+#define COMP_NO_SUPER_ERR          "Cannot use 'super' in a class that has no superclass."
+#define COMP_SUPER_DOT_ERR         "Expected a '.' after 'super'."
+#define COMP_SUPER_METHOD_ERR      "Expected a superclass method after 'super'."
 
 /* Limits */
 #define COMP_CONST_LIMIT_ERR   "Limit of 65535 constants reached."

@@ -180,12 +180,9 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
  * Tries to bind a method to the receiver, a class instance, on the top of the stack. If the binding
  * succeeds, "true" is returned, and otherwise, "false".
  */
-static bool bindMethod(FalconVM *vm, ObjInstance *instance, ObjString *methodName) {
+static bool bindMethod(FalconVM *vm, ObjClass *class_, ObjString *methodName) {
     FalconValue method;
-    ObjClass *class_ = instance->class_;
-
-    /* Checks if the method is defined */
-    if (!tableGet(&class_->methods, methodName, &method)) {
+    if (!tableGet(&class_->methods, methodName, &method)) { /* Checks if the method is defined */
         falconVMError(vm, VM_UNDEF_PROP_ERR, class_->name->chars, methodName->chars);
         return false;
     }
@@ -724,6 +721,12 @@ static FalconResultCode run(FalconVM *vm) {
             case OP_DEFMETHOD:
                 defineMethod(vm, READ_STRING());
                 break;
+            case OP_INVPROP: {
+                int argCount = READ_BYTE();
+                if (!invoke(vm, READ_STRING(), argCount)) return FALCON_RUNTIME_ERROR;
+                frame = &vm->frames[vm->frameCount - 1]; /* Updates the current frame */
+                break;
+            }
             case OP_GETPROP: {
                 if (!IS_INSTANCE(VMPeek(vm, 0))) {
                     falconVMError(vm, VM_NOT_INSTANCE_ERR);
@@ -741,9 +744,9 @@ static FalconResultCode run(FalconVM *vm) {
                     break;
                 }
 
-                /* Looks for a valid method */
-                if (!bindMethod(vm, instance, name))
-                    return FALCON_RUNTIME_ERROR; /* Undefined property error */
+                /* Looks for a valid method, leaving it on the stack top */
+                if (!bindMethod(vm, instance->class_, name))
+                    return FALCON_RUNTIME_ERROR; /* Undefined property */
 
                 break;
             }
@@ -761,10 +764,14 @@ static FalconResultCode run(FalconVM *vm) {
                 VMPush(vm, value);             /* Pushes the new field value */
                 break;
             }
-            case OP_INVPROP: {
-                int argCount = READ_BYTE();
-                if (!invoke(vm, READ_STRING(), argCount)) return FALCON_RUNTIME_ERROR;
-                frame = &vm->frames[vm->frameCount - 1]; /* Updates the current frame */
+            case OP_SUPER: {
+                ObjString *name = READ_STRING();
+                ObjClass *superclass = AS_CLASS(VMPop(vm));
+
+                /* Tries to look for the method on the superclass, leaving it on the stack top */
+                if (!bindMethod(vm, superclass, name))
+                    return FALCON_RUNTIME_ERROR; /* Undefined superclass method */
+
                 break;
             }
 

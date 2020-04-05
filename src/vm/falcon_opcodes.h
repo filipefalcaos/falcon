@@ -63,9 +63,10 @@ typedef enum {
     OP_DEFCLASS,  /* Define a new class */
     OP_INHERIT,   /* Apply inheritance effects */
     OP_DEFMETHOD, /* Define a new method in a class */
+    OP_INVPROP,   /* Perform a invocation on a property */
     OP_GETPROP,   /* Get the value of a property */
     OP_SETPROP,   /* Set the value of a property */
-    OP_INVPROP,   /* Perform a invocation on a property */
+    OP_SUPER,     /* Perform a super access */
 
     /* VM operations */
     OP_DUPT,    /* Duplicate the top of the VM stack */

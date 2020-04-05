@@ -216,12 +216,14 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
             return simpleInstruction("INHERIT", offset);
         case OP_DEFMETHOD:
             return constantInstruction("DEFMETHOD", vm, bytecode, offset);
+        case OP_INVPROP:
+            return invokeInstruction("INVPROP", vm, bytecode, offset);
         case OP_GETPROP:
             return constantInstruction("GETPROP", vm, bytecode, offset);
         case OP_SETPROP:
             return constantInstruction("SETPROP", vm, bytecode, offset);
-        case OP_INVPROP:
-            return invokeInstruction("INVPROP", vm, bytecode, offset);
+        case OP_SUPER:
+            return constantInstruction("SUPER", vm, bytecode, offset);
 
         /* VM operations */
         case OP_DUPT:
