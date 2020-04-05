@@ -144,7 +144,7 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
 
                 /* Calls the class "init" method, if existent */
                 if (tableGet(&class_->methods, vm->initStr, &init)) {
-                    return call(vm, AS_CLOSURE(init), argCount);
+                    return call(vm, AS_CLOSURE(init), argCount); /* Calls "init" as a closure */
                 } else if (argCount != 0) {
                     falconVMError(vm, VM_INIT_ERR, argCount);
                     return false;
@@ -155,7 +155,7 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
             case OBJ_BMETHOD: {
                 ObjBMethod *bMethod = AS_BMETHOD(callee);
                 vm->stackTop[-argCount - 1] = bMethod->receiver; /* Set the "this" bound receiver */
-                return call(vm, bMethod->method, argCount);
+                return call(vm, bMethod->method, argCount);      /* Calls the method as a closure */
             }
             case OBJ_CLOSURE:
                 return call(vm, AS_CLOSURE(callee), argCount);
@@ -195,10 +195,10 @@ static bool bindMethod(FalconVM *vm, ObjClass *class_, ObjString *methodName) {
 }
 
 /**
- * Tries to call a given method of a class instance. If the invocation succeeds, "true" is
+ * Tries to invoke a given method of a class instance. If the invocation succeeds, "true" is
  * returned, and otherwise, "false".
  */
-static bool callMethod(FalconVM *vm, ObjClass *class_, ObjString *methodName, int argCount) {
+static bool invokeFromClass(FalconVM *vm, ObjClass *class_, ObjString *methodName, int argCount) {
     FalconValue method;
     if (!tableGet(&class_->methods, methodName, &method)) { /* Checks if method is defined */
         falconVMError(vm, VM_UNDEF_PROP_ERR);
@@ -226,7 +226,7 @@ static bool invoke(FalconVM *vm, ObjString *calleeName, int argCount) {
         return callValue(vm, property, argCount); /* Tries to execute the field as a function */
     }
 
-    return callMethod(vm, instance->class_, calleeName, argCount); /* Invokes the method */
+    return invokeFromClass(vm, instance->class_, calleeName, argCount); /* Invokes the method */
 }
 
 /**
@@ -722,8 +722,9 @@ static FalconResultCode run(FalconVM *vm) {
                 defineMethod(vm, READ_STRING());
                 break;
             case OP_INVPROP: {
+                ObjString *name = READ_STRING();
                 int argCount = READ_BYTE();
-                if (!invoke(vm, READ_STRING(), argCount)) return FALCON_RUNTIME_ERROR;
+                if (!invoke(vm, name, argCount)) return FALCON_RUNTIME_ERROR;
                 frame = &vm->frames[vm->frameCount - 1]; /* Updates the current frame */
                 break;
             }
@@ -772,6 +773,18 @@ static FalconResultCode run(FalconVM *vm) {
                 if (!bindMethod(vm, superclass, name))
                     return FALCON_RUNTIME_ERROR; /* Undefined superclass method */
 
+                break;
+            }
+            case OP_INVSUPER: {
+                ObjString *name = READ_STRING();
+                int argCount = READ_BYTE();
+                ObjClass *superclass = AS_CLASS(VMPop(vm));
+
+                /* Tries to invoke the method from the superclass */
+                if (!invokeFromClass(vm, superclass, name, argCount))
+                    return FALCON_RUNTIME_ERROR;
+
+                frame = &vm->frames[vm->frameCount - 1];
                 break;
             }
 

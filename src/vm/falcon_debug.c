@@ -79,8 +79,8 @@ static int constantInstruction16(const char *name, FalconVM *vm, BytecodeChunk *
  * Displays a method invocation instruction.
  */
 static int invokeInstruction(const char *name, FalconVM *vm, BytecodeChunk *bytecode, int offset) {
-    uint8_t argCount = bytecode->code[offset + 1];
-    uint8_t constant = bytecode->code[offset + 2];
+    uint8_t constant = bytecode->code[offset + 1];
+    uint8_t argCount = bytecode->code[offset + 2];
     printf("%-19s %d %d '", name, argCount, constant);
     printValue(vm, bytecode->constants.values[constant]);
     printf("'\n");
@@ -224,6 +224,8 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
             return constantInstruction("SETPROP", vm, bytecode, offset);
         case OP_SUPER:
             return constantInstruction("SUPER", vm, bytecode, offset);
+        case OP_INVSUPER:
+            return invokeInstruction("INVSUPER", vm, bytecode, offset);
 
         /* VM operations */
         case OP_DUPT:

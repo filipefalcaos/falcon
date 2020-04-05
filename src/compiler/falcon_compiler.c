@@ -599,24 +599,19 @@ PARSE_RULE(binary) {
  */
 PARSE_RULE(variable) { namedVariable(compiler, compiler->parser->previous, canAssign); }
 
-/* Performs a function or method call based on the given opcode */
-#define PERFORM_CALL(compiler, opcode)             \
-    do {                                           \
-        uint8_t argCount = argumentList(compiler); \
-        emitBytes(compiler, opcode, argCount);     \
-    } while (false)
-
 /**
  * Handles a function call expression by parsing its arguments list and emitting the instruction to
  * proceed with the execution of the function.
  */
 PARSE_RULE(call) {
     (void) canAssign; /* Unused */
-    PERFORM_CALL(compiler, OP_CALL);
+    uint8_t argCount = argumentList(compiler);
+    emitBytes(compiler, OP_CALL, argCount);
 }
 
 /**
- * Handles the "dot" syntax for get and set expressions on a class instance.
+ * Handles the "dot" syntax for get and set expressions, and method calls, on a class instance. If
+ * the expression is a direct method call, the more efficient "OP_INVPROP" instruction is emitted.
  */
 PARSE_RULE(dot) {
     consume(compiler, TK_IDENTIFIER, COMP_PROP_NAME_ERR);
@@ -627,14 +622,13 @@ PARSE_RULE(dot) {
         expression(compiler);
         emitBytes(compiler, OP_SETPROP, name);
     } else if (match(compiler, TK_LPAREN)) { /* Method call */
-        PERFORM_CALL(compiler, OP_INVPROP);
-        emitByte(compiler, name);
+        uint8_t argCount = argumentList(compiler);
+        emitBytes(compiler, OP_INVPROP, name);
+        emitByte(compiler, argCount);
     } else { /* Access field */
         emitBytes(compiler, OP_GETPROP, name);
     }
 }
-
-#undef PERFORM_CALL
 
 /**
  * Handles the opening parenthesis by compiling the expression between the parentheses, and then
@@ -745,7 +739,9 @@ PARSE_RULE(subscript) {
 }
 
 /**
- * Handles a "super" access expression.
+ * Handles a "super" access expression. Both the current receiver and the superclass are looked up,
+ * and pushed onto the stack. If the expression is a direct "super" call, the more efficient
+ * "OP_INVSUPER" instruction is emitted.
  */
 PARSE_RULE(super_) {
     if (compiler->cCompiler == NULL) { /* Checks if not inside a class */
@@ -754,14 +750,22 @@ PARSE_RULE(super_) {
         falconCompilerError(compiler, &compiler->parser->previous, COMP_NO_SUPER_ERR);
     }
 
+    /* Compiles the identifier after "super." */
     consume(compiler, TK_DOT, COMP_SUPER_DOT_ERR);
     consume(compiler, TK_IDENTIFIER, COMP_SUPER_METHOD_ERR);
     uint8_t name = identifierConstant(compiler, &compiler->parser->previous);
+    namedVariable(compiler, syntheticToken("this"), false); /* Looks up the receiver */
 
-    /* Looks up both the current receiver and the superclass, and push them onto the stack */
-    namedVariable(compiler, syntheticToken("this"), false);
-    namedVariable(compiler, syntheticToken("super"), false);
-    emitBytes(compiler, OP_SUPER, name); /* Perform the super access */
+    /* Compiles the "super" expression as a call or as an access */
+    if (match(compiler, TK_LPAREN)) {
+        uint8_t argCount = argumentList(compiler);
+        namedVariable(compiler, syntheticToken("super"), false);
+        emitBytes(compiler, OP_INVSUPER, name);
+        emitByte(compiler, argCount);
+    } else {
+        namedVariable(compiler, syntheticToken("super"), false);
+        emitBytes(compiler, OP_SUPER, name); /* Performs the "super" access */
+    }
 }
 
 /**
