@@ -5,7 +5,6 @@
  */
 
 #include "falcon_natives.h"
-#include "../vm/falcon_memory.h"
 #include "falcon_error.h"
 #include "falcon_io.h"
 #include <math.h>
@@ -15,22 +14,22 @@
 #include <time.h>
 
 /* Checks the validity of a given argument count */
-#define ASSERT_ARGS_COUNT(vm, op, argCount, expectedCount)                 \
-    do {                                                                   \
-        if (argCount op expectedCount) {                                   \
-            falconVMError(vm, VM_ARGS_COUNT_ERR, expectedCount, argCount); \
-            return ERR_VAL;                                                \
-        }                                                                  \
+#define ASSERT_ARGS_COUNT(vm, op, argCount, expectedCount)                    \
+    do {                                                                      \
+        if (argCount op expectedCount) {                                      \
+            interpreterError(vm, VM_ARGS_COUNT_ERR, expectedCount, argCount); \
+            return ERR_VAL;                                                   \
+        }                                                                     \
     } while (false)
 
 /* Checks if a given value "value" of a given type "type" at a given position "pos" is a value of
  * the requested type */
-#define ASSERT_ARG_TYPE(type, typeName, value, vm, pos)              \
-    do {                                                        \
-        if (!type(value)) {                                     \
-            falconVMError(vm, VM_ARGS_TYPE_ERR, pos, typeName); \
-            return ERR_VAL;                                     \
-        }                                                       \
+#define ASSERT_ARG_TYPE(type, typeName, value, vm, pos)            \
+    do {                                                           \
+        if (!type(value)) {                                        \
+            interpreterError(vm, VM_ARGS_TYPE_ERR, pos, typeName); \
+            return ERR_VAL;                                        \
+        }                                                          \
     } while (false)
 
 /* Defines a common interface to all Falcon native functions */
@@ -48,7 +47,7 @@
 FALCON_NATIVE(authors) {
     (void) args; /* Unused */
     ASSERT_ARGS_COUNT(vm, !=, argCount, 0);
-    falconPrintAuthors();
+    printf("Falcon authors: %s\n", FALCON_AUTHORS);
     return NULL_VAL;
 }
 
@@ -58,17 +57,7 @@ FALCON_NATIVE(authors) {
 FALCON_NATIVE(license) {
     (void) args; /* Unused */
     ASSERT_ARGS_COUNT(vm, !=, argCount, 0);
-    falconPrintLicense();
-    return NULL_VAL;
-}
-
-/**
- * Native Falcon function to print interpreter usage details.
- */
-FALCON_NATIVE(help) {
-    (void) args; /* Unused */
-    ASSERT_ARGS_COUNT(vm, !=, argCount, 0);
-    falconPrintUsage();
+    printf("%s\n%s\n", FALCON_COPYRIGHT, FALCON_MORE_INFO);
     return NULL_VAL;
 }
 
@@ -179,7 +168,7 @@ FALCON_NATIVE(num) {
     ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
     if (!IS_NUM(*args)) {
         if (!IS_STRING(*args) && !IS_BOOL(*args)) {
-            falconVMError(vm, VM_ARGS_TYPE_ERR, 1, "string, boolean, or number");
+            interpreterError(vm, VM_ARGS_TYPE_ERR, 1, "string, boolean, or number");
             return ERR_VAL;
         }
 
@@ -188,7 +177,7 @@ FALCON_NATIVE(num) {
             double number = strtod(AS_CSTRING(*args), &end); /* Converts to double */
 
             if (start == end) { /* Checks for conversion success */
-                falconVMError(vm, FALCON_CONV_STR_NUM_ERR);
+                interpreterError(vm, FALCON_CONV_STR_NUM_ERR);
                 return ERR_VAL;
             }
 
@@ -229,7 +218,7 @@ FALCON_NATIVE(len) {
         case OBJ_STRING:
             return NUM_VAL(AS_STRING(*args)->length); /* Returns the string length */
         default:
-            falconVMError(vm, VM_ARGS_TYPE_ERR, 1, "list or string");
+            interpreterError(vm, VM_ARGS_TYPE_ERR, 1, "list or string");
             return ERR_VAL;
     }
 }
@@ -270,7 +259,8 @@ FALCON_NATIVE(getField) {
         return value;
 
     /* Undefined field error */
-    falconVMError(vm, VM_UNDEF_PROP_ERR, instance->class_->name->chars, AS_STRING(args[1])->chars);
+    interpreterError(vm, VM_UNDEF_PROP_ERR, instance->class_->name->chars,
+                     AS_STRING(args[1])->chars);
     return ERR_VAL;
 }
 
@@ -394,20 +384,19 @@ FALCON_NATIVE(print) {
  * Defines a new native function for Falcon.
  */
 static void defNative(FalconVM *vm, const char *name, FalconNativeFn function) {
-    VMPush(vm, OBJ_VAL(falconString(vm, name, (int) strlen(name)))); /* Avoids GC */
-    VMPush(vm, OBJ_VAL(falconNative(vm, function, name)));         /* Avoids GC */
+    push(vm, OBJ_VAL(falconString(vm, name, (int) strlen(name)))); /* Avoids GC */
+    push(vm, OBJ_VAL(falconNative(vm, function, name)));           /* Avoids GC */
     tableSet(vm, &vm->globals, AS_STRING(vm->stack[0]), vm->stack[1]);
-    VMPop2(vm);
+    popTwice(vm);
 }
 
 /**
  * Defines the complete set of native function for Falcon.
  */
-void falconDefNatives(FalconVM *vm) {
+void defineNatives(FalconVM *vm) {
     const ObjNative nativeFunctions[] = { /* Native functions implementations */
         { .function = authors, .name = "authors" },
         { .function = license, .name = "license" },
-        { .function = help, .name = "help" },
         { .function = exit_, .name = "exit" },
         { .function = clock_, .name = "clock" },
         { .function = time_, .name = "time" },

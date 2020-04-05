@@ -11,7 +11,7 @@
 /**
  * Presents a compiler time error to the programmer.
  */
-static void falconCompileError(FalconVM *vm, Scanner *scanner, Token *token, const char *message) {
+static void compileTimeError(FalconVM *vm, Scanner *scanner, Token *token, const char *message) {
     int offset = 0;
     uint32_t tkLine = token->line;
     uint32_t tkColumn = token->column;
@@ -33,10 +33,10 @@ static void falconCompileError(FalconVM *vm, Scanner *scanner, Token *token, con
 /**
  * Presents a syntax/compiler error to the programmer.
  */
-void falconCompilerError(FalconCompiler *compiler, Token *token, const char *message) {
+void compilerError(FalconCompiler *compiler, Token *token, const char *message) {
     if (compiler->parser->panicMode) return; /* Checks and sets error recovery */
     compiler->parser->panicMode = true;
-    falconCompileError(compiler->vm, compiler->scanner, token, message); /* Presents the error */
+    compileTimeError(compiler->vm, compiler->scanner, token, message); /* Presents the error */
     compiler->parser->hadError = true;
 }
 
@@ -63,7 +63,7 @@ static void printCallFrames(FalconVM *vm, int initial, int final) {
 /**
  * Presents a runtime error to the programmer.
  */
-void falconRuntimeError(FalconVM *vm, const char *format, va_list args) {
+static void runtimeError(FalconVM *vm, const char *format, va_list args) {
     fprintf(stderr, "RuntimeError: ");
     vfprintf(stderr, format, args); /* Prints the error */
     fprintf(stderr, "\n");
@@ -84,10 +84,10 @@ void falconRuntimeError(FalconVM *vm, const char *format, va_list args) {
 /**
  * Presents a runtime error to the programmer and resets the VM stack.
  */
-void falconVMError(FalconVM *vm, const char *format, ...) {
+void interpreterError(FalconVM *vm, const char *format, ...) {
     va_list args;
     va_start(args, format);
-    falconRuntimeError(vm, format, args); /* Presents the error */
+    runtimeError(vm, format, args); /* Presents the error */
     va_end(args);
-    resetVMStack(vm); /* Resets the stack due to error */
+    resetStack(vm); /* Resets the stack due to error */
 }

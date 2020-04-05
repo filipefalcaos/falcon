@@ -20,7 +20,7 @@
 /**
  * Resets the virtual machine stack.
  */
-void resetVMStack(FalconVM *vm) {
+void resetStack(FalconVM *vm) {
     vm->stackTop = vm->stack;
     vm->openUpvalues = NULL;
     vm->frameCount = 0;
@@ -29,8 +29,8 @@ void resetVMStack(FalconVM *vm) {
 /**
  * Initializes the Falcon's virtual machine.
  */
-void falconInitVM(FalconVM *vm) {
-    resetVMStack(vm); /* Inits the VM stack */
+void initFalconVM(FalconVM *vm) {
+    resetStack(vm); /* Inits the VM stack */
 
     /* Inits the VM fields */
     vm->fileName = NULL;
@@ -47,7 +47,7 @@ void falconInitVM(FalconVM *vm) {
 
     initTable(&vm->strings); /* Inits the table of interned strings */
     initTable(&vm->globals); /* Inits the table of globals */
-    falconDefNatives(vm);    /* Sets native functions */
+    defineNatives(vm);    /* Sets native functions */
 
     /* Defines the string for class initializers */
     vm->initStr = NULL;
@@ -57,7 +57,7 @@ void falconInitVM(FalconVM *vm) {
 /**
  * Frees the Falcon's virtual machine and its allocated objects.
  */
-void falconFreeVM(FalconVM *vm) {
+void freeFalconVM(FalconVM *vm) {
     vm->initStr = NULL;
     freeTable(vm, &vm->strings);
     freeTable(vm, &vm->globals);
@@ -67,9 +67,9 @@ void falconFreeVM(FalconVM *vm) {
 /**
  * Pushes a value to the Falcon's virtual machine stack.
  */
-bool VMPush(FalconVM *vm, FalconValue value) {
+bool push(FalconVM *vm, FalconValue value) {
     if ((vm->stackTop - &vm->stack[0]) > FALCON_STACK_MAX - 1) {
-        falconVMError(vm, VM_STACK_OVERFLOW);
+        interpreterError(vm, VM_STACK_OVERFLOW);
         return false;
     }
 
@@ -81,7 +81,7 @@ bool VMPush(FalconVM *vm, FalconValue value) {
 /**
  * Pops a value from the Falcon's virtual machine stack.
  */
-FalconValue VMPop(FalconVM *vm) {
+FalconValue pop(FalconVM *vm) {
     vm->stackTop--;
     return *vm->stackTop;
 }
@@ -89,24 +89,22 @@ FalconValue VMPop(FalconVM *vm) {
 /**
  * Pops and discard the two value from the top of the Falcon's virtual machine stack.
  */
-void VMPop2(FalconVM *vm) {
-    VMPop(vm);
-    VMPop(vm);
+void popTwice(FalconVM *vm) {
+    pop(vm);
+    pop(vm);
 }
 
 /**
  * Pops and discard "n" values from the top of the Falcon's virtual machine stack.
  */
-void VMPopN(FalconVM *vm, long int n) {
-    for (long int i = 0; i < n; i++) {
-        VMPop(vm);
-    }
+void popN(FalconVM *vm, long int n) {
+    for (long int i = 0; i < n; i++) pop(vm);
 }
 
 /**
  * Peeks a element on the Falcon's virtual machine stack.
  */
-static FalconValue VMPeek(FalconVM *vm, int distance) { return vm->stackTop[-1 - distance]; }
+static FalconValue peek(FalconVM *vm, int distance) { return vm->stackTop[-1 - distance]; }
 
 /**
  * Executes a call on the given Falcon function by setting its call frame to be run. If the call
@@ -114,12 +112,12 @@ static FalconValue VMPeek(FalconVM *vm, int distance) { return vm->stackTop[-1 -
  */
 static bool call(FalconVM *vm, ObjClosure *closure, int argCount) {
     if (argCount != closure->function->arity) {
-        falconVMError(vm, VM_ARGS_COUNT_ERR, closure->function->arity, argCount);
+        interpreterError(vm, VM_ARGS_COUNT_ERR, closure->function->arity, argCount);
         return false;
     }
 
     if (vm->frameCount == FALCON_FRAMES_MAX) {
-        falconVMError(vm, VM_STACK_OVERFLOW);
+        interpreterError(vm, VM_STACK_OVERFLOW);
         return false;
     }
 
@@ -146,7 +144,7 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
                 if (tableGet(&class_->methods, vm->initStr, &init)) {
                     return call(vm, AS_CLOSURE(init), argCount); /* Calls "init" as a closure */
                 } else if (argCount != 0) {
-                    falconVMError(vm, VM_INIT_ERR, argCount);
+                    interpreterError(vm, VM_INIT_ERR, argCount);
                     return false;
                 }
 
@@ -162,9 +160,9 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
             case OBJ_NATIVE: {
                 FalconNativeFn native = AS_NATIVE(callee)->function;
                 FalconValue out = native(vm, argCount, vm->stackTop - argCount);
-                if (IS_ERR(out)) return false;      /* Checks if a runtime error occurred */
-                vm->stackTop -= argCount + 1;       /* Updates the stack to where it was */
-                if (!VMPush(vm, out)) return false; /* Pushes the return value */
+                if (IS_ERR(out)) return false;    /* Checks if a runtime error occurred */
+                vm->stackTop -= argCount + 1;     /* Updates the stack to where it was */
+                if (!push(vm, out)) return false; /* Pushes the return value */
                 return true;
             }
             default:
@@ -172,7 +170,7 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
         }
     }
 
-    falconVMError(vm, VM_VALUE_NOT_CALL_ERR);
+    interpreterError(vm, VM_VALUE_NOT_CALL_ERR);
     return false;
 }
 
@@ -183,14 +181,14 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
 static bool bindMethod(FalconVM *vm, ObjClass *class_, ObjString *methodName) {
     FalconValue method;
     if (!tableGet(&class_->methods, methodName, &method)) { /* Checks if the method is defined */
-        falconVMError(vm, VM_UNDEF_PROP_ERR, class_->name->chars, methodName->chars);
+        interpreterError(vm, VM_UNDEF_PROP_ERR, class_->name->chars, methodName->chars);
         return false;
     }
 
     /* Binds the method to the receiver */
-    ObjBMethod* bMethod = falconBMethod(vm, VMPeek(vm, 0), AS_CLOSURE(method));
-    VMPop(vm);
-    VMPush(vm, OBJ_VAL(bMethod));
+    ObjBMethod* bMethod = falconBMethod(vm, peek(vm, 0), AS_CLOSURE(method));
+    pop(vm);
+    push(vm, OBJ_VAL(bMethod));
     return true;
 }
 
@@ -201,7 +199,7 @@ static bool bindMethod(FalconVM *vm, ObjClass *class_, ObjString *methodName) {
 static bool invokeFromClass(FalconVM *vm, ObjClass *class_, ObjString *methodName, int argCount) {
     FalconValue method;
     if (!tableGet(&class_->methods, methodName, &method)) { /* Checks if method is defined */
-        falconVMError(vm, VM_UNDEF_PROP_ERR);
+        interpreterError(vm, VM_UNDEF_PROP_ERR);
         return false;
     }
 
@@ -213,9 +211,9 @@ static bool invokeFromClass(FalconVM *vm, ObjClass *class_, ObjString *methodNam
  * returned, and otherwise, "false".
  */
 static bool invoke(FalconVM *vm, ObjString *calleeName, int argCount) {
-    FalconValue receiver = VMPeek(vm, argCount);
+    FalconValue receiver = peek(vm, argCount);
     if (!IS_INSTANCE(receiver)) {
-        falconVMError(vm, VM_NOT_INSTANCE_ERR);
+        interpreterError(vm, VM_NOT_INSTANCE_ERR);
         return false;
     }
 
@@ -273,17 +271,17 @@ static void closeUpvalues(FalconVM *vm, FalconValue *last) {
  * Defines a new class method by adding it to the table of methods in a class.
  */
 static void defineMethod(FalconVM *vm, ObjString *name) {
-    FalconValue method = VMPeek(vm, 0);           /* Avoids GC */
-    ObjClass *class_ = AS_CLASS(VMPeek(vm, 1));   /* Avoids GC */
+    FalconValue method = peek(vm, 0);             /* Avoids GC */
+    ObjClass *class_ = AS_CLASS(peek(vm, 1));     /* Avoids GC */
     tableSet(vm, &class_->methods, name, method); /* Sets the new method */
-    VMPop(vm);
+    pop(vm);
 }
 
 /**
  * Compares the two string values on the top of the virtual machine stack.
  */
 static int compareStrings(FalconVM *vm) {
-    ObjString *str2 = AS_STRING(VMPop(vm));
+    ObjString *str2 = AS_STRING(pop(vm));
     return cmpStrings(AS_STRING(vm->stackTop[-1]), str2);
 }
 
@@ -292,11 +290,11 @@ static int compareStrings(FalconVM *vm) {
  * string to the stack.
  */
 static void concatenateStrings(FalconVM *vm) {
-    ObjString *b = AS_STRING(VMPeek(vm, 0));     /* Avoids GC */
-    ObjString *a = AS_STRING(VMPeek(vm, 1));     /* Avoids GC */
+    ObjString *b = AS_STRING(peek(vm, 0));       /* Avoids GC */
+    ObjString *a = AS_STRING(peek(vm, 1));       /* Avoids GC */
     ObjString *result = concatStrings(vm, b, a); /* Concatenates both strings */
-    VMPop2(vm);
-    VMPush(vm, OBJ_VAL(result));                  /* Pushes concatenated string */
+    popTwice(vm);
+    push(vm, OBJ_VAL(result));                    /* Pushes concatenated string */
     tableSet(vm, &vm->strings, result, NULL_VAL); /* Interns the string */
 }
 
@@ -321,32 +319,32 @@ static FalconResultCode run(FalconVM *vm) {
 
 /* Checks if the two values at the top of the Falcon VM's stack are numerical Values. If not, a
  * runtime error is returned */
-#define ASSERT_TOP2_NUM(vm)                                     \
-    do {                                                        \
-        if (!IS_NUM(VMPeek(vm, 0)) || !IS_NUM(VMPeek(vm, 1))) { \
-            falconVMError(vm, VM_OPR_NOT_NUM_ERR);              \
-            return FALCON_RUNTIME_ERROR;                        \
-        }                                                       \
+#define ASSERT_TOP2_NUM(vm)                                 \
+    do {                                                    \
+        if (!IS_NUM(peek(vm, 0)) || !IS_NUM(peek(vm, 1))) { \
+            interpreterError(vm, VM_OPR_NOT_NUM_ERR);       \
+            return FALCON_RUNTIME_ERROR;                    \
+        }                                                   \
     } while (false)
 
 /* Checks if the value at the given position "pos" of the Falcon VM's stack is a numerical Value.
  * If not, a runtime error is returned */
 #define ASSERT_NUM(vm, pos, error)       \
     do {                                 \
-        if (!IS_NUM(VMPeek(vm, pos))) {  \
-            falconVMError(vm, error);    \
+        if (!IS_NUM(peek(vm, pos))) {    \
+            interpreterError(vm, error); \
             return FALCON_RUNTIME_ERROR; \
         }                                \
     } while (false)
 
 /* Checks if the value at the given position "pos" of the Falcon VM's stack is not zero. If not, a
  * runtime error is returned */
-#define ASSERT_NOT_0(vm, pos)                   \
-    do {                                        \
-        if (AS_NUM(VMPeek(vm, pos)) == 0) {     \
-            falconVMError(vm, VM_DIV_ZERO_ERR); \
-            return FALCON_RUNTIME_ERROR;        \
-        }                                       \
+#define ASSERT_NOT_0(vm, pos)                      \
+    do {                                           \
+        if (AS_NUM(peek(vm, pos)) == 0) {          \
+            interpreterError(vm, VM_DIV_ZERO_ERR); \
+            return FALCON_RUNTIME_ERROR;           \
+        }                                          \
     } while (false)
 
 /* Performs a binary operation of the "op" operator on the two elements on the top of the Falcon
@@ -354,7 +352,7 @@ static FalconResultCode run(FalconVM *vm) {
 #define BINARY_OP(vm, op, valueType)            \
     do {                                        \
         ASSERT_TOP2_NUM(vm);                    \
-        double b = AS_NUM(VMPop(vm));           \
+        double b = AS_NUM(pop(vm));             \
         double a = AS_NUM((vm)->stackTop[-1]);  \
         (vm)->stackTop[-1] = valueType(a op b); \
     } while (false)
@@ -365,7 +363,7 @@ static FalconResultCode run(FalconVM *vm) {
     do {                                      \
         ASSERT_TOP2_NUM(vm);                  \
         ASSERT_NOT_0(vm, 0);                  \
-        type b = AS_NUM(VMPop(vm));           \
+        type b = AS_NUM(pop(vm));             \
         type a = AS_NUM((vm)->stackTop[-1]);  \
         (vm)->stackTop[-1] = NUM_VAL(a op b); \
     } while (false)
@@ -374,14 +372,14 @@ static FalconResultCode run(FalconVM *vm) {
  * the top of the Falcon VM's stack. Then, sets the result on the top of the stack */
 #define GL_COMPARE(vm, op)                                                             \
     do {                                                                               \
-        if (IS_STRING(VMPeek(vm, 0)) && IS_STRING(VMPeek(vm, 1))) {                    \
+        if (IS_STRING(peek(vm, 0)) && IS_STRING(peek(vm, 1))) {                        \
             int comparison = compareStrings(vm);                                       \
             (vm)->stackTop[-1] = (comparison op 0) ? BOOL_VAL(true) : BOOL_VAL(false); \
-        } else if (IS_NUM(VMPeek(vm, 0)) && IS_NUM(VMPeek(vm, 1))) {                   \
-            double a = AS_NUM(VMPop(vm));                                              \
+        } else if (IS_NUM(peek(vm, 0)) && IS_NUM(peek(vm, 1))) {                       \
+            double a = AS_NUM(pop(vm));                                                \
             (vm)->stackTop[-1] = BOOL_VAL(AS_NUM((vm)->stackTop[-1]) op a);            \
         } else {                                                                       \
-            falconVMError(vm, VM_OPR_NOT_NUM_STR_ERR);                                 \
+            interpreterError(vm, VM_OPR_NOT_NUM_STR_ERR);                              \
             return FALCON_RUNTIME_ERROR;                                               \
         }                                                                              \
     } while (false)
@@ -400,17 +398,17 @@ static FalconResultCode run(FalconVM *vm) {
             /* Constants and literals */
             case OP_LOADCONST: {
                 uint16_t index = READ_BYTE() | (uint16_t)(READ_BYTE() << 8u);
-                if (!VMPush(vm, CURR_CONSTANTS().values[index])) return FALCON_RUNTIME_ERROR;
+                if (!push(vm, CURR_CONSTANTS().values[index])) return FALCON_RUNTIME_ERROR;
                 break;
             }
             case OP_LOADFALSE:
-                if (!VMPush(vm, BOOL_VAL(false))) return FALCON_RUNTIME_ERROR;
+                if (!push(vm, BOOL_VAL(false))) return FALCON_RUNTIME_ERROR;
                 break;
             case OP_LOADTRUE:
-                if (!VMPush(vm, BOOL_VAL(true))) return FALCON_RUNTIME_ERROR;
+                if (!push(vm, BOOL_VAL(true))) return FALCON_RUNTIME_ERROR;
                 break;
             case OP_LOADNULL:
-                if (!VMPush(vm, NULL_VAL)) return FALCON_RUNTIME_ERROR;
+                if (!push(vm, NULL_VAL)) return FALCON_RUNTIME_ERROR;
                 break;
 
             /* Lists */
@@ -420,11 +418,11 @@ static FalconResultCode run(FalconVM *vm) {
 
                 /* Adds the elements to the list */
                 for (uint16_t i = 0; i < elementsCount; i++) {
-                    list.elements.values[i] = VMPeek(vm, elementsCount - i - 1);
+                    list.elements.values[i] = peek(vm, elementsCount - i - 1);
                 }
 
-                VMPopN(vm, elementsCount); /* Discards the elements */
-                VMPush(vm, OBJ_VAL(&list));
+                popN(vm, elementsCount); /* Discards the elements */
+                push(vm, OBJ_VAL(&list));
                 break;
             }
             case OP_DEFMAP: {
@@ -433,22 +431,22 @@ static FalconResultCode run(FalconVM *vm) {
 
                 /* Adds the entries to the map */
                 for (uint16_t i = 0; i < entriesCount; i++) {
-                    FalconValue value = VMPeek(vm, 0);
-                    FalconValue key = VMPeek(vm, 1);
+                    FalconValue value = peek(vm, 0);
+                    FalconValue key = peek(vm, 1);
                     tableSet(vm, &map.entries, AS_STRING(key), value);
-                    VMPop2(vm); /* Discards the entry's key and value */
+                    popTwice(vm); /* Discards the entry's key and value */
                 }
 
-                VMPush(vm, OBJ_VAL(&map));
+                push(vm, OBJ_VAL(&map));
                 break;
             }
             case OP_GETSUB: {
                 ASSERT_NUM(vm, 0, VM_INDEX_NOT_NUM_ERR); /* Checks if index is valid */
-                int index = (int) AS_NUM(VMPop(vm));
-                FalconValue subscript = VMPop(vm);
+                int index = (int) AS_NUM(pop(vm));
+                FalconValue subscript = pop(vm);
 
                 if (!IS_OBJ(subscript)) { /* Checks if subscript is an object */
-                    falconVMError(vm, VM_INDEX_ERR);
+                    interpreterError(vm, VM_INDEX_ERR);
                     return FALCON_RUNTIME_ERROR;
                 }
 
@@ -458,28 +456,28 @@ static FalconResultCode run(FalconVM *vm) {
                         ObjList *list = AS_LIST(subscript);
                         if (index < 0) index = list->elements.count + index;
                         if (index >= 0 && index < list->elements.count) {
-                            VMPush(vm, list->elements.values[index]);
+                            push(vm, list->elements.values[index]);
                             break;
                         }
 
                         /* Out of bounds index */
-                        falconVMError(vm, VM_LIST_BOUNDS_ERR);
+                        interpreterError(vm, VM_LIST_BOUNDS_ERR);
                         return FALCON_RUNTIME_ERROR;
                     }
                     case OBJ_STRING: {
                         ObjString *string = AS_STRING(subscript);
                         if (index < 0) index = (int) string->length + index;
                         if (index >= 0 && index < string->length) {
-                            VMPush(vm, OBJ_VAL(falconString(vm, &string->chars[index], 1)));
+                            push(vm, OBJ_VAL(falconString(vm, &string->chars[index], 1)));
                             break;
                         }
 
                         /* Out of bounds index */
-                        falconVMError(vm, VM_STRING_BOUNDS_ERR);
+                        interpreterError(vm, VM_STRING_BOUNDS_ERR);
                         return FALCON_RUNTIME_ERROR;
                     }
                     default: /* Only lists and strings can be subscript */
-                        falconVMError(vm, VM_INDEX_ERR);
+                        interpreterError(vm, VM_INDEX_ERR);
                         return FALCON_RUNTIME_ERROR;
                 }
 
@@ -487,12 +485,12 @@ static FalconResultCode run(FalconVM *vm) {
             }
             case OP_SETSUB: {
                 ASSERT_NUM(vm, 1, VM_INDEX_NOT_NUM_ERR); /* Checks if index is valid */
-                FalconValue value = VMPop(vm);
-                int index = (int) AS_NUM(VMPop(vm));
-                FalconValue subscript = VMPop(vm);
+                FalconValue value = pop(vm);
+                int index = (int) AS_NUM(pop(vm));
+                FalconValue subscript = pop(vm);
 
                 if (!IS_OBJ(subscript)) { /* Checks if subscript is an object */
-                    falconVMError(vm, VM_INDEX_ERR);
+                    interpreterError(vm, VM_INDEX_ERR);
                     return FALCON_RUNTIME_ERROR;
                 }
 
@@ -502,16 +500,16 @@ static FalconResultCode run(FalconVM *vm) {
                         if (index < 0) index = list->elements.count + index;
                         if (index >= 0 && index < list->elements.count) {
                             list->elements.values[index] = value;
-                            VMPush(vm, value);
+                            push(vm, value);
                             break;
                         }
 
                         /* Out of bounds index */
-                        falconVMError(vm, VM_LIST_BOUNDS_ERR);
+                        interpreterError(vm, VM_LIST_BOUNDS_ERR);
                         return FALCON_RUNTIME_ERROR;
                     }
                     default: /* Only lists support subscript assignment */
-                        falconVMError(vm, VM_INDEX_ASSG_ERR);
+                        interpreterError(vm, VM_INDEX_ASSG_ERR);
                         return FALCON_RUNTIME_ERROR;
                 }
 
@@ -521,16 +519,16 @@ static FalconResultCode run(FalconVM *vm) {
             /* Relational operations */
             case OP_AND: {
                 uint16_t offset = READ_SHORT();
-                if (isFalsy(VMPeek(vm, 0)))
+                if (isFalsy(peek(vm, 0)))
                     frame->pc += offset;
                 else
-                    VMPop(vm);
+                    pop(vm);
                 break;
             }
             case OP_OR: {
                 uint16_t offset = READ_SHORT();
-                if (isFalsy(VMPeek(vm, 0)))
-                    VMPop(vm);
+                if (isFalsy(peek(vm, 0)))
+                    pop(vm);
                 else
                     frame->pc += offset;
                 break;
@@ -539,7 +537,7 @@ static FalconResultCode run(FalconVM *vm) {
                 vm->stackTop[-1] = BOOL_VAL(isFalsy(vm->stackTop[-1]));
                 break;
             case OP_EQUAL: {
-                FalconValue b = VMPop(vm);
+                FalconValue b = pop(vm);
                 vm->stackTop[-1] = BOOL_VAL(valuesEqual(vm->stackTop[-1], b));
                 break;
             }
@@ -552,13 +550,13 @@ static FalconResultCode run(FalconVM *vm) {
 
             /* Arithmetic operations */
             case OP_ADD: {
-                if (IS_STRING(VMPeek(vm, 0)) && IS_STRING(VMPeek(vm, 1))) {
+                if (IS_STRING(peek(vm, 0)) && IS_STRING(peek(vm, 1))) {
                     concatenateStrings(vm);
-                } else if (IS_NUM(VMPeek(vm, 0)) && IS_NUM(VMPeek(vm, 1))) {
-                    double a = AS_NUM(VMPop(vm));
+                } else if (IS_NUM(peek(vm, 0)) && IS_NUM(peek(vm, 1))) {
+                    double a = AS_NUM(pop(vm));
                     vm->stackTop[-1] = NUM_VAL(AS_NUM(vm->stackTop[-1]) + a);
                 } else {
-                    falconVMError(vm, VM_OPR_NOT_NUM_STR_ERR);
+                    interpreterError(vm, VM_OPR_NOT_NUM_STR_ERR);
                     return FALCON_RUNTIME_ERROR;
                 }
 
@@ -583,7 +581,7 @@ static FalconResultCode run(FalconVM *vm) {
             }
             case OP_POW: {
                 ASSERT_TOP2_NUM(vm);
-                double a = AS_NUM(VMPop(vm));
+                double a = AS_NUM(pop(vm));
                 vm->stackTop[-1] = NUM_VAL(pow(AS_NUM(vm->stackTop[-1]), a));
                 break;
             }
@@ -591,8 +589,8 @@ static FalconResultCode run(FalconVM *vm) {
             /* Variable operations */
             case OP_DEFGLOBAL: {
                 ObjString *name = READ_STRING();
-                tableSet(vm, &vm->globals, name, VMPeek(vm, 0));
-                VMPop(vm);
+                tableSet(vm, &vm->globals, name, peek(vm, 0));
+                pop(vm);
                 break;
             }
             case OP_GETGLOBAL: {
@@ -600,18 +598,18 @@ static FalconResultCode run(FalconVM *vm) {
                 FalconValue value;
 
                 if (!tableGet(&vm->globals, name, &value)) { /* Checks if undefined */
-                    falconVMError(vm, VM_UNDEF_VAR_ERR, (name)->chars);
+                    interpreterError(vm, VM_UNDEF_VAR_ERR, (name)->chars);
                     return FALCON_RUNTIME_ERROR;
                 }
 
-                if (!VMPush(vm, value)) return FALCON_RUNTIME_ERROR;
+                if (!push(vm, value)) return FALCON_RUNTIME_ERROR;
                 break;
             }
             case OP_SETGLOBAL: {
                 ObjString *name = READ_STRING();
-                if (tableSet(vm, &vm->globals, name, VMPeek(vm, 0))) { /* Checks if undefined */
+                if (tableSet(vm, &vm->globals, name, peek(vm, 0))) { /* Checks if undefined */
                     tableDelete(&(vm)->globals, name);
-                    falconVMError(vm, VM_UNDEF_VAR_ERR, (name)->chars);
+                    interpreterError(vm, VM_UNDEF_VAR_ERR, (name)->chars);
                     return FALCON_RUNTIME_ERROR;
                 }
 
@@ -619,26 +617,26 @@ static FalconResultCode run(FalconVM *vm) {
             }
             case OP_GETUPVAL: {
                 uint8_t slot = READ_BYTE();
-                if (!VMPush(vm, *frame->closure->upvalues[slot]->slot)) return FALCON_RUNTIME_ERROR;
+                if (!push(vm, *frame->closure->upvalues[slot]->slot)) return FALCON_RUNTIME_ERROR;
                 break;
             }
             case OP_SETUPVAL: {
                 uint8_t slot = READ_BYTE();
-                *frame->closure->upvalues[slot]->slot = VMPeek(vm, 0);
+                *frame->closure->upvalues[slot]->slot = peek(vm, 0);
                 break;
             }
             case OP_CLOSEUPVAL:
                 closeUpvalues(vm, vm->stackTop - 1);
-                VMPop(vm);
+                pop(vm);
                 break;
             case OP_GETLOCAL: {
                 uint8_t slot = READ_BYTE();
-                if (!VMPush(vm, frame->slots[slot])) return FALCON_RUNTIME_ERROR;
+                if (!push(vm, frame->slots[slot])) return FALCON_RUNTIME_ERROR;
                 break;
             }
             case OP_SETLOCAL: {
                 uint8_t slot = READ_BYTE();
-                frame->slots[slot] = VMPeek(vm, 0);
+                frame->slots[slot] = peek(vm, 0);
                 break;
             }
 
@@ -650,7 +648,7 @@ static FalconResultCode run(FalconVM *vm) {
             }
             case OP_JUMPIFF: {
                 uint16_t offset = READ_SHORT();
-                if (isFalsy(VMPeek(vm, 0))) frame->pc += offset;
+                if (isFalsy(peek(vm, 0))) frame->pc += offset;
                 break;
             }
             case OP_LOOP: {
@@ -663,7 +661,7 @@ static FalconResultCode run(FalconVM *vm) {
             case OP_CLOSURE: {
                 ObjFunction *function = AS_FUNCTION(READ_CONSTANT());
                 ObjClosure *closure = falconClosure(vm, function);
-                if (!VMPush(vm, OBJ_VAL(closure))) return FALCON_RUNTIME_ERROR;
+                if (!push(vm, OBJ_VAL(closure))) return FALCON_RUNTIME_ERROR;
 
                 /* Capture upvalues */
                 for (int i = 0; i < closure->upvalueCount; i++) {
@@ -681,41 +679,41 @@ static FalconResultCode run(FalconVM *vm) {
             }
             case OP_CALL: {
                 int argCount = READ_BYTE();
-                if (!callValue(vm, VMPeek(vm, argCount), argCount)) return FALCON_RUNTIME_ERROR;
+                if (!callValue(vm, peek(vm, argCount), argCount)) return FALCON_RUNTIME_ERROR;
                 frame = &vm->frames[vm->frameCount - 1]; /* Updates the current frame */
                 break;
             }
             case OP_RETURN: {
-                FalconValue result = VMPop(vm);  /* Gets the function's return value */
+                FalconValue result = pop(vm);    /* Gets the function's return value */
                 closeUpvalues(vm, frame->slots); /* Closes upvalues */
                 vm->frameCount--;
 
                 if (vm->frameCount == 0) { /* Checks if top level code is finished */
-                    VMPop(vm);             /* Pops "script" from the stack */
+                    pop(vm);               /* Pops "script" from the stack */
                     return FALCON_OK;
                 }
 
-                vm->stackTop = frame->slots;                          /* Resets the stack top */
-                if (!VMPush(vm, result)) return FALCON_RUNTIME_ERROR; /* Pushes the return value */
+                vm->stackTop = frame->slots;                        /* Resets the stack top */
+                if (!push(vm, result)) return FALCON_RUNTIME_ERROR; /* Pushes the return value */
                 frame = &vm->frames[vm->frameCount - 1]; /* Updates the current frame */
                 break;
             }
 
             /* Class operations */
             case OP_DEFCLASS:
-                VMPush(vm, OBJ_VAL(falconClass(vm, READ_STRING())));
+                push(vm, OBJ_VAL(falconClass(vm, READ_STRING())));
                 break;
             case OP_INHERIT: {
-                FalconValue superclass = VMPeek(vm, 1);
+                FalconValue superclass = peek(vm, 1);
                 if (!IS_CLASS(superclass)) { /* Checks if superclass value is valid */
-                    falconVMError(vm, VM_INHERITANCE_ERR);
+                    interpreterError(vm, VM_INHERITANCE_ERR);
                     return FALCON_RUNTIME_ERROR;
                 }
 
                 /* Applies the inheritance effect */
-                ObjClass *subclass = AS_CLASS(VMPeek(vm, 0));
+                ObjClass *subclass = AS_CLASS(peek(vm, 0));
                 copyEntries(vm, &AS_CLASS(superclass)->methods, &subclass->methods);
-                VMPop(vm);
+                pop(vm);
                 break;
             }
             case OP_DEFMETHOD:
@@ -729,19 +727,19 @@ static FalconResultCode run(FalconVM *vm) {
                 break;
             }
             case OP_GETPROP: {
-                if (!IS_INSTANCE(VMPeek(vm, 0))) {
-                    falconVMError(vm, VM_NOT_INSTANCE_ERR);
+                if (!IS_INSTANCE(peek(vm, 0))) {
+                    interpreterError(vm, VM_NOT_INSTANCE_ERR);
                     return FALCON_RUNTIME_ERROR;
                 }
 
-                ObjInstance *instance = AS_INSTANCE(VMPeek(vm, 0));
+                ObjInstance *instance = AS_INSTANCE(peek(vm, 0));
                 ObjString *name = READ_STRING();
                 FalconValue value;
 
                 /* Looks for a valid field */
                 if (tableGet(&instance->fields, name, &value)) {
-                    VMPop(vm);         /* Pops the instance */
-                    VMPush(vm, value); /* Pushes the field value */
+                    pop(vm);         /* Pops the instance */
+                    push(vm, value); /* Pushes the field value */
                     break;
                 }
 
@@ -752,22 +750,22 @@ static FalconResultCode run(FalconVM *vm) {
                 break;
             }
             case OP_SETPROP: {
-                if (!IS_INSTANCE(VMPeek(vm, 1))) {
-                    falconVMError(vm, VM_NOT_INSTANCE_ERR);
+                if (!IS_INSTANCE(peek(vm, 1))) {
+                    interpreterError(vm, VM_NOT_INSTANCE_ERR);
                     return FALCON_RUNTIME_ERROR;
                 }
 
-                ObjInstance *instance = AS_INSTANCE(VMPeek(vm, 1));
-                tableSet(vm, &instance->fields, READ_STRING(), VMPeek(vm, 0));
+                ObjInstance *instance = AS_INSTANCE(peek(vm, 1));
+                tableSet(vm, &instance->fields, READ_STRING(), peek(vm, 0));
 
-                FalconValue value = VMPop(vm); /* Pops the assigned value */
-                VMPop(vm);                     /* Pops the instance */
-                VMPush(vm, value);             /* Pushes the new field value */
+                FalconValue value = pop(vm); /* Pops the assigned value */
+                pop(vm);                     /* Pops the instance */
+                push(vm, value);             /* Pushes the new field value */
                 break;
             }
             case OP_SUPER: {
                 ObjString *name = READ_STRING();
-                ObjClass *superclass = AS_CLASS(VMPop(vm));
+                ObjClass *superclass = AS_CLASS(pop(vm));
 
                 /* Tries to look for the method on the superclass, leaving it on the stack top */
                 if (!bindMethod(vm, superclass, name))
@@ -778,7 +776,7 @@ static FalconResultCode run(FalconVM *vm) {
             case OP_INVSUPER: {
                 ObjString *name = READ_STRING();
                 int argCount = READ_BYTE();
-                ObjClass *superclass = AS_CLASS(VMPop(vm));
+                ObjClass *superclass = AS_CLASS(pop(vm));
 
                 /* Tries to invoke the method from the superclass */
                 if (!invokeFromClass(vm, superclass, name, argCount))
@@ -790,28 +788,28 @@ static FalconResultCode run(FalconVM *vm) {
 
             /* VM operations */
             case OP_DUPT:
-                VMPush(vm, VMPeek(vm, 0));
+                push(vm, peek(vm, 0));
                 break;
             case OP_POPT:
-                VMPop(vm);
+                pop(vm);
                 break;
             case OP_POPEXPR: {
-                FalconValue result = VMPeek(vm, 0);
+                FalconValue result = peek(vm, 0);
                 if (!IS_NULL(result)) {
                     printValue(vm, result);
                     printf("\n");
                 }
 
-                VMPop(vm);
+                pop(vm);
                 break;
             }
             case OP_TEMP:
-                falconVMError(vm, VM_UNREACHABLE_ERR, instruction);
+                interpreterError(vm, VM_UNREACHABLE_ERR, instruction);
                 return FALCON_RUNTIME_ERROR;
 
             /* Unknown opcode */
             default:
-                falconVMError(vm, VM_UNKNOWN_OPCODE_ERR, instruction);
+                interpreterError(vm, VM_UNKNOWN_OPCODE_ERR, instruction);
                 return FALCON_RUNTIME_ERROR;
         }
     }
@@ -838,10 +836,10 @@ FalconResultCode falconInterpret(FalconVM *vm, const char *source) {
     if (function == NULL) return FALCON_COMPILE_ERROR;
 
     /* Set the script to run */
-    VMPush(vm, OBJ_VAL(function));
+    push(vm, OBJ_VAL(function));
     ObjClosure *closure = falconClosure(vm, function);
-    VMPop(vm);
-    VMPush(vm, OBJ_VAL(closure));
+    pop(vm);
+    push(vm, OBJ_VAL(closure));
     callValue(vm, OBJ_VAL(closure), 0);
 
     return run(vm); /* Executes the bytecode chunk */

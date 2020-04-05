@@ -74,12 +74,12 @@ struct FalconVM {
 typedef enum { FALCON_OK, FALCON_COMPILE_ERROR, FALCON_RUNTIME_ERROR } FalconResultCode;
 
 /* Virtual machine operations */
-void falconInitVM(FalconVM *vm);
-void falconFreeVM(FalconVM *vm);
-void resetVMStack(FalconVM *vm);
-bool VMPush(FalconVM *vm, FalconValue value);
-FalconValue VMPop(FalconVM *vm);
-void VMPop2(FalconVM *vm);
+void initFalconVM(FalconVM *vm);
+void freeFalconVM(FalconVM *vm);
+void resetStack(FalconVM *vm);
+bool push(FalconVM *vm, FalconValue value);
+FalconValue pop(FalconVM *vm);
+void popTwice(FalconVM *vm);
 FalconResultCode falconInterpret(FalconVM *vm, const char *source);
 
 /* The initial allocation size for the heap, in bytes */
@@ -87,10 +87,10 @@ FalconResultCode falconInterpret(FalconVM *vm, const char *source);
 
 /* Runtime error messages */
 /* VM Bug */
-#define VM_BUG_REPORT          "Please provide a bug report."
-#define VM_BUG                 "This is most likely a bug in Falcon itself. " VM_BUG_REPORT
-#define VM_UNKNOWN_OPCODE_ERR  "Unknown opcode %d. " VM_BUG
-#define VM_UNREACHABLE_ERR     "Opcode %d should be unreachable. " VM_BUG
+#define VM_BUG_REPORT         "Please provide a bug report."
+#define VM_BUG                "This is most likely a bug in Falcon itself. " VM_BUG_REPORT
+#define VM_UNKNOWN_OPCODE_ERR "Unknown opcode %d. " VM_BUG
+#define VM_UNREACHABLE_ERR    "Opcode %d should be unreachable. " VM_BUG
 
 /* Overflow and Limits */
 #define VM_STACK_OVERFLOW "Stack overflow."

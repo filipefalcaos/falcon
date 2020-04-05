@@ -101,8 +101,9 @@ static int closureInstruction(const char *name, FalconVM *vm, BytecodeChunk *byt
     for (int i = 0; i < function->upvalueCount; i++) {
         int isLocal = bytecode->code[offset++];
         int index = bytecode->code[offset++];
-        printf("%04d    |                     %s %d\n", offset - 2, isLocal ? "local" : "upvalue",
-               index);
+        const int spacePadding = 19;
+        printf("%04d    | %*c %s %d\n", offset - 2, spacePadding, ' ',
+               isLocal ? "local" : "upvalue", index);
     }
 
     return offset;

@@ -92,9 +92,9 @@ int getLine(BytecodeChunk *bytecode, int instruction) {
  * Adds a new constant to a bytecode chunk.
  */
 int addConstant(FalconVM *vm, BytecodeChunk *bytecode, FalconValue value) {
-    VMPush(vm, value);                              /* Avoids GC */
+    push(vm, value);                                /* Avoids GC */
     writeValArray(vm, &bytecode->constants, value); /* Adds the constant */
-    VMPop(vm);
+    pop(vm);
     return bytecode->constants.count - 1;
 }
 

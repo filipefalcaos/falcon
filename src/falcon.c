@@ -56,16 +56,6 @@ static void printInfo() {
 }
 
 /**
- * Prints Falcon's authors.
- */
-void falconPrintAuthors() { printf("Falcon authors: %s\n", FALCON_AUTHORS); }
-
-/**
- * Prints Falcon's MIT license.
- */
-void falconPrintLicense() { printf("%s\n%s\n", FALCON_COPYRIGHT, FALCON_MORE_INFO); }
-
-/**
  * Prints Falcon's interpreter usage details.
  */
 void falconPrintUsage() {
@@ -245,8 +235,8 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
 
 int main(int argc, char **argv) {
     FalconVM vm;
-    falconInitVM(&vm);
+    initFalconVM(&vm);
     processArgs(&vm, argc, argv);
-    falconFreeVM(&vm);
+    freeFalconVM(&vm);
     return 0;
 }

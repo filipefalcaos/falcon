@@ -7,11 +7,6 @@
 #ifndef FALCON_H
 #define FALCON_H
 
-/* Falcon functions */
-void falconPrintAuthors();
-void falconPrintLicense();
-void falconPrintUsage();
-
 /* Falcon version and copyright */
 #define FALCON_VERSION_MAJOR   "0"
 #define FALCON_VERSION_MINOR   "0"

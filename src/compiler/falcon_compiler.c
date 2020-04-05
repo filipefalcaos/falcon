@@ -59,7 +59,7 @@ static void advance(FalconCompiler *compiler) {
     while (true) {
         compiler->parser->current = scanToken(compiler->scanner, compiler->vm);
         if (compiler->parser->current.type != TK_ERROR) break;
-        falconCompilerError(compiler, &compiler->parser->current, compiler->parser->current.start);
+        compilerError(compiler, &compiler->parser->current, compiler->parser->current.start);
     }
 }
 
@@ -72,7 +72,7 @@ static void consume(FalconCompiler *compiler, FalconTokens type, const char *mes
         return;
     }
 
-    falconCompilerError(compiler, &compiler->parser->current, message);
+    compilerError(compiler, &compiler->parser->current, message);
 }
 
 /**
@@ -125,7 +125,7 @@ static void emitLoop(FalconCompiler *compiler, int loopStart) {
     uint16_t offset = (uint16_t)(currentBytecode(compiler->fCompiler)->count - loopStart + 2);
 
     if (offset > UINT16_MAX) /* Loop is too long? */
-        falconCompilerError(compiler, &compiler->parser->previous, COMP_LOOP_LIMIT_ERR);
+        compilerError(compiler, &compiler->parser->previous, COMP_LOOP_LIMIT_ERR);
 
     emitByte(compiler, (uint8_t)((uint16_t)(offset >> 8u) & 0xffu));
     emitByte(compiler, (uint8_t)(offset & 0xffu));
@@ -170,7 +170,7 @@ static void emitCollection(FalconCompiler *compiler, uint8_t opcode, uint16_t el
 static uint8_t makeConstant(FalconCompiler *compiler, FalconValue value) {
     int constant = addConstant(compiler->vm, currentBytecode(compiler->fCompiler), value);
     if (constant > UINT8_MAX) {
-        falconCompilerError(compiler, &compiler->parser->previous, COMP_CONST_LIMIT_ERR);
+        compilerError(compiler, &compiler->parser->previous, COMP_CONST_LIMIT_ERR);
         return 0;
     }
 
@@ -184,7 +184,7 @@ static uint8_t makeConstant(FalconCompiler *compiler, FalconValue value) {
 static void emitConstant(FalconCompiler *compiler, FalconValue value) {
     int constant = addConstant(compiler->vm, currentBytecode(compiler->fCompiler), value);
     if (constant > UINT16_MAX) {
-        falconCompilerError(compiler, &compiler->parser->previous, COMP_CONST_LIMIT_ERR);
+        compilerError(compiler, &compiler->parser->previous, COMP_CONST_LIMIT_ERR);
     } else {
         writeConstant(compiler->vm, currentBytecode(compiler->fCompiler), (uint16_t) constant,
                       compiler->parser->previous.line);
@@ -201,7 +201,7 @@ static void patchJump(FalconCompiler *compiler, int offset) {
                                2); /* -2 to adjust by offset */
 
     if (jump > UINT16_MAX) /* Jump is too long? */
-        falconCompilerError(compiler, &compiler->parser->previous, COMP_JUMP_LIMIT_ERR);
+        compilerError(compiler, &compiler->parser->previous, COMP_JUMP_LIMIT_ERR);
 
     currentBytecode(compiler->fCompiler)->code[offset] = (uint8_t)((uint16_t)(jump >> 8u) & 0xffu);
     currentBytecode(compiler->fCompiler)->code[offset + 1] = (uint8_t)(jump & 0xffu);
@@ -327,7 +327,7 @@ static int resolveLocal(FalconCompiler *compiler, FunctionCompiler *fCompiler, T
         Local *local = &fCompiler->locals[i];
         if (identifiersEqual(name, &local->name)) { /* Checks if identifier matches */
             if (local->depth == COMP_UNDEF_SCOPE)
-                falconCompilerError(compiler, &compiler->parser->previous, COMP_READ_INIT_ERR);
+                compilerError(compiler, &compiler->parser->previous, COMP_READ_INIT_ERR);
             return i;
         }
     }
@@ -350,7 +350,7 @@ static int addUpvalue(FalconCompiler *compiler, FunctionCompiler *fCompiler, uin
     }
 
     if (upvalueCount == FALCON_MAX_BYTE) { /* Exceeds the limit os upvalues? */
-        falconCompilerError(compiler, &compiler->parser->previous, COMP_CLOSURE_LIMIT_ERR);
+        compilerError(compiler, &compiler->parser->previous, COMP_CLOSURE_LIMIT_ERR);
         return COMP_UNRESOLVED_LOCAL;
     }
 
@@ -389,7 +389,7 @@ static int resolveUpvalue(FalconCompiler *compiler, FunctionCompiler *fCompiler,
 static void addLocal(FalconCompiler *compiler, Token name) {
     FunctionCompiler *fCompiler = compiler->fCompiler;
     if (fCompiler->localCount == FALCON_MAX_BYTE) {
-        falconCompilerError(compiler, &compiler->parser->previous, COMP_VAR_LIMIT_ERR);
+        compilerError(compiler, &compiler->parser->previous, COMP_VAR_LIMIT_ERR);
         return;
     }
 
@@ -412,7 +412,7 @@ static void declareVariable(FalconCompiler *compiler) {
         Local *local = &fCompiler->locals[i];
         if (local->depth != COMP_UNDEF_SCOPE && local->depth < fCompiler->scopeDepth) break;
         if (identifiersEqual(name, &local->name)) /* Checks if already declared */
-            falconCompilerError(compiler, &compiler->parser->previous, COMP_VAR_REDECL_ERR);
+            compilerError(compiler, &compiler->parser->previous, COMP_VAR_REDECL_ERR);
     }
 
     addLocal(compiler, *name);
@@ -461,7 +461,7 @@ static uint8_t argumentList(FalconCompiler *compiler) {
         do {
             expression(compiler);
             if (argCount == UINT8_MAX) /* Reached max args? */
-                falconCompilerError(compiler, &compiler->parser->previous, COMP_ARGS_LIMIT_ERR);
+                compilerError(compiler, &compiler->parser->previous, COMP_ARGS_LIMIT_ERR);
             argCount++;
         } while (match(compiler, TK_COMMA));
     }
@@ -652,7 +652,7 @@ PARSE_RULE(list) {
         do {
             expression(compiler);
             if (elementsCount == UINT16_MAX) /* Reached max elements? */
-                falconCompilerError(compiler, &compiler->parser->previous, COMP_LIST_LIMIT_ERR);
+                compilerError(compiler, &compiler->parser->previous, COMP_LIST_LIMIT_ERR);
             elementsCount++;
         } while (match(compiler, TK_COMMA));
     }
@@ -694,7 +694,7 @@ PARSE_RULE(map) {
             expression(compiler); /* The key */
 
             if (entriesCount == UINT16_MAX) /* Reached max entries? */
-                falconCompilerError(compiler, &compiler->parser->previous, COMP_MAP_LIMIT_ERR);
+                compilerError(compiler, &compiler->parser->previous, COMP_MAP_LIMIT_ERR);
 
             consume(compiler, TK_COLON, COMP_MAP_COLON_ERR);
             expression(compiler); /* The value */
@@ -744,10 +744,12 @@ PARSE_RULE(subscript) {
  * "OP_INVSUPER" instruction is emitted.
  */
 PARSE_RULE(super_) {
+    (void) canAssign; /* Unused */
+
     if (compiler->cCompiler == NULL) { /* Checks if not inside a class */
-        falconCompilerError(compiler, &compiler->parser->previous, COMP_SUPER_ERR);
+        compilerError(compiler, &compiler->parser->previous, COMP_SUPER_ERR);
     } else if (!compiler->cCompiler->hasSuper) { /* Checks if there is no superclass */
-        falconCompilerError(compiler, &compiler->parser->previous, COMP_NO_SUPER_ERR);
+        compilerError(compiler, &compiler->parser->previous, COMP_NO_SUPER_ERR);
     }
 
     /* Compiles the identifier after "super." */
@@ -789,8 +791,9 @@ PARSE_RULE(ternary) {
  * Handles a "this" expression, where "this" is treated as a lexically-scoped local variable.
  */
 PARSE_RULE(this_) {
+    (void) canAssign;                  /* Unused */
     if (compiler->cCompiler == NULL) { /* Checks if not inside a class */
-        falconCompilerError(compiler, &compiler->parser->previous, COMP_THIS_ERR);
+        compilerError(compiler, &compiler->parser->previous, COMP_THIS_ERR);
         return;
     }
 
@@ -900,7 +903,7 @@ static void parsePrecedence(FalconCompiler *compiler, PrecedenceLevels precedenc
     ParseFunction prefixRule = getParseRule(parser->previous.type)->prefix;
 
     if (prefixRule == NULL) { /* Checks if is a parsing error */
-        falconCompilerError(compiler, &parser->previous, COMP_EXPR_ERR);
+        compilerError(compiler, &parser->previous, COMP_EXPR_ERR);
         return;
     }
 
@@ -916,7 +919,7 @@ static void parsePrecedence(FalconCompiler *compiler, PrecedenceLevels precedenc
     }
 
     if (canAssign && match(compiler, TK_EQUAL)) { /* Checks if is an invalid assignment */
-        falconCompilerError(compiler, &parser->previous, COMP_INV_ASSG_ERR);
+        compilerError(compiler, &parser->previous, COMP_INV_ASSG_ERR);
     }
 }
 
@@ -960,7 +963,7 @@ static void function(FalconCompiler *compiler, FunctionType type) {
             current->arity++;
 
             if (current->arity > UINT8_MAX) /* Exceeds the limit os parameters? */
-                falconCompilerError(compiler, &parser->current, COMP_PARAMS_LIMIT_ERR);
+                compilerError(compiler, &parser->current, COMP_PARAMS_LIMIT_ERR);
 
             uint8_t paramConstant = parseVariable(compiler, COMP_PARAM_NAME_ERR);
             defineVariable(compiler, paramConstant);
@@ -1030,7 +1033,7 @@ static void classDeclaration(FalconCompiler *compiler) {
         variable(compiler, false); /* Loads the superclass as a variable */
 
         if (identifiersEqual(&className, &parser->previous))
-            falconCompilerError(compiler, &parser->previous, COMP_INHERIT_SELF_ERR);
+            compilerError(compiler, &parser->previous, COMP_INHERIT_SELF_ERR);
 
         /* Creates a new scope and make the superclass a local variable */
         beginScope(compiler->fCompiler);
@@ -1162,7 +1165,7 @@ static void switchStatement(FalconCompiler *compiler) {
             FalconTokens caseType = parser->previous.type;
 
             if (switchState == FALCON_AFT_ELSE) { /* Already compiled the else case? */
-                falconCompilerError(compiler, &parser->previous, COMP_ELSE_END_ERR);
+                compilerError(compiler, &parser->previous, COMP_ELSE_END_ERR);
             } else if (switchState == FALCON_BEF_ELSE) { /* Else case not compiled yet? */
                 caseEnds[caseCount++] = emitJump(compiler, OP_JUMP); /* Jumps the other cases */
                 patchJump(compiler, previousCaseSkip);               /* Patches the jump */
@@ -1187,7 +1190,7 @@ static void switchStatement(FalconCompiler *compiler) {
             }
         } else {
             if (switchState == FALCON_BEF_CASES) /* Statement outside a case? */
-                falconCompilerError(compiler, &parser->previous, COMP_STMT_SWITCH_ERR);
+                compilerError(compiler, &parser->previous, COMP_STMT_SWITCH_ERR);
             statement(compiler); /* Statement is inside a case */
         }
     }
@@ -1345,7 +1348,7 @@ static void forStatement(FalconCompiler *compiler) {
 
     /* Compiles the initializer clause */
     if (match(compiler, TK_COMMA)) { /* Empty initializer? */
-        falconCompilerError(compiler, &compiler->parser->previous, COMP_FOR_STMT_INIT_ERR);
+        compilerError(compiler, &compiler->parser->previous, COMP_FOR_STMT_INIT_ERR);
     } else {
         singleVarDeclaration(compiler); /* Variable declaration initializer */
         consume(compiler, TK_COMMA, COMP_FOR_STMT_CM1_ERR);
@@ -1384,10 +1387,10 @@ static void forStatement(FalconCompiler *compiler) {
 #undef LOOP_BODY
 
 /* Checks if the current scope is outside of a loop body */
-#define CHECK_LOOP_ERROR(fCompiler, error)                                     \
-    do {                                                                       \
-        if ((fCompiler)->loop == NULL) /* Is outside of a loop body? */        \
-            falconCompilerError(compiler, &compiler->parser->previous, error); \
+#define CHECK_LOOP_ERROR(fCompiler, error)                               \
+    do {                                                                 \
+        if ((fCompiler)->loop == NULL) /* Is outside of a loop body? */  \
+            compilerError(compiler, &compiler->parser->previous, error); \
     } while (false)
 
 /**
@@ -1441,13 +1444,13 @@ static void nextStatement(FalconCompiler *compiler) {
  */
 static void returnStatement(FalconCompiler *compiler) {
     if (compiler->fCompiler->type == TYPE_SCRIPT) /* Checks if in top level code */
-        falconCompilerError(compiler, &compiler->parser->previous, COMP_RETURN_TOP_LEVEL_ERR);
+        compilerError(compiler, &compiler->parser->previous, COMP_RETURN_TOP_LEVEL_ERR);
 
     if (match(compiler, TK_SEMICOLON)) {
         emitReturn(compiler);
     } else {
         if (compiler->fCompiler->type == TYPE_INIT) /* Checks if inside a "init" method */
-            falconCompilerError(compiler, &compiler->parser->previous, COMP_RETURN_INIT_ERR);
+            compilerError(compiler, &compiler->parser->previous, COMP_RETURN_INIT_ERR);
 
         /* Compiles the returned value */
         expression(compiler);
