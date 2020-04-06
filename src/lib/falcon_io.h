@@ -19,7 +19,7 @@ void printUntil(FILE *file, const char *str, char delimiter);
 #define IO_READLINE_ERR "Could not read input line."
 
 /* File errors */
-#define IO_OPEN_FILE_ERR "Could not open file."
-#define IO_READ_FILE_ERR "Could not read file."
+#define IO_OPEN_FILE_ERR "Could not open file"
+#define IO_READ_FILE_ERR "Could not read file"
 
 #endif // FALCON_IO_H

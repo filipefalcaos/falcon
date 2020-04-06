@@ -16,7 +16,7 @@ char *readFile(FalconVM *vm, const char *path) {
     FILE *file = fopen(path, "rb"); /* Opens the input file */
 
     if (file == NULL) { /* Failed to open the file? */
-        fprintf(stderr, "%s \"%s\"\n", IO_OPEN_FILE_ERR, path);
+        fprintf(stderr, "%s '%s'.\n", IO_OPEN_FILE_ERR, path);
         exit(FALCON_ERR_OS);
     }
 
@@ -29,7 +29,7 @@ char *readFile(FalconVM *vm, const char *path) {
         fread(buffer, sizeof(char), fileSize, file); /* Reads the file in a single batch */
 
     if (bytesRead < fileSize) { /* Failed to read the entire file? */
-        fprintf(stderr, "%s \"%s\"\n", IO_READ_FILE_ERR, path);
+        fprintf(stderr, "%s '%s'.\n", IO_READ_FILE_ERR, path);
         exit(FALCON_ERR_OS);
     }
 

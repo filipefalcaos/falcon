@@ -58,11 +58,11 @@ static void printInfo() {
 /**
  * Prints Falcon's interpreter usage details.
  */
-void falconPrintUsage() {
-    printf("Usage: \n%*c%s\n\n", 4, ' ', FALCON_USAGE);
-    printf("Flags: \n%*c%s\n%*c%s\n\n", 4, ' ', FALCON_HELP_FLAG, 4, ' ', FALCON_VERSION_FLAG);
-    printf("Options: \n%*c%s\n\n", 4, ' ', FALCON_INPUT_OPTION);
-    printf("Arguments: \n%*c%s\n", 4, ' ', FALCON_FILE_ARG);
+void printUsage() {
+    printf("usage: %s\n", FALCON_USAGE);
+    printf("Available options: \n%*c%s\n%*c%s\n%*c%s\n%*c%s\n%*c%s\n", 2, ' ', FALCON_HELP_OPT, 2,
+           ' ', FALCON_INPUT_OPT, 2, ' ', FALCON_VERSION_OPT, 2, ' ', FALCON_STOP_OPT, 2, ' ',
+           FALCON_FILE_ARG);
 }
 
 /**
@@ -139,14 +139,14 @@ static void setRepl(FalconVM *vm) {
 }
 
 /* CLI parsing errors */
-#define UNKNOWN_OPT_ERROR  "Unknown option '%s'.\n"
-#define REQUIRED_ARG_ERROR "Option '%s' requires a string argument.\n"
+#define UNKNOWN_OPT_ERR  "Unknown option '%s'.\n"
+#define REQUIRED_ARG_ERR "Option '%s' requires a string argument.\n"
 
 /* Reports a given CLI error and then prints the CLI usage */
 #define CLI_ERROR(argv, index, error)          \
     do {                                       \
         fprintf(stderr, error, (argv)[index]); \
-        falconPrintUsage();                    \
+        printUsage();                          \
         exit(FALCON_ERR_USAGE);                \
     } while (false)
 
@@ -154,7 +154,7 @@ static void setRepl(FalconVM *vm) {
  * CLI_ERROR */
 #define CHECK_EXTRA_CHARS(argv, index)                                       \
     do {                                                                     \
-        if ((argv)[i][2] != '\0') CLI_ERROR(argv, index, UNKNOWN_OPT_ERROR); \
+        if ((argv)[index][2] != '\0') CLI_ERROR(argv, index, UNKNOWN_OPT_ERR); \
     } while (false)
 
 /* Checks if there are no arguments for the last parsed option */
@@ -164,68 +164,57 @@ static void setRepl(FalconVM *vm) {
  * Processes the given CLI arguments and proceeds with the requested action. The following options
  * are available:
  *
- * "-i <input>" input code to execute
- * "-h"         output usage information
- * "-v"         output version information
- * <script>     script file to interpret
+ * "-h"        output usage information
+ * "-i input"  input code to execute (ends the option list)
+ * "-v"        output version information
+ * "--"        stop parsing options
+ * script      script file to interpret
  *
- * If there are no CLI arguments, the interpreter will start on REPL mode. If a input "-i" option
- * or a script path is provided, the help "-h" and version "-v" options will be ignored. If both
- * "-h" and "-v" options are provided, only the help option will be executed.
+ * The "-i" option requires a string argument and ends the parsing of the option list. Both the "-h"
+ * and "-v" options print their information immediately after being parsed, and then exit the
+ * interpreter. The "--" option is used to stop parsing the option list.
+ *
+ * After parsing the list, if there was no "-i" option, the CLI will look for the script positional
+ * argument. If no value is found, the interpreter will start on REPL mode. If there was a "-i"
+ * option, the interpreter will execute the command passed as argument to that option.
  */
 static void processArgs(FalconVM *vm, int argc, char **argv) {
-    char *fileName, *inputCommand;
-    bool hasHelp, hasVersion, hasScript;
-    fileName = inputCommand = NULL;
-    hasHelp = hasVersion = hasScript = false;
-
-    if (argc == 1) { /* No arguments provided? */
-        setRepl(vm); /* Sets the Falcon REPL */
-        return;
-    }
+    char *inputCommand = NULL;
+    size_t optionId;
 
     /* Parses all command line arguments */
-    for (int i = 1; argv[i] != NULL; i++) {
-        if (argv[i][0] != '-') { /* Not an option? */
-            hasScript = true;
-            fileName = argv[i];
-        } else { /* Is an option */
-            switch (argv[i][1]) {
-                case 'h':
-                    CHECK_EXTRA_CHARS(argv, i);
-                    hasHelp = true;
-                    break;
-                case 'v':
-                    CHECK_EXTRA_CHARS(argv, i);
-                    hasVersion = true;
-                    break;
-                case 'i':
-                    CHECK_EXTRA_CHARS(argv, i);
-                    i++; /* Goes to the next arg */
-
-                    if (CHECK_NO_ARG(argv, i)) { /* Has no argument or is another option? */
-                        CLI_ERROR(argv, i - 1, REQUIRED_ARG_ERROR);
-                    } else {
-                        hasScript = true;
-                        inputCommand = argv[i];
-                    }
-
-                    break;
-                default:
-                    CLI_ERROR(argv, i, UNKNOWN_OPT_ERROR);
-            }
+    for (optionId = 1; optionId < argc && argv[optionId][0] == '-'; optionId++) {
+        switch (argv[optionId][1]) {
+            case 'h':
+                CHECK_EXTRA_CHARS(argv, optionId);
+                printUsage();
+                exit(FALCON_NO_ERR);
+            case 'v':
+                CHECK_EXTRA_CHARS(argv, optionId);
+                printInfo();
+                exit(FALCON_NO_ERR);
+            case 'i':
+                CHECK_EXTRA_CHARS(argv, optionId);
+                optionId++;
+                if (CHECK_NO_ARG(argv, optionId)) CLI_ERROR(argv, optionId - 1, REQUIRED_ARG_ERR);
+                inputCommand = argv[optionId];
+                goto EXEC; /* Stop parsing on "-i"*/
+            case '-':
+                optionId++;
+                goto EXEC; /* Stop parsing on "--" */
+            default:
+                CLI_ERROR(argv, optionId, UNKNOWN_OPT_ERR);
         }
     }
 
-    if (!hasScript) {
-        if (hasVersion && !hasHelp) printInfo(); /* Prints version details */
-        if (hasHelp) falconPrintUsage();         /* Prints usage */
+    /* Execute the given source */
+    EXEC:
+    if (inputCommand != NULL) {
+        setCommand(vm, inputCommand); /* Sets the command interpreter */
+    } else if (argv[optionId] == NULL) {
+        setRepl(vm); /* Sets the Falcon REPL */
     } else {
-        if (inputCommand != NULL) {
-            setCommand(vm, inputCommand); /* Sets the command interpreter */
-        } else {
-            setFile(vm, fileName); /* Sets the file interpreter */
-        }
+        setFile(vm, argv[optionId]); /* Sets the file interpreter */
     }
 }
 
