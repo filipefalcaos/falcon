@@ -23,10 +23,11 @@ typedef struct {
 /* Falcon's virtual machine representation */
 struct FalconVM {
 
-    /* Basic info on the running program: the name of the running file and whether it is running on
-     * REPL or not */
+    /* Basic info on the running program: (i) the name of the running file; (ii) whether it is
+     * running on REPL or not; and (iii) whether opcodes should be displayed or not */
     const char *fileName;
     bool isREPL;
+    bool dumpOpcodes;
 
     /* Default string to store the "init" initializer name */
     ObjString *initStr;

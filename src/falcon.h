@@ -24,17 +24,16 @@
 #define FALCON_REPL        "repl"
 #define FALCON_INPUT       "input"
 #define FALCON_USAGE       "falcon [options] ... [-i input | script]"
+#define FALCON_DEBUG_OPT   "-d        output basic interpreter debugging information"
 #define FALCON_HELP_OPT    "-h        output usage information"
 #define FALCON_INPUT_OPT   "-i input  input code to execute (ends the option list)"
 #define FALCON_VERSION_OPT "-v        output version information"
 #define FALCON_STOP_OPT    "--        stop parsing options"
-#define FALCON_FILE_ARG    "script    script file to interpret"
+#define FALCON_SCRIPT_ARG  "script    script file to interpret"
 #define FALCON_MORE_INFO   "See full license in the \"LICENSE\" file"
-#define FALCON_HELP_FN     "\"help()\""
 #define FALCON_LIC_FN      "\"license()\""
 #define FALCON_AUTHORS_FN  "\"authors()\""
-#define FALCON_HELP_FNS    FALCON_HELP_FN ", " FALCON_LIC_FN " or " FALCON_AUTHORS_FN
-#define FALCON_HELP        "Call " FALCON_HELP_FNS " for more information."
+#define FALCON_HELP        "Call " FALCON_LIC_FN " or " FALCON_AUTHORS_FN " for more information."
 
 /* Values and limits */
 #define FALCON_REPL_MAX   500

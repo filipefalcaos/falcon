@@ -35,6 +35,7 @@ void initFalconVM(FalconVM *vm) {
     /* Inits the VM fields */
     vm->fileName = NULL;
     vm->isREPL = false;
+    vm->dumpOpcodes = false;
     vm->objects = NULL;
     vm->compiler = NULL;
 

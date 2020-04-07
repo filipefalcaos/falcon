@@ -7,12 +7,8 @@
 #include "falcon_compiler.h"
 #include "../lib/falcon_error.h"
 #include "../lib/falcon_string.h"
-#include <string.h>
-
-#ifdef FALCON_DEBUG_LEVEL_01
 #include "../vm/falcon_debug.h"
-#include <stdio.h>
-#endif
+#include <string.h>
 
 /* Precedence levels, from lowest to highest */
 typedef enum {
@@ -257,13 +253,10 @@ static ObjFunction *endFunctionCompiler(FalconCompiler *compiler) {
     emitReturn(compiler);
     ObjFunction *function = currentFunction(compiler->fCompiler);
 
-#ifdef FALCON_DEBUG_LEVEL_01
-    if (!compiler->parser->hadError) {
+    if (compiler->vm->dumpOpcodes && !compiler->parser->hadError) {
         dumpBytecode(compiler->vm, currentBytecode(compiler->fCompiler),
                      function->name != NULL ? function->name->chars : FALCON_SCRIPT);
-        printf("\n");
     }
-#endif
 
     compiler->vm->compiler = compiler->fCompiler = compiler->fCompiler->enclosing;
     return function;

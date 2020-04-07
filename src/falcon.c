@@ -60,9 +60,13 @@ static void printInfo() {
  */
 void printUsage() {
     printf("usage: %s\n", FALCON_USAGE);
-    printf("Available options: \n%*c%s\n%*c%s\n%*c%s\n%*c%s\n%*c%s\n", 2, ' ', FALCON_HELP_OPT, 2,
-           ' ', FALCON_INPUT_OPT, 2, ' ', FALCON_VERSION_OPT, 2, ' ', FALCON_STOP_OPT, 2, ' ',
-           FALCON_FILE_ARG);
+    printf("Available options: \n"
+           "  " FALCON_DEBUG_OPT "\n"
+           "  " FALCON_HELP_OPT "\n"
+           "  " FALCON_INPUT_OPT "\n"
+           "  " FALCON_VERSION_OPT "\n"
+           "  " FALCON_STOP_OPT "\n"
+           "  " FALCON_SCRIPT_ARG "\n");
 }
 
 /**
@@ -164,6 +168,7 @@ static void setRepl(FalconVM *vm) {
  * Processes the given CLI arguments and proceeds with the requested action. The following options
  * are available:
  *
+ * "-d"        output basic interpreter debugging information
  * "-h"        output usage information
  * "-i input"  input code to execute (ends the option list)
  * "-v"        output version information
@@ -185,13 +190,13 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
     /* Parses all command line arguments */
     for (optionId = 1; optionId < argc && argv[optionId][0] == '-'; optionId++) {
         switch (argv[optionId][1]) {
+            case 'd':
+                CHECK_EXTRA_CHARS(argv, optionId);
+                vm->dumpOpcodes = true;
+                break;
             case 'h':
                 CHECK_EXTRA_CHARS(argv, optionId);
                 printUsage();
-                exit(FALCON_NO_ERR);
-            case 'v':
-                CHECK_EXTRA_CHARS(argv, optionId);
-                printInfo();
                 exit(FALCON_NO_ERR);
             case 'i':
                 CHECK_EXTRA_CHARS(argv, optionId);
@@ -199,6 +204,10 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
                 if (CHECK_NO_ARG(argv, optionId)) CLI_ERROR(argv, optionId - 1, REQUIRED_ARG_ERR);
                 inputCommand = argv[optionId];
                 goto EXEC; /* Stop parsing on "-i"*/
+            case 'v':
+                CHECK_EXTRA_CHARS(argv, optionId);
+                printInfo();
+                exit(FALCON_NO_ERR);
             case '-':
                 optionId++;
                 goto EXEC; /* Stop parsing on "--" */
