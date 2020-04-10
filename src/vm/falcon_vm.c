@@ -13,10 +13,6 @@
 #include <math.h>
 #include <stdio.h>
 
-#ifdef FALCON_DEBUG_LEVEL_01
-#include "falcon_debug.h"
-#endif
-
 /**
  * Resets the virtual machine stack.
  */
@@ -48,7 +44,7 @@ void initFalconVM(FalconVM *vm) {
 
     initTable(&vm->strings); /* Inits the table of interned strings */
     initTable(&vm->globals); /* Inits the table of globals */
-    defineNatives(vm);    /* Sets native functions */
+    defineNatives(vm);       /* Sets native functions */
 
     /* Defines the string for class initializers */
     vm->initStr = NULL;

@@ -29,9 +29,6 @@ struct FalconVM {
     bool isREPL;
     bool dumpOpcodes;
 
-    /* Default string to store the "init" initializer name */
-    ObjString *initStr;
-
     /* Bytecode chunk to interpret and the program counter */
     BytecodeChunk *bytecode;
     uint8_t *pc;
@@ -69,6 +66,9 @@ struct FalconVM {
      * that triggers the next garbage collection */
     size_t bytesAllocated;
     size_t nextGC;
+
+    /* Default string to store the "init" initializer name */
+    ObjString *initStr;
 };
 
 /* Interpretation result codes */

@@ -11,8 +11,8 @@
 #include "falcon_object.h"
 
 /* Compiler/VM debugging operations */
-int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset);
-void dumpBytecode(FalconVM *vm, BytecodeChunk *bytecode, const char *name);
+int dumpInstruction(FalconVM *vm, const BytecodeChunk *bytecode, int offset);
+void dumpBytecode(FalconVM *vm, ObjFunction *function);
 void dumpStack(FalconVM *vm);
 
 /* Memory allocation debugging operations */

@@ -69,7 +69,7 @@ void writeBytecode(FalconVM *vm, BytecodeChunk *bytecode, uint8_t byte, int line
  * is only possible because Falcon is single-pass compiled, which means instruction codes can only
  * increase. Thus, the array is always sorted and a binary search is possible.
  */
-int getLine(BytecodeChunk *bytecode, int instruction) {
+int getLine(const BytecodeChunk *bytecode, int instruction) {
     int start = 0;
     int end = bytecode->lineCount - 1;
 

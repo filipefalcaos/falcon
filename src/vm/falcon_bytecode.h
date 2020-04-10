@@ -32,7 +32,7 @@ typedef struct {
 void initBytecode(BytecodeChunk *bytecode);
 void freeBytecode(FalconVM *vm, BytecodeChunk *bytecode);
 void writeBytecode(FalconVM *vm, BytecodeChunk *bytecode, uint8_t byte, int line);
-int getLine(BytecodeChunk *bytecode, int instruction);
+int getLine(const BytecodeChunk *bytecode, int instruction);
 int addConstant(FalconVM *vm, BytecodeChunk *bytecode, FalconValue value);
 void writeConstant(FalconVM *vm, BytecodeChunk *bytecode, uint16_t index, int line);
 

@@ -253,10 +253,9 @@ static ObjFunction *endFunctionCompiler(FalconCompiler *compiler) {
     emitReturn(compiler);
     ObjFunction *function = currentFunction(compiler->fCompiler);
 
-    if (compiler->vm->dumpOpcodes && !compiler->parser->hadError) {
-        dumpBytecode(compiler->vm, currentBytecode(compiler->fCompiler),
-                     function->name != NULL ? function->name->chars : FALCON_SCRIPT);
-    }
+    /* Dumps the function's bytecode if in debugging mode */
+    if (compiler->vm->dumpOpcodes && !compiler->parser->hadError)
+        dumpBytecode(compiler->vm, function);
 
     compiler->vm->compiler = compiler->fCompiler = compiler->fCompiler->enclosing;
     return function;

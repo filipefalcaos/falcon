@@ -19,7 +19,7 @@ static int simpleInstruction(const char *name, int offset) {
 /**
  * Displays a byte instruction.
  */
-static int byteInstruction(const char *name, BytecodeChunk *bytecode, int offset) {
+static int byteInstruction(const char *name, const BytecodeChunk *bytecode, int offset) {
     uint8_t slot = bytecode->code[offset + 1];
     printf("%-16s %4d\n", name, slot);
     return offset + 2;
@@ -28,7 +28,7 @@ static int byteInstruction(const char *name, BytecodeChunk *bytecode, int offset
 /**
  * Displays a collection (list or maps) instruction.
  */
-static int collectionInstruction(const char *name, BytecodeChunk *bytecode, int offset) {
+static int collectionInstruction(const char *name, const BytecodeChunk *bytecode, int offset) {
     uint16_t length = (uint16_t)(bytecode->code[offset + 1] << 8u);
     length |= bytecode->code[offset + 2];
     printf("%-16s %4d\n", name, length);
@@ -38,7 +38,7 @@ static int collectionInstruction(const char *name, BytecodeChunk *bytecode, int 
 /**
  * Displays a jump (conditional) instruction.
  */
-static int jumpInstruction(const char *name, int sign, BytecodeChunk *bytecode, int offset) {
+static int jumpInstruction(const char *name, int sign, const BytecodeChunk *bytecode, int offset) {
     uint16_t jump = (uint16_t)(bytecode->code[offset + 1] << 8u);
     jump |= bytecode->code[offset + 2];
     printf("%-16s %4d -> %d\n", name, offset, offset + 3 + sign * jump);
@@ -48,7 +48,7 @@ static int jumpInstruction(const char *name, int sign, BytecodeChunk *bytecode, 
 /**
  * Displays a constant instruction (8 bits).
  */
-static int constantInstruction(const char *name, FalconVM *vm, BytecodeChunk *bytecode,
+static int constantInstruction(const char *name, FalconVM *vm, const BytecodeChunk *bytecode,
                                int offset) {
     uint8_t constant = bytecode->code[offset + 1];
     FalconValue value = bytecode->constants.values[constant];
@@ -63,7 +63,7 @@ static int constantInstruction(const char *name, FalconVM *vm, BytecodeChunk *by
 /**
  * Displays a constant instruction (16 bits).
  */
-static int constantInstruction16(const char *name, FalconVM *vm, BytecodeChunk *bytecode,
+static int constantInstruction16(const char *name, FalconVM *vm, const BytecodeChunk *bytecode,
                                  int offset) {
     uint16_t constant = (bytecode->code[offset + 1] | (uint16_t)(bytecode->code[offset + 2] << 8u));
     FalconValue value = bytecode->constants.values[constant];
@@ -78,7 +78,8 @@ static int constantInstruction16(const char *name, FalconVM *vm, BytecodeChunk *
 /**
  * Displays a method invocation instruction.
  */
-static int invokeInstruction(const char *name, FalconVM *vm, BytecodeChunk *bytecode, int offset) {
+static int invokeInstruction(const char *name, FalconVM *vm, const BytecodeChunk *bytecode,
+                             int offset) {
     uint8_t constant = bytecode->code[offset + 1];
     uint8_t argCount = bytecode->code[offset + 2];
     printf("%-19s %d %d '", name, argCount, constant);
@@ -90,7 +91,8 @@ static int invokeInstruction(const char *name, FalconVM *vm, BytecodeChunk *byte
 /**
  * Displays a closure instruction.
  */
-static int closureInstruction(const char *name, FalconVM *vm, BytecodeChunk *bytecode, int offset) {
+static int closureInstruction(const char *name, FalconVM *vm, const BytecodeChunk *bytecode,
+                              int offset) {
     offset++;
     uint8_t constant = bytecode->code[offset++];
     printf("%-16s %4d '", name, constant);
@@ -112,16 +114,17 @@ static int closureInstruction(const char *name, FalconVM *vm, BytecodeChunk *byt
 /**
  * Displays a single instruction in a bytecode chunk.
  */
-int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
-    printf("%04d ", offset); /* Prints offset info */
+int dumpInstruction(FalconVM *vm, const BytecodeChunk *bytecode, int offset) {
     int sourceLine = getLine(bytecode, offset);
 
     /* Prints line info */
     if (offset > 0 && sourceLine == getLine(bytecode, offset - 1)) {
-        printf("   | ");
+        printf("    ");
     } else {
-        printf("%4d ", sourceLine);
+        printf("%04d", sourceLine);
     }
+
+    printf("    %04d    ", offset); /* Prints offset info */
 
     uint8_t instruction = bytecode->code[offset]; /* Current instruction */
     switch (instruction) {                        /* Verifies the instruction type */
@@ -248,11 +251,16 @@ int dumpInstruction(FalconVM *vm, BytecodeChunk *bytecode, int offset) {
 /**
  * Displays a complete bytecode chunk.
  */
-void dumpBytecode(FalconVM *vm, BytecodeChunk *bytecode, const char *name) {
-    printf("== %s ==\n", name);
-    for (int offset = 0; offset < bytecode->count;) {   /* Loop through the instructions */
-        offset = dumpInstruction(vm, bytecode, offset); /* Disassemble instruction */
-    }
+void dumpBytecode(FalconVM *vm, ObjFunction *function) {
+    const ObjString *functionName = function->name;
+    const BytecodeChunk *bytecode = &function->bytecode;
+    bool isTopLevel = (functionName == NULL);
+
+    printf("== %s <%s> ==\n", isTopLevel ? FALCON_SCRIPT : functionName->chars, vm->fileName);
+    for (int offset = 0; offset < bytecode->count;)
+        offset = dumpInstruction(vm, bytecode, offset); /* Disassembles each instruction */
+
+    if (!isTopLevel) printf("\n");
 }
 
 /**

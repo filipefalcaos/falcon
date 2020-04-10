@@ -20,7 +20,7 @@
 
 /* REPL macros */
 #define FALCON_PROMPT      ">>> "
-#define FALCON_SCRIPT      "<script>"
+#define FALCON_SCRIPT      "script"
 #define FALCON_REPL        "repl"
 #define FALCON_INPUT       "input"
 #define FALCON_USAGE       "falcon [options] ... [-i input | script]"
