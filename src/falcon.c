@@ -154,15 +154,24 @@ static void setRepl(FalconVM *vm) {
         exit(FALCON_ERR_USAGE);                \
     } while (false)
 
-/* Checks if there are no extra characters in the same option. If so, reports a CLI error through
- * CLI_ERROR */
-#define CHECK_EXTRA_CHARS(argv, index)                                       \
-    do {                                                                     \
-        if ((argv)[index][2] != '\0') CLI_ERROR(argv, index, UNKNOWN_OPT_ERR); \
-    } while (false)
+/* Checks if there are no extra characters after the first char */
+#define CHECK_EXTRA_CHARS(argv, index) ((argv)[index][2] != '\0')
 
 /* Checks if there are no arguments for the last parsed option */
 #define CHECK_NO_ARG(argv, i) ((argv)[i] == NULL || (argv)[i][0] == '-')
+
+/* Validates the current option, reporting an error if there extra chars after the given index */
+#define VALIDATE_OPTION(argv, index)                                                 \
+    do {                                                                             \
+        if (CHECK_EXTRA_CHARS(argv, index)) CLI_ERROR(argv, index, UNKNOWN_OPT_ERR); \
+    } while (false)
+
+/* Validates the argument of the current option, reporting an error if there is no argument after
+ * the option */
+#define VALIDATE_ARG(argv, index)                                                    \
+    do {                                                                             \
+        if (CHECK_NO_ARG(argv, index)) CLI_ERROR(argv, index - 1, REQUIRED_ARG_ERR); \
+    } while (false)
 
 /**
  * Processes the given CLI arguments and proceeds with the requested action. The following options
@@ -191,21 +200,21 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
     for (optionId = 1; optionId < argc && argv[optionId][0] == '-'; optionId++) {
         switch (argv[optionId][1]) {
             case 'd':
-                CHECK_EXTRA_CHARS(argv, optionId);
+                VALIDATE_OPTION(argv, optionId);
                 vm->dumpOpcodes = true;
                 break;
             case 'h':
-                CHECK_EXTRA_CHARS(argv, optionId);
+                VALIDATE_OPTION(argv, optionId);
                 printUsage();
                 exit(FALCON_NO_ERR);
             case 'i':
-                CHECK_EXTRA_CHARS(argv, optionId);
+                VALIDATE_OPTION(argv, optionId);
                 optionId++;
-                if (CHECK_NO_ARG(argv, optionId)) CLI_ERROR(argv, optionId - 1, REQUIRED_ARG_ERR);
+                VALIDATE_ARG(argv, optionId);
                 inputCommand = argv[optionId];
                 goto EXEC; /* Stop parsing on "-i"*/
             case 'v':
-                CHECK_EXTRA_CHARS(argv, optionId);
+                VALIDATE_OPTION(argv, optionId);
                 printInfo();
                 exit(FALCON_NO_ERR);
             case '-':
@@ -227,9 +236,13 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
     }
 }
 
+#undef UNKNOWN_OPT_ERR
+#undef REQUIRED_ARG_ERR
 #undef CLI_ERROR
 #undef CHECK_EXTRA_CHARS
 #undef CHECK_NO_ARG
+#undef VALIDATE_OPTION
+#undef VALIDATE_ARG
 
 int main(int argc, char **argv) {
     FalconVM vm;
