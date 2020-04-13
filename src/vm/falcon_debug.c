@@ -113,6 +113,7 @@ static int closureInstruction(const char *name, FalconVM *vm, const BytecodeChun
 
 /**
  * Displays a single instruction in a bytecode chunk.
+ * TODO: check if all opcodes are covered.
  */
 int dumpInstruction(FalconVM *vm, const BytecodeChunk *bytecode, int offset) {
     int sourceLine = getLine(bytecode, offset);

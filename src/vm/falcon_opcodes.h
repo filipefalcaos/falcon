@@ -19,8 +19,8 @@ typedef enum {
     /* Lists, maps, and subscripts */
     OP_DEFLIST, /* Define a new list */
     OP_DEFMAP,  /* Define a new map */
-    OP_GETSUB,  /* Get a list/string element by index */
-    OP_SETSUB,  /* Set a list/string element by index */
+    OP_GETSUB,  /* Subscript access */
+    OP_SETSUB,  /* Subscript value set */
 
     /* Relational operations */
     OP_AND,     /* "and" logical operator */

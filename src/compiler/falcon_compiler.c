@@ -45,9 +45,9 @@ static void initParser(Parser *parser) {
 }
 
 /**
- * Takes the old current token and then loops through the token stream and to get the next token.
- * The loop keeps going reading tokens and reporting the errors, until it hits a non-error one or
- * reach EOF.
+ * Takes the old current token and then loops through the token stream to get the next token. The
+ * loop keeps going reading tokens and reporting the errors, until it hits a non-error one or
+ * reaches EOF.
  */
 static void advance(FalconCompiler *compiler) {
     compiler->parser->previous = compiler->parser->current;
@@ -1181,6 +1181,7 @@ static void switchStatement(FalconCompiler *compiler) {
 
 /**
  * Gets the number of arguments for a instruction at the given program counter.
+ * TODO: check if all opcodes are covered.
  */
 int instructionArgs(const BytecodeChunk *bytecode, int pc) {
     switch (bytecode->code[pc]) {
