@@ -84,19 +84,8 @@ FalconValue pop(FalconVM *vm) {
 }
 
 /**
- * Pops and discard the two value from the top of the Falcon's virtual machine stack.
+ * Pops and discard "n" values from the top of the Falcon's virtual machine stack. for (long int i = 0; i < n; i++) pop(vm);
  */
-void popTwice(FalconVM *vm) {
-    pop(vm);
-    pop(vm);
-}
-
-/**
- * Pops and discard "n" values from the top of the Falcon's virtual machine stack.
- */
-void popN(FalconVM *vm, long int n) {
-    for (long int i = 0; i < n; i++) pop(vm);
-}
 
 /**
  * Peeks a element on the Falcon's virtual machine stack.
@@ -290,7 +279,9 @@ static void concatenateStrings(FalconVM *vm) {
     ObjString *b = AS_STRING(peek(vm, 0));       /* Avoids GC */
     ObjString *a = AS_STRING(peek(vm, 1));       /* Avoids GC */
     ObjString *result = concatStrings(vm, b, a); /* Concatenates both strings */
-    popTwice(vm);
+
+    pop(vm);
+    pop(vm);
     push(vm, OBJ_VAL(result));                    /* Pushes concatenated string */
     tableSet(vm, &vm->strings, result, NULL_VAL); /* Interns the string */
 }
@@ -411,30 +402,33 @@ static FalconResultCode run(FalconVM *vm) {
             /* Lists */
             case OP_DEFLIST: {
                 uint16_t elementsCount = READ_SHORT();
-                ObjList list = *falconList(vm, elementsCount);
+                ObjList *list = falconList(vm, elementsCount);
 
                 /* Adds the elements to the list */
                 for (uint16_t i = 0; i < elementsCount; i++) {
-                    list.elements.values[i] = peek(vm, elementsCount - i - 1);
+                    list->elements.values[i] = peek(vm, elementsCount - i - 1);
                 }
 
-                popN(vm, elementsCount); /* Discards the elements */
-                push(vm, OBJ_VAL(&list));
+                for (uint16_t i = 0; i < elementsCount; i++) pop(vm); /* Discards the elements */
+                push(vm, OBJ_VAL(list));
                 break;
             }
             case OP_DEFMAP: {
                 uint16_t entriesCount = READ_SHORT();
-                ObjMap map = *falconMap(vm, entriesCount);
+                ObjMap *map = falconMap(vm, entriesCount);
 
                 /* Adds the entries to the map */
                 for (uint16_t i = 0; i < entriesCount; i++) {
                     FalconValue value = peek(vm, 0);
                     FalconValue key = peek(vm, 1);
-                    tableSet(vm, &map.entries, AS_STRING(key), value);
-                    popTwice(vm); /* Discards the entry's key and value */
+                    tableSet(vm, &map->entries, AS_STRING(key), value);
+
+                    /* Discards the entry's key and value */
+                    pop(vm);
+                    pop(vm);
                 }
 
-                push(vm, OBJ_VAL(&map));
+                push(vm, OBJ_VAL(map));
                 break;
             }
             case OP_GETSUB: {

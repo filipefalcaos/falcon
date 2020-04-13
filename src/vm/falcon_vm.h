@@ -80,7 +80,6 @@ void freeFalconVM(FalconVM *vm);
 void resetStack(FalconVM *vm);
 bool push(FalconVM *vm, FalconValue value);
 FalconValue pop(FalconVM *vm);
-void popTwice(FalconVM *vm);
 FalconResultCode falconInterpret(FalconVM *vm, const char *source);
 
 /* The initial allocation size for the heap, in bytes */
