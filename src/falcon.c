@@ -225,8 +225,8 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
         }
     }
 
-    /* Execute the given source */
-    EXEC:
+/* Execute the given source */
+EXEC:
     if (inputCommand != NULL) {
         setCommand(vm, inputCommand); /* Sets the command interpreter */
     } else if (argv[optionId] == NULL) {

@@ -84,10 +84,6 @@ FalconValue pop(FalconVM *vm) {
 }
 
 /**
- * Pops and discard "n" values from the top of the Falcon's virtual machine stack. for (long int i = 0; i < n; i++) pop(vm);
- */
-
-/**
  * Peeks a element on the Falcon's virtual machine stack.
  */
 static FalconValue peek(FalconVM *vm, int distance) { return vm->stackTop[-1 - distance]; }
@@ -172,7 +168,7 @@ static bool bindMethod(FalconVM *vm, ObjClass *class_, ObjString *methodName) {
     }
 
     /* Binds the method to the receiver */
-    ObjBMethod* bMethod = falconBMethod(vm, peek(vm, 0), AS_CLOSURE(method));
+    ObjBMethod *bMethod = falconBMethod(vm, peek(vm, 0), AS_CLOSURE(method));
     pop(vm);
     push(vm, OBJ_VAL(bMethod));
     return true;
@@ -686,7 +682,7 @@ static FalconResultCode run(FalconVM *vm) {
 
                 vm->stackTop = frame->slots;                        /* Resets the stack top */
                 if (!push(vm, result)) return FALCON_RUNTIME_ERROR; /* Pushes the return value */
-                frame = &vm->frames[vm->frameCount - 1]; /* Updates the current frame */
+                frame = &vm->frames[vm->frameCount - 1];            /* Updates the current frame */
                 break;
             }
 
@@ -770,9 +766,7 @@ static FalconResultCode run(FalconVM *vm) {
                 ObjClass *superclass = AS_CLASS(pop(vm));
 
                 /* Tries to invoke the method from the superclass */
-                if (!invokeFromClass(vm, superclass, name, argCount))
-                    return FALCON_RUNTIME_ERROR;
-
+                if (!invokeFromClass(vm, superclass, name, argCount)) return FALCON_RUNTIME_ERROR;
                 frame = &vm->frames[vm->frameCount - 1];
                 break;
             }

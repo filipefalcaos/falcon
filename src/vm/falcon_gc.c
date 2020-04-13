@@ -131,9 +131,9 @@ static void blackenObject(FalconVM *vm, FalconObj *object) {
             break;
         }
         case OBJ_BMETHOD: {
-            ObjBMethod* bound = (ObjBMethod *) object;
+            ObjBMethod *bound = (ObjBMethod *) object;
             markValue(vm, bound->receiver);
-            markObject(vm, (FalconObj *)bound->method);
+            markObject(vm, (FalconObj *) bound->method);
             break;
         }
         case OBJ_LIST: {

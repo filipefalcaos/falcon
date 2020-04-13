@@ -7,9 +7,9 @@
 #ifndef FALCON_OBJECT_H
 #define FALCON_OBJECT_H
 
+#include "../lib/falcon_table.h"
 #include "falcon_bytecode.h"
 #include "falcon_value.h"
-#include "../lib/falcon_table.h"
 
 /* Types of objects on Falcon */
 typedef enum {
@@ -83,7 +83,7 @@ typedef struct {
 typedef struct {
     FalconObj obj;
     FalconValue receiver;
-    ObjClosure* method;
+    ObjClosure *method;
 } ObjBMethod;
 
 /* Falcon's list object */

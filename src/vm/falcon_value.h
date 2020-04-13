@@ -39,11 +39,11 @@ typedef struct {
 #define AS_OBJ(value)  ((value).as.obj)
 
 /* Sets a native C value to a Falcon Value */
-#define BOOL_VAL(value) ((FalconValue) {VAL_BOOL, {.boolean = (value)}})
-#define NUM_VAL(value)  ((FalconValue) {VAL_NUM, {.number = (value)}})
-#define OBJ_VAL(object) ((FalconValue) {VAL_OBJ, {.obj = (FalconObj *) (object)}})
-#define NULL_VAL        ((FalconValue) {VAL_NULL, {.number = 0}})
-#define ERR_VAL         ((FalconValue) {VAL_ERR, {.number = 0}})
+#define BOOL_VAL(value) ((FalconValue){VAL_BOOL, {.boolean = (value)}})
+#define NUM_VAL(value)  ((FalconValue){VAL_NUM, {.number = (value)}})
+#define OBJ_VAL(object) ((FalconValue){VAL_OBJ, {.obj = (FalconObj *) (object)}})
+#define NULL_VAL        ((FalconValue){VAL_NULL, {.number = 0}})
+#define ERR_VAL         ((FalconValue){VAL_ERR, {.number = 0}})
 
 /* Array of Values */
 typedef struct {

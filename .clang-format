@@ -11,3 +11,4 @@ AlignEscapedNewlines: Left
 IndentCaseLabels: true
 AllowShortIfStatementsOnASingleLine: WithoutElse
 AllowShortLoopsOnASingleLine: true
+AlignConsecutiveMacros: true

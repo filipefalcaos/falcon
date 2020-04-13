@@ -255,8 +255,7 @@ FALCON_NATIVE(getField) {
     /* Gets the field value */
     ObjInstance *instance = AS_INSTANCE(args[0]);
     FalconValue value;
-    if (tableGet(&instance->fields, AS_STRING(args[1]), &value))
-        return value;
+    if (tableGet(&instance->fields, AS_STRING(args[1]), &value)) return value;
 
     /* Undefined field error */
     interpreterError(vm, VM_UNDEF_PROP_ERR, instance->class_->name->chars,
@@ -346,7 +345,7 @@ FALCON_NATIVE(input) {
     if (argCount == 1) {
         FalconValue prompt = *args;
         ASSERT_ARG_TYPE(IS_STRING, "string", prompt, vm, 1); /* Checks if is valid */
-        printf("%s", AS_CSTRING(prompt));               /* Prints the prompt */
+        printf("%s", AS_CSTRING(prompt));                    /* Prints the prompt */
     }
 
     char *inputString = readStrStdin(vm); /* Reads the input string */
@@ -395,27 +394,18 @@ static void defNative(FalconVM *vm, const char *name, FalconNativeFn function) {
  * Defines the complete set of native function for Falcon.
  */
 void defineNatives(FalconVM *vm) {
-    const ObjNative nativeFunctions[] = { /* Native functions implementations */
-        { .function = authors, .name = "authors" },
-        { .function = license, .name = "license" },
-        { .function = exit_, .name = "exit" },
-        { .function = clock_, .name = "clock" },
-        { .function = time_, .name = "time" },
-        { .function = type, .name = "type" },
-        { .function = bool_, .name = "bool" },
-        { .function = num, .name = "num" },
-        { .function = str, .name = "str" },
-        { .function = len, .name = "len" },
-        { .function = hasField, .name = "hasField" },
-        { .function = getField, .name = "getField" },
-        { .function = setField, .name = "setField" },
-        { .function = delField, .name = "delField" },
-        { .function = abs_, .name = "abs" },
-        { .function = sqrt_, .name = "sqrt" },
-        { .function = pow_, .name = "pow" },
-        { .function = input, .name = "input" },
-        { .function = print, .name = "print" }
-    };
+    const ObjNative nativeFunctions[] = {
+        /* Native functions implementations */
+        {.function = authors, .name = "authors"},   {.function = license, .name = "license"},
+        {.function = exit_, .name = "exit"},        {.function = clock_, .name = "clock"},
+        {.function = time_, .name = "time"},        {.function = type, .name = "type"},
+        {.function = bool_, .name = "bool"},        {.function = num, .name = "num"},
+        {.function = str, .name = "str"},           {.function = len, .name = "len"},
+        {.function = hasField, .name = "hasField"}, {.function = getField, .name = "getField"},
+        {.function = setField, .name = "setField"}, {.function = delField, .name = "delField"},
+        {.function = abs_, .name = "abs"},          {.function = sqrt_, .name = "sqrt"},
+        {.function = pow_, .name = "pow"},          {.function = input, .name = "input"},
+        {.function = print, .name = "print"}};
 
     /* Define listed native functions */
     for (unsigned long i = 0; i < sizeof(nativeFunctions) / sizeof(nativeFunctions[0]); i++)
