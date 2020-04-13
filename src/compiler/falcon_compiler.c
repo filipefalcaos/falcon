@@ -548,41 +548,18 @@ PARSE_RULE(binary) {
 
     /* Emits the operator instruction */
     switch (operatorType) {
-        case TK_NOTEQUAL:
-            emitBytes(compiler, OP_EQUAL, OP_NOT);
-            break;
-        case TK_EQEQUAL:
-            emitByte(compiler, OP_EQUAL);
-            break;
-        case TK_GREATER:
-            emitByte(compiler, OP_GREATER);
-            break;
-        case TK_GREATEREQUAL:
-            emitBytes(compiler, OP_LESS, OP_NOT);
-            break;
-        case TK_LESS:
-            emitByte(compiler, OP_LESS);
-            break;
-        case TK_LESSEQUAL:
-            emitBytes(compiler, OP_GREATER, OP_NOT);
-            break;
-        case TK_PLUS:
-            emitByte(compiler, OP_ADD);
-            break;
-        case TK_MINUS:
-            emitByte(compiler, OP_SUB);
-            break;
-        case TK_SLASH:
-            emitByte(compiler, OP_DIV);
-            break;
-        case TK_PERCENT:
-            emitByte(compiler, OP_MOD);
-            break;
-        case TK_STAR:
-            emitByte(compiler, OP_MULT);
-            break;
-        default:
-            return; /* Unreachable */
+        case TK_NOTEQUAL: emitBytes(compiler, OP_EQUAL, OP_NOT); break;
+        case TK_EQEQUAL: emitByte(compiler, OP_EQUAL); break;
+        case TK_GREATER: emitByte(compiler, OP_GREATER); break;
+        case TK_GREATEREQUAL: emitBytes(compiler, OP_LESS, OP_NOT); break;
+        case TK_LESS: emitByte(compiler, OP_LESS); break;
+        case TK_LESSEQUAL: emitBytes(compiler, OP_GREATER, OP_NOT); break;
+        case TK_PLUS: emitByte(compiler, OP_ADD); break;
+        case TK_MINUS: emitByte(compiler, OP_SUB); break;
+        case TK_SLASH: emitByte(compiler, OP_DIV); break;
+        case TK_PERCENT: emitByte(compiler, OP_MOD); break;
+        case TK_STAR: emitByte(compiler, OP_MULT); break;
+        default: return; /* Unreachable */
     }
 }
 
@@ -659,17 +636,10 @@ PARSE_RULE(list) {
 PARSE_RULE(literal) {
     (void) canAssign; /* Unused */
     switch (compiler->parser->previous.type) {
-        case TK_FALSE:
-            emitByte(compiler, OP_LOADFALSE);
-            break;
-        case TK_NULL:
-            emitByte(compiler, OP_LOADNULL);
-            break;
-        case TK_TRUE:
-            emitByte(compiler, OP_LOADTRUE);
-            break;
-        default:
-            return; /* Unreachable */
+        case TK_FALSE: emitByte(compiler, OP_LOADFALSE); break;
+        case TK_NULL: emitByte(compiler, OP_LOADNULL); break;
+        case TK_TRUE: emitByte(compiler, OP_LOADTRUE); break;
+        default: return; /* Unreachable */
     }
 }
 
@@ -802,14 +772,9 @@ PARSE_RULE(unary) {
     parsePrecedence(compiler, PREC_UNARY); /* Compiles the operand */
 
     switch (operatorType) {
-        case TK_MINUS:
-            emitByte(compiler, OP_NEG);
-            break;
-        case TK_NOT:
-            emitByte(compiler, OP_NOT);
-            break;
-        default:
-            return;
+        case TK_MINUS: emitByte(compiler, OP_NEG); break;
+        case TK_NOT: emitByte(compiler, OP_NOT); break;
+        default: return;
     }
 }
 
@@ -1040,10 +1005,7 @@ static void classDeclaration(FalconCompiler *compiler) {
     /* Parses the class body and its methods */
     namedVariable(compiler, className, false);
     consume(compiler, TK_LBRACE, COMP_CLASS_BODY_BRACE_ERR);
-
-    while (!check(parser, TK_RBRACE) && !check(parser, TK_EOF)) {
-        method(compiler);
-    }
+    while (!check(parser, TK_RBRACE) && !check(parser, TK_EOF)) method(compiler);
 
     consume(compiler, TK_RBRACE, COMP_CLASS_BODY_BRACE2_ERR);
     emitByte(compiler, OP_POPT);
@@ -1194,9 +1156,7 @@ static void switchStatement(FalconCompiler *compiler) {
     }
 
     /* Patch all the case jumps to the end */
-    for (int i = 0; i < caseCount; i++) {
-        patchJump(compiler, caseEnds[i]);
-    }
+    for (int i = 0; i < caseCount; i++) patchJump(compiler, caseEnds[i]);
 
     emitByte(compiler, OP_POPT); /* Pops the switch value */
 
@@ -1245,8 +1205,7 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case OP_DUPT:
         case OP_POPT:
         case OP_POPEXPR:
-        case OP_TEMP:
-            return 0; /* Instructions with no arguments */
+        case OP_TEMP: return 0; /* Instructions with no arguments */
 
         case OP_DEFGLOBAL:
         case OP_GETGLOBAL:
@@ -1260,8 +1219,7 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case OP_DEFMETHOD:
         case OP_GETPROP:
         case OP_SETPROP:
-        case OP_INVPROP:
-            return 1; /* Instructions with single byte as argument */
+        case OP_INVPROP: return 1; /* Instructions with single byte as argument */
 
         case OP_LOADCONST:
         case OP_DEFLIST:
@@ -1270,8 +1228,7 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
         case OP_OR:
         case OP_JUMP:
         case OP_JUMPIFF:
-        case OP_LOOP:
-            return 2; /* Instructions with 2 bytes as arguments */
+        case OP_LOOP: return 2; /* Instructions with 2 bytes as arguments */
 
         case OP_CLOSURE: {
             int index = bytecode->code[pc + 1];
@@ -1279,8 +1236,7 @@ int instructionArgs(const BytecodeChunk *bytecode, int pc) {
             return 1 + function->upvalueCount * 2; /* Function: 1 byte; Upvalues: 2 bytes each */
         }
 
-        default:
-            return 0;
+        default: return 0;
     }
 }
 
@@ -1497,8 +1453,7 @@ static void synchronize(FalconCompiler *compiler) {
             case TK_RETURN:
             case TK_SWITCH:
             case TK_VAR:
-            case TK_WHILE:
-                return;
+            case TK_WHILE: return;
             default:; /* Keep skipping tokens */
         }
 

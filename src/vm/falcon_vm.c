@@ -137,8 +137,7 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
                 vm->stackTop[-argCount - 1] = bMethod->receiver; /* Set the "this" bound receiver */
                 return call(vm, bMethod->method, argCount);      /* Calls the method as a closure */
             }
-            case OBJ_CLOSURE:
-                return call(vm, AS_CLOSURE(callee), argCount);
+            case OBJ_CLOSURE: return call(vm, AS_CLOSURE(callee), argCount);
             case OBJ_NATIVE: {
                 FalconNativeFn native = AS_NATIVE(callee)->function;
                 FalconValue out = native(vm, argCount, vm->stackTop - argCount);
@@ -147,8 +146,7 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
                 if (!push(vm, out)) return false; /* Pushes the return value */
                 return true;
             }
-            default:
-                break; /* Not callable */
+            default: break; /* Not callable */
         }
     }
 
@@ -520,20 +518,14 @@ static FalconResultCode run(FalconVM *vm) {
                     frame->pc += offset;
                 break;
             }
-            case OP_NOT:
-                vm->stackTop[-1] = BOOL_VAL(isFalsy(vm->stackTop[-1]));
-                break;
+            case OP_NOT: vm->stackTop[-1] = BOOL_VAL(isFalsy(vm->stackTop[-1])); break;
             case OP_EQUAL: {
                 FalconValue b = pop(vm);
                 vm->stackTop[-1] = BOOL_VAL(valuesEqual(vm->stackTop[-1], b));
                 break;
             }
-            case OP_GREATER:
-                GL_COMPARE(vm, >);
-                break;
-            case OP_LESS:
-                GL_COMPARE(vm, <);
-                break;
+            case OP_GREATER: GL_COMPARE(vm, >); break;
+            case OP_LESS: GL_COMPARE(vm, <); break;
 
             /* Arithmetic operations */
             case OP_ADD: {
@@ -549,19 +541,13 @@ static FalconResultCode run(FalconVM *vm) {
 
                 break;
             }
-            case OP_SUB:
-                BINARY_OP(vm, -, NUM_VAL);
-                break;
+            case OP_SUB: BINARY_OP(vm, -, NUM_VAL); break;
             case OP_NEG:
                 ASSERT_NUM(vm, 0, VM_OPR_NOT_NUM_ERR);
                 vm->stackTop[-1] = NUM_VAL(-AS_NUM(vm->stackTop[-1]));
                 break;
-            case OP_MULT:
-                BINARY_OP(vm, *, NUM_VAL);
-                break;
-            case OP_MOD:
-                DIVISION_OP(vm, %, int);
-                break;
+            case OP_MULT: BINARY_OP(vm, *, NUM_VAL); break;
+            case OP_MOD: DIVISION_OP(vm, %, int); break;
             case OP_DIV: {
                 DIVISION_OP(vm, /, double);
                 break;
@@ -687,9 +673,7 @@ static FalconResultCode run(FalconVM *vm) {
             }
 
             /* Class operations */
-            case OP_DEFCLASS:
-                push(vm, OBJ_VAL(falconClass(vm, READ_STRING())));
-                break;
+            case OP_DEFCLASS: push(vm, OBJ_VAL(falconClass(vm, READ_STRING()))); break;
             case OP_INHERIT: {
                 FalconValue superclass = peek(vm, 1);
                 if (!IS_CLASS(superclass)) { /* Checks if superclass value is valid */
@@ -703,9 +687,7 @@ static FalconResultCode run(FalconVM *vm) {
                 pop(vm);
                 break;
             }
-            case OP_DEFMETHOD:
-                defineMethod(vm, READ_STRING());
-                break;
+            case OP_DEFMETHOD: defineMethod(vm, READ_STRING()); break;
             case OP_INVPROP: {
                 ObjString *name = READ_STRING();
                 int argCount = READ_BYTE();
@@ -772,12 +754,8 @@ static FalconResultCode run(FalconVM *vm) {
             }
 
             /* VM operations */
-            case OP_DUPT:
-                push(vm, peek(vm, 0));
-                break;
-            case OP_POPT:
-                pop(vm);
-                break;
+            case OP_DUPT: push(vm, peek(vm, 0)); break;
+            case OP_POPT: pop(vm); break;
             case OP_POPEXPR: {
                 FalconValue result = peek(vm, 0);
                 if (!IS_NULL(result)) {

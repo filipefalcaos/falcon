@@ -49,16 +49,11 @@ bool valuesEqual(FalconValue a, FalconValue b) {
     if (a.type != b.type) return false;
 
     switch (a.type) {
-        case VAL_BOOL:
-            return AS_BOOL(a) == AS_BOOL(b);
-        case VAL_NULL:
-            return true;
-        case VAL_NUM:
-            return AS_NUM(a) == AS_NUM(b);
-        case VAL_OBJ:
-            return AS_OBJ(a) == AS_OBJ(b);
-        default:
-            return false;
+        case VAL_BOOL: return AS_BOOL(a) == AS_BOOL(b);
+        case VAL_NULL: return true;
+        case VAL_NUM: return AS_NUM(a) == AS_NUM(b);
+        case VAL_OBJ: return AS_OBJ(a) == AS_OBJ(b);
+        default: return false;
     }
 }
 
@@ -188,11 +183,9 @@ char *valueToString(FalconVM *vm, FalconValue *value) {
                     sprintf(string, "<native fn %s>", native->name);
                     return string;
                 }
-                default:
-                    break;
+                default: break;
             }
-        default:
-            return NULL;
+        default: return NULL;
     }
 }
 
@@ -215,15 +208,9 @@ void printFunction(ObjFunction *function) {
  */
 void printValue(FalconVM *vm, FalconValue value) {
     switch (value.type) {
-        case VAL_BOOL:
-            printf("%s", AS_BOOL(value) ? "true" : "false");
-            break;
-        case VAL_NULL:
-            printf("null");
-            break;
-        case VAL_NUM:
-            printf("%g", AS_NUM(value));
-            break;
+        case VAL_BOOL: printf("%s", AS_BOOL(value) ? "true" : "false"); break;
+        case VAL_NULL: printf("null"); break;
+        case VAL_NUM: printf("%g", AS_NUM(value)); break;
         case VAL_OBJ:
             switch (OBJ_TYPE(value)) {
                 case OBJ_STRING: {
@@ -240,15 +227,11 @@ void printValue(FalconVM *vm, FalconValue value) {
                     printFunction(closure->function);
                     break;
                 }
-                case OBJ_CLASS:
-                    printf("<class %s>", AS_CLASS(value)->name->chars);
-                    break;
+                case OBJ_CLASS: printf("<class %s>", AS_CLASS(value)->name->chars); break;
                 case OBJ_INSTANCE:
                     printf("<instance of %s>", AS_INSTANCE(value)->class_->name->chars);
                     break;
-                case OBJ_BMETHOD:
-                    printFunction(AS_BMETHOD(value)->method->function);
-                    break;
+                case OBJ_BMETHOD: printFunction(AS_BMETHOD(value)->method->function); break;
                 case OBJ_LIST: {
                     ObjList *list = AS_LIST(value);
                     printf("[");
@@ -292,10 +275,8 @@ void printValue(FalconVM *vm, FalconValue value) {
                     printf("<native fn %s>", native->name);
                     break;
                 }
-                default:
-                    break;
+                default: break;
             }
-        default:
-            break;
+        default: break;
     }
 }

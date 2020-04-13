@@ -140,12 +140,10 @@ FALCON_NATIVE(type) {
                     typeString = "<function>";
                     typeStringLen = 10;
                     break;
-                default:
-                    break;
+                default: break;
             }
             break;
-        default:
-            break;
+        default: break;
     }
 
     return OBJ_VAL(falconString(vm, typeString, typeStringLen));
@@ -213,13 +211,9 @@ FALCON_NATIVE(len) {
 
     /* Handles the subscript types */
     switch (AS_OBJ(*args)->type) {
-        case OBJ_LIST:
-            return NUM_VAL(AS_LIST(*args)->elements.count); /* Returns the list length */
-        case OBJ_STRING:
-            return NUM_VAL(AS_STRING(*args)->length); /* Returns the string length */
-        default:
-            interpreterError(vm, VM_ARGS_TYPE_ERR, 1, "list or string");
-            return ERR_VAL;
+        case OBJ_LIST: return NUM_VAL(AS_LIST(*args)->elements.count); /* Returns the list length */
+        case OBJ_STRING: return NUM_VAL(AS_STRING(*args)->length); /* Returns the string length */
+        default: interpreterError(vm, VM_ARGS_TYPE_ERR, 1, "list or string"); return ERR_VAL;
     }
 }
 

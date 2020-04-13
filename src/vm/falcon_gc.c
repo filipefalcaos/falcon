@@ -78,9 +78,7 @@ static void markTable(FalconVM *vm, Table *table) {
  * Marks all Falcon Values in a value array for garbage collection.
  */
 static void markArray(FalconVM *vm, ValueArray *array) {
-    for (int i = 0; i < array->count; i++) {
-        markValue(vm, array->values[i]);
-    }
+    for (int i = 0; i < array->count; i++) markValue(vm, array->values[i]);
 }
 
 /**
@@ -109,9 +107,7 @@ static void blackenObject(FalconVM *vm, FalconObj *object) {
             markArray(vm, &function->bytecode.constants);
             break;
         }
-        case OBJ_UPVALUE:
-            markValue(vm, ((ObjUpvalue *) object)->closed);
-            break;
+        case OBJ_UPVALUE: markValue(vm, ((ObjUpvalue *) object)->closed); break;
         case OBJ_CLOSURE: {
             ObjClosure *closure = (ObjClosure *) object;
             markObject(vm, (FalconObj *) closure->function);
@@ -147,8 +143,7 @@ static void blackenObject(FalconVM *vm, FalconObj *object) {
             break;
         }
         case OBJ_STRING:
-        case OBJ_NATIVE:
-            break;
+        case OBJ_NATIVE: break;
     }
 }
 
