@@ -122,5 +122,6 @@ FalconResultCode falconInterpret(FalconVM *vm, const char *source);
 #define VM_INDEX_ASSG_ERR    "Only lists and maps support subscript assignment."
 #define VM_LIST_BOUNDS_ERR   "List index out of bounds."
 #define VM_STRING_BOUNDS_ERR "String index out of bounds."
+#define VM_STRING_MUT_ERR    "String content cannot be modified."
 
 #endif // FALCON_VM_H

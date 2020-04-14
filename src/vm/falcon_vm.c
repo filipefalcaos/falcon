@@ -319,10 +319,10 @@ static FalconResultCode run(FalconVM *vm) {
 
 /* Checks if a given Value is numerical and its value is also different from zero. If not, a
  * runtime error is returned */
-#define ASSERT_NOT_0(vm, value)                     \
+#define ASSERT_NOT_0(vm, value, error)              \
     do {                                            \
         if (!IS_NUM(value) || AS_NUM(value) == 0) { \
-            interpreterError(vm, VM_DIV_ZERO_ERR);  \
+            interpreterError(vm, error);            \
             return FALCON_RUNTIME_ERROR;            \
         }                                           \
     } while (false)
@@ -342,7 +342,7 @@ static FalconResultCode run(FalconVM *vm) {
  * the Falcon VM's stack. Then, sets the result on the top of the stack */
 #define DIVISION_OP(vm, op, type)                        \
     do {                                                 \
-        ASSERT_NOT_0(vm, peek(vm, 0));                   \
+        ASSERT_NOT_0(vm, peek(vm, 0), VM_DIV_ZERO_ERR);  \
         ASSERT_NUM(vm, peek(vm, 1), VM_OPR_NOT_NUM_ERR); \
         type b = AS_NUM(pop(vm));                        \
         type a = AS_NUM((vm)->stackTop[-1]);             \
@@ -487,9 +487,8 @@ static FalconResultCode run(FalconVM *vm) {
                 break;
             }
             case OP_SETSUB: {
-                ASSERT_NUM(vm, peek(vm, 1), VM_LIST_INDEX_ERR); /* Checks if index is valid */
                 FalconValue value = pop(vm);
-                int index = (int) AS_NUM(pop(vm));
+                FalconValue index = pop(vm);
                 FalconValue subscript = pop(vm);
 
                 if (!IS_OBJ(subscript)) { /* Checks if subscript is an object */
@@ -499,10 +498,13 @@ static FalconResultCode run(FalconVM *vm) {
 
                 switch (AS_OBJ(subscript)->type) { /* Handles the subscript types */
                     case OBJ_LIST: {
+                        ASSERT_NUM(vm, index, VM_LIST_INDEX_ERR);
+                        int listIndex = AS_NUM(index);
                         ObjList *list = AS_LIST(subscript);
-                        if (index < 0) index = list->elements.count + index;
-                        if (index >= 0 && index < list->elements.count) {
-                            list->elements.values[index] = value;
+
+                        if (listIndex < 0) listIndex = list->elements.count + listIndex;
+                        if (listIndex >= 0 && listIndex < list->elements.count) {
+                            list->elements.values[listIndex] = value;
                             push(vm, value);
                             break;
                         }
@@ -511,7 +513,19 @@ static FalconResultCode run(FalconVM *vm) {
                         interpreterError(vm, VM_LIST_BOUNDS_ERR);
                         return FALCON_RUNTIME_ERROR;
                     }
-                    default: /* Only lists support subscript assignment */
+                    case OBJ_MAP: {
+                        ASSERT_STR(vm, index, VM_MAP_INDEX_ERR);
+                        ObjString *key = AS_STRING(index);
+                        ObjMap *map = AS_MAP(subscript);
+                        tableSet(vm, &map->entries, key, value);
+                        push(vm, value);
+                        break;
+                    }
+                    case OBJ_STRING: {
+                        interpreterError(vm, VM_STRING_MUT_ERR);
+                        return FALCON_RUNTIME_ERROR;
+                    }
+                    default: /* Only lists and maps support subscript assignment */
                         interpreterError(vm, VM_INDEX_ASSG_ERR);
                         return FALCON_RUNTIME_ERROR;
                 }
