@@ -116,7 +116,7 @@ FalconResultCode falconInterpret(FalconVM *vm, const char *source);
 
 /* Indexing */
 #define VM_LIST_INDEX_ERR    "List index must be a number."
-#define VM_MAP_INDEX_ERR     "Map index must be a string."
+#define VM_MAP_INDEX_ERR     "Map key must be a string."
 #define VM_STRING_INDEX_ERR  "String index must be a number."
 #define VM_INDEX_ERR         "Indexed value must be a list, a map or a string."
 #define VM_INDEX_ASSG_ERR    "Only lists and maps support subscript assignment."

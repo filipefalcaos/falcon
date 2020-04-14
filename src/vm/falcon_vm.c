@@ -412,8 +412,9 @@ static FalconResultCode run(FalconVM *vm) {
 
                 /* Adds the entries to the map */
                 for (uint16_t i = 0; i < entriesCount; i++) {
-                    FalconValue value = peek(vm, 0);
                     FalconValue key = peek(vm, 1);
+                    ASSERT_STR(vm, key, VM_MAP_INDEX_ERR);
+                    FalconValue value = peek(vm, 0);
                     tableSet(vm, &map->entries, AS_STRING(key), value);
 
                     /* Discards the entry's key and value */
