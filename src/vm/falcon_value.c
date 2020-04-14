@@ -252,7 +252,7 @@ void printValue(FalconVM *vm, FalconValue value) {
 
                     /* Print elements */
                     while (true) {
-                        if (currCount == map->length) /* All elements found? */
+                        if (currCount == map->entries.count) /* All elements found? */
                             break;
 
                         /* Prints a key/value pair */
@@ -260,7 +260,7 @@ void printValue(FalconVM *vm, FalconValue value) {
                             printValue(vm, OBJ_VAL(currEntry->key));
                             printf(": ");
                             printValue(vm, currEntry->value);
-                            if (currCount != map->length - 1) printf(", ");
+                            if (currCount != map->entries.count - 1) printf(", ");
                             currCount++;
                         }
 
