@@ -207,13 +207,14 @@ FALCON_NATIVE(str) {
  */
 FALCON_NATIVE(len) {
     ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
-    ASSERT_ARG_TYPE(IS_OBJ, "list or string", *args, vm, 1);
+    ASSERT_ARG_TYPE(IS_OBJ, "list, map or string", *args, vm, 1);
 
     /* Handles the subscript types */
     switch (AS_OBJ(*args)->type) {
         case OBJ_LIST: return NUM_VAL(AS_LIST(*args)->elements.count); /* Returns the list length */
+        case OBJ_MAP: return NUM_VAL(AS_MAP(*args)->entries.count);    /* Returns the map length */
         case OBJ_STRING: return NUM_VAL(AS_STRING(*args)->length); /* Returns the string length */
-        default: interpreterError(vm, VM_ARGS_TYPE_ERR, 1, "list or string"); return ERR_VAL;
+        default: interpreterError(vm, VM_ARGS_TYPE_ERR, 1, "list, map or string"); return ERR_VAL;
     }
 }
 
