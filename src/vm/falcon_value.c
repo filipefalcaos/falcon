@@ -70,9 +70,9 @@ bool isFalsy(FalconValue value) {
 }
 
 /* String conversion constants */
-#define MIN_LIST_TO_STR      3
-#define MAX_NUM_TO_STR       24
-#define NUM_TO_STR_FORMATTER "%.14g"
+#define MIN_COLLECTION_TO_STR 10
+#define MAX_NUM_TO_STR        24
+#define NUM_TO_STR_FORMATTER  "%.14g"
 
 /**
  * Converts a given Falcon Function to a Falcon string.
@@ -91,10 +91,11 @@ char *functionToString(FalconVM *vm, ObjFunction *function) {
  * Converts a given Falcon List to a Falcon string.
  */
 char *listToString(FalconVM *vm, ObjList *list) {
-    int allocationSize = MIN_LIST_TO_STR;
+    int allocationSize = MIN_COLLECTION_TO_STR;
     char *string = FALCON_ALLOCATE(vm, char, allocationSize); /* Initial allocation */
     int stringLen = snprintf(string, allocationSize, "[");
 
+    /* Adds the elements to the string */
     for (int i = 0; i < list->elements.count; i++) {
         bool isString;
         char *elementString;
@@ -128,6 +129,78 @@ char *listToString(FalconVM *vm, ObjList *list) {
     }
 
     snprintf(string + stringLen, allocationSize - stringLen, "]");
+    return string;
+}
+
+/**
+ * Converts a given Falcon Map to a Falcon string.
+ */
+char *mapToString(FalconVM *vm, ObjMap *map) {
+    int allocationSize = MIN_COLLECTION_TO_STR;
+    char *string = FALCON_ALLOCATE(vm, char, allocationSize); /* Initial allocation */
+    int stringLen = snprintf(string, allocationSize, "{");
+
+    uint16_t currCount = 0;
+    Entry *currEntry = map->entries.entries;
+
+    /* Adds the pairs to the string */
+    while (true) {
+        bool isString;
+        char *keyString, *valueString;
+        size_t keyLen, valueLen;
+
+        if (currCount == map->entries.count) /* All elements found? */
+            break;
+
+        if (currEntry->key != NULL) {
+            keyString = currEntry->key->chars;
+            keyLen = currEntry->key->length;
+
+            /* Increases the allocation, if needed */
+            if ((stringLen + keyLen + 4) > allocationSize) { /* +4 for the previous separator */
+                int oldSize = allocationSize;
+                allocationSize = FALCON_INCREASE_CAPACITY(allocationSize);
+                string = FALCON_INCREASE_ARRAY(vm, string, char, oldSize, allocationSize);
+            }
+
+            /* Appends the current element to the output string */
+            stringLen +=
+                snprintf(string + stringLen, allocationSize - stringLen, "%s: ", keyString);
+
+            /* Gets the current value string */
+            if (IS_STRING(currEntry->value)) {
+                ObjString *objString = AS_STRING(currEntry->value);
+                valueString = objString->chars;
+                valueLen = objString->length;
+                isString = true;
+            } else {
+                valueString = valueToString(vm, &currEntry->value);
+                valueLen = strlen(valueString);
+                isString = false;
+            }
+
+            /* Increases the allocation, if needed */
+            if ((stringLen + valueLen + 2) > allocationSize) { /* +2 for a possible separator */
+                int oldSize = allocationSize;
+                allocationSize = FALCON_INCREASE_CAPACITY(allocationSize);
+                string = FALCON_INCREASE_ARRAY(vm, string, char, oldSize, allocationSize);
+            }
+
+            /* Appends the current value to the output string */
+            stringLen +=
+                snprintf(string + stringLen, allocationSize - stringLen, "%s", valueString);
+            if (!isString) FALCON_FREE(vm, char, valueString);
+
+            if (currCount != map->entries.count - 1) /* Should print the separator after element? */
+                stringLen += snprintf(string + stringLen, allocationSize - stringLen, ", ");
+
+            currCount++;
+        }
+
+        currEntry++; /* Goes to the next slot */
+    }
+
+    snprintf(string + stringLen, allocationSize - stringLen, "}");
     return string;
 }
 
@@ -176,6 +249,10 @@ char *valueToString(FalconVM *vm, FalconValue *value) {
                 case OBJ_LIST: {
                     ObjList *list = AS_LIST(*value);
                     return listToString(vm, list);
+                }
+                case OBJ_MAP: {
+                    ObjMap *map = AS_MAP(*value);
+                    return mapToString(vm, map);
                 }
                 case OBJ_NATIVE: {
                     ObjNative *native = AS_NATIVE(*value);
