@@ -69,28 +69,23 @@ bool isFalsy(FalconValue value) {
            (IS_MAP(value) && AS_MAP(value)->entries.count == 0);
 }
 
-/* String conversion constants */
-#define MIN_COLLECTION_TO_STR 10
-#define MAX_NUM_TO_STR        24
-#define NUM_TO_STR_FORMATTER  "%.14g"
-
 /**
  * Converts a given Falcon Function to a Falcon string.
  */
-char *functionToString(FalconVM *vm, ObjFunction *function) {
+ObjString *functionToString(FalconVM *vm, ObjFunction *function) {
     if (function->name == NULL) {
-        return FALCON_SCRIPT;
+        return falconString(vm, FALCON_SCRIPT, 6);
     } else {
         char *string = FALCON_ALLOCATE(vm, char, function->name->length + 6);
         sprintf(string, "<fn %s>", function->name->chars);
-        return string;
+        return falconString(vm, string, strlen(string));
     }
 }
 
 /**
  * Converts a given Falcon List to a Falcon string.
  */
-char *listToString(FalconVM *vm, ObjList *list) {
+ObjString *listToString(FalconVM *vm, ObjList *list) {
     size_t allocationSize = MIN_COLLECTION_TO_STR;
     char *string = FALCON_ALLOCATE(vm, char, allocationSize); /* Initial allocation */
     int stringLen = sprintf(string, "[");
@@ -100,41 +95,52 @@ char *listToString(FalconVM *vm, ObjList *list) {
     for (int i = 0; i < elementsCount; i++) {
         char *elementString;
         size_t elementLen, currLen;
+        bool isString;
 
         /* Gets the current element string */
         if (IS_STRING(list->elements.values[i])) {
             ObjString *objString = AS_STRING(list->elements.values[i]);
             elementString = objString->chars;
             elementLen = objString->length;
+            currLen = stringLen + elementLen + 5; /* +5 = quotes (2) + ", " (2) + init space (1) */
+            isString = true;
         } else {
-            elementString = valueToString(vm, &list->elements.values[i]);
+            elementString = valueToString(vm, &list->elements.values[i])->chars;
             elementLen = strlen(elementString);
+            currLen = stringLen + elementLen + 3; /* +3 = ", " (2) + init space (1) */
+            isString = false;
         }
 
         /* Increases the allocation, if needed */
-        currLen = stringLen + elementLen + 3;
-        if (currLen > allocationSize) { /* +3 = separator + initial space */
+        if (currLen > allocationSize) {
             int oldSize = allocationSize;
             allocationSize = increaseStringAllocation(currLen, allocationSize);
             string = FALCON_INCREASE_ARRAY(vm, string, char, oldSize, allocationSize);
         }
 
         /* Appends the current element to the output string */
-        if (i != (elementsCount - 1)) {
-            stringLen += sprintf(string + stringLen, " %s,", elementString);
+        if (isString) {
+            stringLen += sprintf(string + stringLen, " \"%s\"", elementString);
         } else {
-            stringLen += sprintf(string + stringLen, " %s ", elementString);
+            stringLen += sprintf(string + stringLen, " %s", elementString);
+        }
+
+        /* Appends the separator or final space */
+        if (i != (elementsCount - 1)) {
+            stringLen += sprintf(string + stringLen, ",");
+        } else {
+            stringLen += sprintf(string + stringLen, " ");
         }
     }
 
     sprintf(string + stringLen, "]");
-    return string;
+    return falconString(vm, string, strlen(string));
 }
 
 /**
  * Converts a given Falcon Map to a Falcon string.
  */
-char *mapToString(FalconVM *vm, ObjMap *map) {
+ObjString *mapToString(FalconVM *vm, ObjMap *map) {
     size_t allocationSize = MIN_COLLECTION_TO_STR;
     char *string = FALCON_ALLOCATE(vm, char, allocationSize); /* Initial allocation */
     int stringLen = sprintf(string, "{");
@@ -147,6 +153,7 @@ char *mapToString(FalconVM *vm, ObjMap *map) {
     while (true) {
         char *keyString, *valueString;
         size_t keyLen, valueLen, currLen;
+        bool isString;
 
         if (currCount == pairsCount) /* All elements found? */
             break;
@@ -154,41 +161,51 @@ char *mapToString(FalconVM *vm, ObjMap *map) {
         if (currEntry->key != NULL) {
             keyString = currEntry->key->chars;
             keyLen = currEntry->key->length;
+            currLen = stringLen + keyLen + 5; /* +5 = quotes (2) + ": " (2) + initial space (1) */
 
             /* Increases the allocation, if needed */
-            currLen = stringLen + keyLen + 3;
-            if (currLen > allocationSize) { /* +3 = separator + initial space */
+            if (currLen > allocationSize) {
                 int oldSize = allocationSize;
                 allocationSize = increaseStringAllocation(currLen, allocationSize);
                 string = FALCON_INCREASE_ARRAY(vm, string, char, oldSize, allocationSize);
             }
 
             /* Appends the current element to the output string */
-            stringLen += sprintf(string + stringLen, " %s: ", keyString);
+            stringLen += sprintf(string + stringLen, " \"%s\": ", keyString);
 
             /* Gets the current value string */
             if (IS_STRING(currEntry->value)) {
                 ObjString *objString = AS_STRING(currEntry->value);
                 valueString = objString->chars;
                 valueLen = objString->length;
+                currLen = stringLen + valueLen + 4; /* +4 = quotes (2) + ", " (2) */
+                isString = true;
             } else {
-                valueString = valueToString(vm, &currEntry->value);
+                valueString = valueToString(vm, &currEntry->value)->chars;
                 valueLen = strlen(valueString);
+                currLen = stringLen + valueLen + 2; /* +2 for the ", " */
+                isString = false;
             }
 
             /* Increases the allocation, if needed */
-            currLen = stringLen + valueLen + 2;
-            if (currLen > allocationSize) { /* +2 for the separator */
+            if (currLen > allocationSize) {
                 int oldSize = allocationSize;
                 allocationSize = increaseStringAllocation(currLen, allocationSize);
                 string = FALCON_INCREASE_ARRAY(vm, string, char, oldSize, allocationSize);
             }
 
             /* Appends the current value to the output string */
-            if (currCount != pairsCount - 1) {
-                stringLen += sprintf(string + stringLen, "%s,", valueString);
+            if (isString) {
+                stringLen += sprintf(string + stringLen, "\"%s\"", valueString);
             } else {
-                stringLen += sprintf(string + stringLen, "%s ", valueString);
+                stringLen += sprintf(string + stringLen, "%s", valueString);
+            }
+
+            /* Appends the separator or final space */
+            if (currCount != pairsCount - 1) {
+                stringLen += sprintf(string + stringLen, ",");
+            } else {
+                stringLen += sprintf(string + stringLen, " ");
             }
 
             currCount++;
@@ -198,28 +215,28 @@ char *mapToString(FalconVM *vm, ObjMap *map) {
     }
 
     sprintf(string + stringLen, "}");
-    return string;
+    return falconString(vm, string, strlen(string));
 }
 
 /**
  * Converts a given Falcon Value that is not already a string into a Falcon string.
  */
-char *valueToString(FalconVM *vm, FalconValue *value) {
+ObjString *valueToString(FalconVM *vm, FalconValue *value) {
     switch (value->type) {
         case VAL_BOOL: {
             char *string = FALCON_ALLOCATE(vm, char, 6);
             sprintf(string, "%s", AS_BOOL(*value) ? "true" : "false");
-            return string;
+            return falconString(vm, string, strlen(string));
         }
         case VAL_NULL: {
             char *string = FALCON_ALLOCATE(vm, char, 5);
             sprintf(string, "%s", "null");
-            return string;
+            return falconString(vm, string, strlen(string));
         }
         case VAL_NUM: {
             char *string = FALCON_ALLOCATE(vm, char, MAX_NUM_TO_STR);
             sprintf(string, NUM_TO_STR_FORMATTER, AS_NUM(*value));
-            return string;
+            return falconString(vm, string, strlen(string));
         }
         case VAL_OBJ:
             switch (OBJ_TYPE(*value)) {
@@ -235,13 +252,13 @@ char *valueToString(FalconVM *vm, FalconValue *value) {
                     ObjClass *class_ = AS_CLASS(*value);
                     char *string = FALCON_ALLOCATE(vm, char, class_->name->length + 9);
                     sprintf(string, "<class %s>", class_->name->chars);
-                    return string;
+                    return falconString(vm, string, strlen(string));
                 }
                 case OBJ_INSTANCE: {
                     ObjInstance *instance = AS_INSTANCE(*value);
                     char *string = FALCON_ALLOCATE(vm, char, instance->class_->name->length + 15);
                     sprintf(string, "<instance of %s>", instance->class_->name->chars);
-                    return string;
+                    return falconString(vm, string, strlen(string));
                 }
                 case OBJ_LIST: {
                     ObjList *list = AS_LIST(*value);
@@ -255,16 +272,13 @@ char *valueToString(FalconVM *vm, FalconValue *value) {
                     ObjNative *native = AS_NATIVE(*value);
                     char *string = FALCON_ALLOCATE(vm, char, strlen(native->name) + 13);
                     sprintf(string, "<native fn %s>", native->name);
-                    return string;
+                    return falconString(vm, string, strlen(string));
                 }
                 default: break;
             }
         default: return NULL;
     }
 }
-
-#undef MAX_NUM_TO_STR
-#undef NUM_TO_STR_FORMATTER
 
 /**
  * Prints a given Falcon Function.
@@ -288,7 +302,7 @@ void printValue(FalconVM *vm, FalconValue value) {
         case VAL_OBJ:
             switch (OBJ_TYPE(value)) {
                 case OBJ_STRING: {
-                    printf("%s", AS_CSTRING(value));
+                    printf("\"%s\"", AS_CSTRING(value));
                     break;
                 }
                 case OBJ_FUNCTION: {
@@ -308,40 +322,12 @@ void printValue(FalconVM *vm, FalconValue value) {
                 case OBJ_BMETHOD: printFunction(AS_BMETHOD(value)->method->function); break;
                 case OBJ_LIST: {
                     ObjList *list = AS_LIST(value);
-                    printf("[");
-
-                    for (int i = 0; i < list->elements.count; i++) {
-                        printValue(vm, list->elements.values[i]);
-                        if (i != list->elements.count - 1) printf(", ");
-                    }
-
-                    printf("]");
+                    printf("%s", listToString(vm, list)->chars);
                     break;
                 }
                 case OBJ_MAP: {
                     ObjMap *map = AS_MAP(value);
-                    uint16_t currCount = 0;
-                    Entry *currEntry = map->entries.entries;
-                    printf("{");
-
-                    /* Print elements */
-                    while (true) {
-                        if (currCount == map->entries.count) /* All elements found? */
-                            break;
-
-                        /* Prints a key/value pair */
-                        if (currEntry->key != NULL) {
-                            printValue(vm, OBJ_VAL(currEntry->key));
-                            printf(": ");
-                            printValue(vm, currEntry->value);
-                            if (currCount != map->entries.count - 1) printf(", ");
-                            currCount++;
-                        }
-
-                        currEntry++; /* Goes to the next slot */
-                    }
-
-                    printf("}");
+                    printf("%s", mapToString(vm, map)->chars);
                     break;
                 }
                 case OBJ_NATIVE: {

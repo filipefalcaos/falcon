@@ -45,6 +45,11 @@ typedef struct {
 #define NULL_VAL        ((FalconValue){VAL_NULL, {.number = 0}})
 #define ERR_VAL         ((FalconValue){VAL_ERR, {.number = 0}})
 
+/* String conversion constants */
+#define MIN_COLLECTION_TO_STR 10
+#define MAX_NUM_TO_STR        24
+#define NUM_TO_STR_FORMATTER  "%.14g"
+
 /* Array of Values */
 typedef struct {
     int count;
@@ -60,7 +65,7 @@ void writeValArray(FalconVM *vm, ValueArray *valueArray, FalconValue value);
 /* Value operations */
 bool valuesEqual(FalconValue a, FalconValue b);
 bool isFalsy(FalconValue value);
-char *valueToString(FalconVM *vm, FalconValue *value);
+ObjString *valueToString(FalconVM *vm, FalconValue *value);
 void printValue(FalconVM *vm, FalconValue value);
 
 #endif // FALCON_VALUE_H

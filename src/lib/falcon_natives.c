@@ -194,10 +194,8 @@ FALCON_NATIVE(num) {
  */
 FALCON_NATIVE(str) {
     ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
-    if (!IS_STRING(*args)) {
-        char *string = valueToString(vm, args); /* Converts value to a string */
-        return OBJ_VAL(falconString(vm, string, strlen(string)));
-    }
+    if (!IS_STRING(*args))
+        return OBJ_VAL(valueToString(vm, args)); /* Converts value to a string */
 
     return *args; /* Given value is already a string */
 }
