@@ -43,4 +43,15 @@ FalconObj *falconAllocateObj(FalconVM *vm, size_t size, ObjType type);
 void falconFreeObj(FalconVM *vm, FalconObj *object);
 void falconFreeObjs(FalconVM *vm);
 
+/**
+ * Increases the allocation size of a string based on its current length.
+ */
+static inline size_t increaseStringAllocation(size_t currLen, size_t allocationSize) {
+    if (currLen > (allocationSize * 2)) {
+        return currLen + allocationSize * 2;
+    } else {
+        return FALCON_INCREASE_CAPACITY(allocationSize);
+    }
+}
+
 #endif // FALCON_MEMORY_H

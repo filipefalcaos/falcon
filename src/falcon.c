@@ -217,16 +217,13 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
                 VALIDATE_OPTION(argv, optionId);
                 printInfo();
                 exit(FALCON_NO_ERR);
-            case '-':
-                optionId++;
-                goto EXEC; /* Stop parsing on "--" */
-            default:
-                CLI_ERROR(argv, optionId, UNKNOWN_OPT_ERR);
+            case '-': optionId++; goto EXEC; /* Stop parsing on "--" */
+            default: CLI_ERROR(argv, optionId, UNKNOWN_OPT_ERR);
         }
     }
 
-    /* Execute the given source */
-    EXEC:
+/* Execute the given source */
+EXEC:
     if (inputCommand != NULL) {
         setCommand(vm, inputCommand); /* Sets the command interpreter */
     } else if (argv[optionId] == NULL) {

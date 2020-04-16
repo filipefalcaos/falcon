@@ -146,8 +146,6 @@ ObjString *tableFindStr(Table *table, const char *chars, size_t length, uint32_t
 void copyEntries(FalconVM *vm, Table *from, Table *to) {
     for (int i = 0; i < from->capacity; i++) {
         Entry *entry = &from->entries[i];
-        if (entry->key != NULL) {
-            tableSet(vm, to, entry->key, entry->value);
-        }
+        if (entry->key != NULL) tableSet(vm, to, entry->key, entry->value);
     }
 }

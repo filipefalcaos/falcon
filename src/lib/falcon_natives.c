@@ -140,12 +140,10 @@ FALCON_NATIVE(type) {
                     typeString = "<function>";
                     typeStringLen = 10;
                     break;
-                default:
-                    break;
+                default: break;
             }
             break;
-        default:
-            break;
+        default: break;
     }
 
     return OBJ_VAL(falconString(vm, typeString, typeStringLen));
@@ -209,17 +207,14 @@ FALCON_NATIVE(str) {
  */
 FALCON_NATIVE(len) {
     ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
-    ASSERT_ARG_TYPE(IS_OBJ, "list or string", *args, vm, 1);
+    ASSERT_ARG_TYPE(IS_OBJ, "list, map or string", *args, vm, 1);
 
     /* Handles the subscript types */
     switch (AS_OBJ(*args)->type) {
-        case OBJ_LIST:
-            return NUM_VAL(AS_LIST(*args)->elements.count); /* Returns the list length */
-        case OBJ_STRING:
-            return NUM_VAL(AS_STRING(*args)->length); /* Returns the string length */
-        default:
-            interpreterError(vm, VM_ARGS_TYPE_ERR, 1, "list or string");
-            return ERR_VAL;
+        case OBJ_LIST: return NUM_VAL(AS_LIST(*args)->elements.count); /* Returns the list length */
+        case OBJ_MAP: return NUM_VAL(AS_MAP(*args)->entries.count);    /* Returns the map length */
+        case OBJ_STRING: return NUM_VAL(AS_STRING(*args)->length); /* Returns the string length */
+        default: interpreterError(vm, VM_ARGS_TYPE_ERR, 1, "list, map or string"); return ERR_VAL;
     }
 }
 
@@ -255,8 +250,7 @@ FALCON_NATIVE(getField) {
     /* Gets the field value */
     ObjInstance *instance = AS_INSTANCE(args[0]);
     FalconValue value;
-    if (tableGet(&instance->fields, AS_STRING(args[1]), &value))
-        return value;
+    if (tableGet(&instance->fields, AS_STRING(args[1]), &value)) return value;
 
     /* Undefined field error */
     interpreterError(vm, VM_UNDEF_PROP_ERR, instance->class_->name->chars,
@@ -346,7 +340,7 @@ FALCON_NATIVE(input) {
     if (argCount == 1) {
         FalconValue prompt = *args;
         ASSERT_ARG_TYPE(IS_STRING, "string", prompt, vm, 1); /* Checks if is valid */
-        printf("%s", AS_CSTRING(prompt));               /* Prints the prompt */
+        printf("%s", AS_CSTRING(prompt));                    /* Prints the prompt */
     }
 
     char *inputString = readStrStdin(vm); /* Reads the input string */
@@ -395,27 +389,18 @@ static void defNative(FalconVM *vm, const char *name, FalconNativeFn function) {
  * Defines the complete set of native function for Falcon.
  */
 void defineNatives(FalconVM *vm) {
-    const ObjNative nativeFunctions[] = { /* Native functions implementations */
-        { .function = authors, .name = "authors" },
-        { .function = license, .name = "license" },
-        { .function = exit_, .name = "exit" },
-        { .function = clock_, .name = "clock" },
-        { .function = time_, .name = "time" },
-        { .function = type, .name = "type" },
-        { .function = bool_, .name = "bool" },
-        { .function = num, .name = "num" },
-        { .function = str, .name = "str" },
-        { .function = len, .name = "len" },
-        { .function = hasField, .name = "hasField" },
-        { .function = getField, .name = "getField" },
-        { .function = setField, .name = "setField" },
-        { .function = delField, .name = "delField" },
-        { .function = abs_, .name = "abs" },
-        { .function = sqrt_, .name = "sqrt" },
-        { .function = pow_, .name = "pow" },
-        { .function = input, .name = "input" },
-        { .function = print, .name = "print" }
-    };
+    const ObjNative nativeFunctions[] = {
+        /* Native functions implementations */
+        {.function = authors, .name = "authors"},   {.function = license, .name = "license"},
+        {.function = exit_, .name = "exit"},        {.function = clock_, .name = "clock"},
+        {.function = time_, .name = "time"},        {.function = type, .name = "type"},
+        {.function = bool_, .name = "bool"},        {.function = num, .name = "num"},
+        {.function = str, .name = "str"},           {.function = len, .name = "len"},
+        {.function = hasField, .name = "hasField"}, {.function = getField, .name = "getField"},
+        {.function = setField, .name = "setField"}, {.function = delField, .name = "delField"},
+        {.function = abs_, .name = "abs"},          {.function = sqrt_, .name = "sqrt"},
+        {.function = pow_, .name = "pow"},          {.function = input, .name = "input"},
+        {.function = print, .name = "print"}};
 
     /* Define listed native functions */
     for (unsigned long i = 0; i < sizeof(nativeFunctions) / sizeof(nativeFunctions[0]); i++)

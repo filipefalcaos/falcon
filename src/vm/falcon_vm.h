@@ -112,13 +112,16 @@ FalconResultCode falconInterpret(FalconVM *vm, const char *source);
 /* Operands */
 #define VM_OPR_NOT_NUM_ERR     "Operand must be a number."
 #define VM_OPR_NOT_NUM_STR_ERR "Operands must be two numbers or two strings."
-#define VM_DIV_ZERO_ERR        "Cannot perform a division by zero."
+#define VM_DIV_ZERO_ERR        "Divisor must be a non-zero number."
 
 /* Indexing */
-#define VM_INDEX_NOT_NUM_ERR "List index must be a number."
-#define VM_INDEX_ERR         "Indexed value must be a list or a string."
-#define VM_INDEX_ASSG_ERR    "Only lists support subscript assignment."
+#define VM_LIST_INDEX_ERR    "List index must be a number."
+#define VM_MAP_INDEX_ERR     "Map key must be a string."
+#define VM_STRING_INDEX_ERR  "String index must be a number."
+#define VM_INDEX_ERR         "Indexed value must be a list, a map or a string."
+#define VM_INDEX_ASSG_ERR    "Only lists and maps support subscript assignment."
 #define VM_LIST_BOUNDS_ERR   "List index out of bounds."
 #define VM_STRING_BOUNDS_ERR "String index out of bounds."
+#define VM_STRING_MUT_ERR    "String content cannot be modified."
 
 #endif // FALCON_VM_H

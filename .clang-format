@@ -2,12 +2,19 @@
 # Usage: clang-format -i <file>
 # The coding style below is based on LLVM with minor modifications
 
+# Base style
 BasedOnStyle: LLVM
-IndentWidth: 4
-Language: Cpp
-ColumnLimit: 100
-SpaceAfterCStyleCast: true
+IndentWidth:  4
+Language:     Cpp
+ColumnLimit:  100
+
+# Options
+AlignConsecutiveMacros: true
 AlignEscapedNewlines: Left
-IndentCaseLabels: true
+AllowShortBlocksOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortFunctionsOnASingleLine: All
 AllowShortLoopsOnASingleLine: true
+IndentCaseLabels: true
+SpaceAfterCStyleCast: true

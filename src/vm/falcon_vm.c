@@ -84,10 +84,6 @@ FalconValue pop(FalconVM *vm) {
 }
 
 /**
- * Pops and discard "n" values from the top of the Falcon's virtual machine stack. for (long int i = 0; i < n; i++) pop(vm);
- */
-
-/**
  * Peeks a element on the Falcon's virtual machine stack.
  */
 static FalconValue peek(FalconVM *vm, int distance) { return vm->stackTop[-1 - distance]; }
@@ -141,8 +137,7 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
                 vm->stackTop[-argCount - 1] = bMethod->receiver; /* Set the "this" bound receiver */
                 return call(vm, bMethod->method, argCount);      /* Calls the method as a closure */
             }
-            case OBJ_CLOSURE:
-                return call(vm, AS_CLOSURE(callee), argCount);
+            case OBJ_CLOSURE: return call(vm, AS_CLOSURE(callee), argCount);
             case OBJ_NATIVE: {
                 FalconNativeFn native = AS_NATIVE(callee)->function;
                 FalconValue out = native(vm, argCount, vm->stackTop - argCount);
@@ -151,8 +146,7 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
                 if (!push(vm, out)) return false; /* Pushes the return value */
                 return true;
             }
-            default:
-                break; /* Not callable */
+            default: break; /* Not callable */
         }
     }
 
@@ -172,7 +166,7 @@ static bool bindMethod(FalconVM *vm, ObjClass *class_, ObjString *methodName) {
     }
 
     /* Binds the method to the receiver */
-    ObjBMethod* bMethod = falconBMethod(vm, peek(vm, 0), AS_CLOSURE(method));
+    ObjBMethod *bMethod = falconBMethod(vm, peek(vm, 0), AS_CLOSURE(method));
     pop(vm);
     push(vm, OBJ_VAL(bMethod));
     return true;
@@ -305,59 +299,58 @@ static FalconResultCode run(FalconVM *vm) {
 #define READ_CONSTANT() CURR_CONSTANTS().values[READ_BYTE()]
 #define READ_STRING()   AS_STRING(READ_CONSTANT())
 
-/* Checks if the two values at the top of the Falcon VM's stack are numerical Values. If not, a
- * runtime error is returned */
-#define ASSERT_TOP2_NUM(vm)                                 \
-    do {                                                    \
-        if (!IS_NUM(peek(vm, 0)) || !IS_NUM(peek(vm, 1))) { \
-            interpreterError(vm, VM_OPR_NOT_NUM_ERR);       \
-            return FALCON_RUNTIME_ERROR;                    \
-        }                                                   \
-    } while (false)
-
-/* Checks if the value at the given position "pos" of the Falcon VM's stack is a numerical Value.
- * If not, a runtime error is returned */
-#define ASSERT_NUM(vm, pos, error)       \
+/* Checks if a given Value is numerical. If not, a runtime error is returned */
+#define ASSERT_NUM(vm, value, error)     \
     do {                                 \
-        if (!IS_NUM(peek(vm, pos))) {    \
+        if (!IS_NUM(value)) {            \
             interpreterError(vm, error); \
             return FALCON_RUNTIME_ERROR; \
         }                                \
     } while (false)
 
-/* Checks if the value at the given position "pos" of the Falcon VM's stack is not zero. If not, a
- * runtime error is returned */
-#define ASSERT_NOT_0(vm, pos)                      \
-    do {                                           \
-        if (AS_NUM(peek(vm, pos)) == 0) {          \
-            interpreterError(vm, VM_DIV_ZERO_ERR); \
-            return FALCON_RUNTIME_ERROR;           \
-        }                                          \
+/* Checks if a given Value is a string. If not, a runtime error is returned */
+#define ASSERT_STR(vm, value, error)     \
+    do {                                 \
+        if (!IS_STRING(value)) {         \
+            interpreterError(vm, error); \
+            return FALCON_RUNTIME_ERROR; \
+        }                                \
     } while (false)
 
-/* Performs a binary operation of the "op" operator on the two elements on the top of the Falcon
- * VM's stack. Then, sets the result on the top of the stack */
-#define BINARY_OP(vm, op, valueType)            \
-    do {                                        \
-        ASSERT_TOP2_NUM(vm);                    \
-        double b = AS_NUM(pop(vm));             \
-        double a = AS_NUM((vm)->stackTop[-1]);  \
-        (vm)->stackTop[-1] = valueType(a op b); \
+/* Checks if a given Value is numerical and its value is also different from zero. If not, a
+ * runtime error is returned */
+#define ASSERT_NOT_0(vm, value, error)              \
+    do {                                            \
+        if (!IS_NUM(value) || AS_NUM(value) == 0) { \
+            interpreterError(vm, error);            \
+            return FALCON_RUNTIME_ERROR;            \
+        }                                           \
+    } while (false)
+
+/* Performs a binary operation of a given C's "op" operator on the two elements on the top of the
+ * Falcon VM's stack. Then, sets the result on the top of the stack */
+#define BINARY_OP(vm, op, valueType)                     \
+    do {                                                 \
+        ASSERT_NUM(vm, peek(vm, 0), VM_OPR_NOT_NUM_ERR); \
+        ASSERT_NUM(vm, peek(vm, 1), VM_OPR_NOT_NUM_ERR); \
+        double b = AS_NUM(pop(vm));                      \
+        double a = AS_NUM((vm)->stackTop[-1]);           \
+        (vm)->stackTop[-1] = valueType(a op b);          \
     } while (false)
 
 /* Performs a division operation (integer mod or double division) on the two elements on the top of
  * the Falcon VM's stack. Then, sets the result on the top of the stack */
-#define DIVISION_OP(vm, op, type)             \
-    do {                                      \
-        ASSERT_TOP2_NUM(vm);                  \
-        ASSERT_NOT_0(vm, 0);                  \
-        type b = AS_NUM(pop(vm));             \
-        type a = AS_NUM((vm)->stackTop[-1]);  \
-        (vm)->stackTop[-1] = NUM_VAL(a op b); \
+#define DIVISION_OP(vm, op, type)                        \
+    do {                                                 \
+        ASSERT_NOT_0(vm, peek(vm, 0), VM_DIV_ZERO_ERR);  \
+        ASSERT_NUM(vm, peek(vm, 1), VM_OPR_NOT_NUM_ERR); \
+        type b = AS_NUM(pop(vm));                        \
+        type a = AS_NUM((vm)->stackTop[-1]);             \
+        (vm)->stackTop[-1] = NUM_VAL(a op b);            \
     } while (false)
 
-/* Performs a greater/less (GL) comparison operation of the "op" operator on the two elements on
- * the top of the Falcon VM's stack. Then, sets the result on the top of the stack */
+/* Performs a greater/less (GL) comparison operation of a given C's "op" operator on the two
+ * elements on the top of the Falcon VM's stack. Then, sets the result on the top of the stack */
 #define GL_COMPARE(vm, op)                                                             \
     do {                                                                               \
         if (IS_STRING(peek(vm, 0)) && IS_STRING(peek(vm, 1))) {                        \
@@ -419,8 +412,9 @@ static FalconResultCode run(FalconVM *vm) {
 
                 /* Adds the entries to the map */
                 for (uint16_t i = 0; i < entriesCount; i++) {
-                    FalconValue value = peek(vm, 0);
                     FalconValue key = peek(vm, 1);
+                    ASSERT_STR(vm, key, VM_MAP_INDEX_ERR);
+                    FalconValue value = peek(vm, 0);
                     tableSet(vm, &map->entries, AS_STRING(key), value);
 
                     /* Discards the entry's key and value */
@@ -432,8 +426,7 @@ static FalconResultCode run(FalconVM *vm) {
                 break;
             }
             case OP_GETSUB: {
-                ASSERT_NUM(vm, 0, VM_INDEX_NOT_NUM_ERR); /* Checks if index is valid */
-                int index = (int) AS_NUM(pop(vm));
+                FalconValue index = pop(vm);
                 FalconValue subscript = pop(vm);
 
                 if (!IS_OBJ(subscript)) { /* Checks if subscript is an object */
@@ -444,10 +437,13 @@ static FalconResultCode run(FalconVM *vm) {
                 /* Handles the subscript types */
                 switch (AS_OBJ(subscript)->type) {
                     case OBJ_LIST: {
+                        ASSERT_NUM(vm, index, VM_LIST_INDEX_ERR);
+                        int listIndex = AS_NUM(index);
                         ObjList *list = AS_LIST(subscript);
-                        if (index < 0) index = list->elements.count + index;
-                        if (index >= 0 && index < list->elements.count) {
-                            push(vm, list->elements.values[index]);
+
+                        if (listIndex < 0) listIndex = list->elements.count + listIndex;
+                        if (listIndex >= 0 && listIndex < list->elements.count) {
+                            push(vm, list->elements.values[listIndex]);
                             break;
                         }
 
@@ -455,11 +451,28 @@ static FalconResultCode run(FalconVM *vm) {
                         interpreterError(vm, VM_LIST_BOUNDS_ERR);
                         return FALCON_RUNTIME_ERROR;
                     }
+                    case OBJ_MAP: {
+                        ASSERT_STR(vm, index, VM_MAP_INDEX_ERR);
+                        ObjString *string = AS_STRING(index);
+                        ObjMap *map = AS_MAP(subscript);
+
+                        FalconValue value;
+                        if (!tableGet(&map->entries, string, &value)) { /* Checks if key exist */
+                            push(vm, NULL_VAL);
+                        } else {
+                            push(vm, value);
+                        }
+
+                        break;
+                    }
                     case OBJ_STRING: {
+                        ASSERT_NUM(vm, index, VM_STRING_INDEX_ERR);
+                        int strIndex = AS_NUM(index);
                         ObjString *string = AS_STRING(subscript);
-                        if (index < 0) index = (int) string->length + index;
-                        if (index >= 0 && index < string->length) {
-                            push(vm, OBJ_VAL(falconString(vm, &string->chars[index], 1)));
+
+                        if (strIndex < 0) strIndex = (int) string->length + strIndex;
+                        if (strIndex >= 0 && strIndex < string->length) {
+                            push(vm, OBJ_VAL(falconString(vm, &string->chars[strIndex], 1)));
                             break;
                         }
 
@@ -475,9 +488,8 @@ static FalconResultCode run(FalconVM *vm) {
                 break;
             }
             case OP_SETSUB: {
-                ASSERT_NUM(vm, 1, VM_INDEX_NOT_NUM_ERR); /* Checks if index is valid */
                 FalconValue value = pop(vm);
-                int index = (int) AS_NUM(pop(vm));
+                FalconValue index = pop(vm);
                 FalconValue subscript = pop(vm);
 
                 if (!IS_OBJ(subscript)) { /* Checks if subscript is an object */
@@ -487,10 +499,13 @@ static FalconResultCode run(FalconVM *vm) {
 
                 switch (AS_OBJ(subscript)->type) { /* Handles the subscript types */
                     case OBJ_LIST: {
+                        ASSERT_NUM(vm, index, VM_LIST_INDEX_ERR);
+                        int listIndex = AS_NUM(index);
                         ObjList *list = AS_LIST(subscript);
-                        if (index < 0) index = list->elements.count + index;
-                        if (index >= 0 && index < list->elements.count) {
-                            list->elements.values[index] = value;
+
+                        if (listIndex < 0) listIndex = list->elements.count + listIndex;
+                        if (listIndex >= 0 && listIndex < list->elements.count) {
+                            list->elements.values[listIndex] = value;
                             push(vm, value);
                             break;
                         }
@@ -499,7 +514,19 @@ static FalconResultCode run(FalconVM *vm) {
                         interpreterError(vm, VM_LIST_BOUNDS_ERR);
                         return FALCON_RUNTIME_ERROR;
                     }
-                    default: /* Only lists support subscript assignment */
+                    case OBJ_MAP: {
+                        ASSERT_STR(vm, index, VM_MAP_INDEX_ERR);
+                        ObjString *key = AS_STRING(index);
+                        ObjMap *map = AS_MAP(subscript);
+                        tableSet(vm, &map->entries, key, value);
+                        push(vm, value);
+                        break;
+                    }
+                    case OBJ_STRING: {
+                        interpreterError(vm, VM_STRING_MUT_ERR);
+                        return FALCON_RUNTIME_ERROR;
+                    }
+                    default: /* Only lists and maps support subscript assignment */
                         interpreterError(vm, VM_INDEX_ASSG_ERR);
                         return FALCON_RUNTIME_ERROR;
                 }
@@ -524,20 +551,14 @@ static FalconResultCode run(FalconVM *vm) {
                     frame->pc += offset;
                 break;
             }
-            case OP_NOT:
-                vm->stackTop[-1] = BOOL_VAL(isFalsy(vm->stackTop[-1]));
-                break;
+            case OP_NOT: vm->stackTop[-1] = BOOL_VAL(isFalsy(vm->stackTop[-1])); break;
             case OP_EQUAL: {
                 FalconValue b = pop(vm);
                 vm->stackTop[-1] = BOOL_VAL(valuesEqual(vm->stackTop[-1], b));
                 break;
             }
-            case OP_GREATER:
-                GL_COMPARE(vm, >);
-                break;
-            case OP_LESS:
-                GL_COMPARE(vm, <);
-                break;
+            case OP_GREATER: GL_COMPARE(vm, >); break;
+            case OP_LESS: GL_COMPARE(vm, <); break;
 
             /* Arithmetic operations */
             case OP_ADD: {
@@ -553,25 +574,20 @@ static FalconResultCode run(FalconVM *vm) {
 
                 break;
             }
-            case OP_SUB:
-                BINARY_OP(vm, -, NUM_VAL);
-                break;
+            case OP_SUB: BINARY_OP(vm, -, NUM_VAL); break;
             case OP_NEG:
-                ASSERT_NUM(vm, 0, VM_OPR_NOT_NUM_ERR);
+                ASSERT_NUM(vm, peek(vm, 0), VM_OPR_NOT_NUM_ERR);
                 vm->stackTop[-1] = NUM_VAL(-AS_NUM(vm->stackTop[-1]));
                 break;
-            case OP_MULT:
-                BINARY_OP(vm, *, NUM_VAL);
-                break;
-            case OP_MOD:
-                DIVISION_OP(vm, %, int);
-                break;
+            case OP_MULT: BINARY_OP(vm, *, NUM_VAL); break;
+            case OP_MOD: DIVISION_OP(vm, %, int); break;
             case OP_DIV: {
                 DIVISION_OP(vm, /, double);
                 break;
             }
             case OP_POW: {
-                ASSERT_TOP2_NUM(vm);
+                ASSERT_NUM(vm, peek(vm, 0), VM_OPR_NOT_NUM_ERR);
+                ASSERT_NUM(vm, peek(vm, 1), VM_OPR_NOT_NUM_ERR);
                 double a = AS_NUM(pop(vm));
                 vm->stackTop[-1] = NUM_VAL(pow(AS_NUM(vm->stackTop[-1]), a));
                 break;
@@ -686,14 +702,12 @@ static FalconResultCode run(FalconVM *vm) {
 
                 vm->stackTop = frame->slots;                        /* Resets the stack top */
                 if (!push(vm, result)) return FALCON_RUNTIME_ERROR; /* Pushes the return value */
-                frame = &vm->frames[vm->frameCount - 1]; /* Updates the current frame */
+                frame = &vm->frames[vm->frameCount - 1];            /* Updates the current frame */
                 break;
             }
 
             /* Class operations */
-            case OP_DEFCLASS:
-                push(vm, OBJ_VAL(falconClass(vm, READ_STRING())));
-                break;
+            case OP_DEFCLASS: push(vm, OBJ_VAL(falconClass(vm, READ_STRING()))); break;
             case OP_INHERIT: {
                 FalconValue superclass = peek(vm, 1);
                 if (!IS_CLASS(superclass)) { /* Checks if superclass value is valid */
@@ -707,9 +721,7 @@ static FalconResultCode run(FalconVM *vm) {
                 pop(vm);
                 break;
             }
-            case OP_DEFMETHOD:
-                defineMethod(vm, READ_STRING());
-                break;
+            case OP_DEFMETHOD: defineMethod(vm, READ_STRING()); break;
             case OP_INVPROP: {
                 ObjString *name = READ_STRING();
                 int argCount = READ_BYTE();
@@ -770,20 +782,14 @@ static FalconResultCode run(FalconVM *vm) {
                 ObjClass *superclass = AS_CLASS(pop(vm));
 
                 /* Tries to invoke the method from the superclass */
-                if (!invokeFromClass(vm, superclass, name, argCount))
-                    return FALCON_RUNTIME_ERROR;
-
+                if (!invokeFromClass(vm, superclass, name, argCount)) return FALCON_RUNTIME_ERROR;
                 frame = &vm->frames[vm->frameCount - 1];
                 break;
             }
 
             /* VM operations */
-            case OP_DUPT:
-                push(vm, peek(vm, 0));
-                break;
-            case OP_POPT:
-                pop(vm);
-                break;
+            case OP_DUPT: push(vm, peek(vm, 0)); break;
+            case OP_POPT: pop(vm); break;
             case OP_POPEXPR: {
                 FalconValue result = peek(vm, 0);
                 if (!IS_NULL(result)) {
