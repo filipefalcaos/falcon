@@ -87,21 +87,11 @@ char *functionToString(FalconVM *vm, ObjFunction *function) {
     }
 }
 
-/* Increases the allocation size of a string based on its current length */
-#define INCREASE_STR_ALLOCATION(currLen, allocationSize)               \
-    do {                                                               \
-        if (currLen > (allocationSize * 2)) {                          \
-            allocationSize = currLen + allocationSize * 2;             \
-        } else {                                                       \
-            allocationSize = FALCON_INCREASE_CAPACITY(allocationSize); \
-        }                                                              \
-    } while (false);
-
 /**
  * Converts a given Falcon List to a Falcon string.
  */
 char *listToString(FalconVM *vm, ObjList *list) {
-    int allocationSize = MIN_COLLECTION_TO_STR;
+    size_t allocationSize = MIN_COLLECTION_TO_STR;
     char *string = FALCON_ALLOCATE(vm, char, allocationSize); /* Initial allocation */
     int stringLen = sprintf(string, "[");
     int elementsCount = list->elements.count;
@@ -125,7 +115,7 @@ char *listToString(FalconVM *vm, ObjList *list) {
         currLen = stringLen + elementLen + 3;
         if (currLen > allocationSize) { /* +3 = separator + initial space */
             int oldSize = allocationSize;
-            INCREASE_STR_ALLOCATION(currLen, allocationSize);
+            allocationSize = increaseStringAllocation(currLen, allocationSize);
             string = FALCON_INCREASE_ARRAY(vm, string, char, oldSize, allocationSize);
         }
 
@@ -169,7 +159,7 @@ char *mapToString(FalconVM *vm, ObjMap *map) {
             currLen = stringLen + keyLen + 3;
             if (currLen > allocationSize) { /* +3 = separator + initial space */
                 int oldSize = allocationSize;
-                INCREASE_STR_ALLOCATION(currLen, allocationSize);
+                allocationSize = increaseStringAllocation(currLen, allocationSize);
                 string = FALCON_INCREASE_ARRAY(vm, string, char, oldSize, allocationSize);
             }
 
@@ -190,7 +180,7 @@ char *mapToString(FalconVM *vm, ObjMap *map) {
             currLen = stringLen + valueLen + 2;
             if (currLen > allocationSize) { /* +2 for the separator */
                 int oldSize = allocationSize;
-                INCREASE_STR_ALLOCATION(currLen, allocationSize);
+                allocationSize = increaseStringAllocation(currLen, allocationSize);
                 string = FALCON_INCREASE_ARRAY(vm, string, char, oldSize, allocationSize);
             }
 
@@ -210,8 +200,6 @@ char *mapToString(FalconVM *vm, ObjMap *map) {
     sprintf(string + stringLen, "}");
     return string;
 }
-
-#undef INCREASE_STR_ALLOCATION
 
 /**
  * Converts a given Falcon Value that is not already a string into a Falcon string.
