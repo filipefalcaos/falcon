@@ -24,12 +24,6 @@ add_compile_definitions(CMAKE_SYSTEM_NAME="${CMAKE_SYSTEM_NAME}")
 option(DEBUG_LEVEL_02 "DEBUG_LEVEL_02" OFF)
 option(DEBUG_STRESS_GC "DEBUG_STRESS_GC" OFF)
 
-# Adds Falcon debugging macros if requested
-# Sets LEVEL_01 flag
-if (DEBUG_LEVEL_01)
-    add_compile_definitions(FALCON_DEBUG_LEVEL_01)
-endif (DEBUG_LEVEL_01)
-
 # Sets LEVEL_02 flag only if not in LEVEL_01 already
 if (DEBUG_LEVEL_02 AND (NOT DEBUG_LEVEL_01))
     add_compile_definitions(FALCON_DEBUG_LEVEL_02)
