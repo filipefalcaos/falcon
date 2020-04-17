@@ -9,7 +9,8 @@
 
 #include "../vm/falcon_object.h"
 
-/* List operations */
+/* List functions */
 ObjList *concatLists(FalconVM *vm, const ObjList *list1, const ObjList *list2);
+ObjString *listToString(FalconVM *vm, ObjList *list);
 
 #endif // FALCON_LIST_H

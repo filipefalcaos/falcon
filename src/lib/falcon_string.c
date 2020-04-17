@@ -5,7 +5,6 @@
  */
 
 #include "falcon_string.h"
-#include "../vm/falcon_memory.h"
 #include <string.h>
 
 /**

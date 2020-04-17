@@ -55,6 +55,8 @@ add_executable(
     src/lib/falcon_io.c
     src/lib/falcon_list.h
     src/lib/falcon_list.c
+    src/lib/falcon_map.h
+    src/lib/falcon_map.c
     src/lib/falcon_natives.h
     src/lib/falcon_natives.c
     src/lib/falcon_string.h

@@ -6,6 +6,8 @@
 
 #include "falcon_list.h"
 #include "../vm/falcon_memory.h"
+#include <stdio.h>
+#include <string.h>
 
 /**
  * Concatenates two given Falcon lists.
@@ -24,4 +26,59 @@ ObjList *concatLists(FalconVM *vm, const ObjList *list1, const ObjList *list2) {
         result->elements.values[i + list2->elements.count] = list1->elements.values[i];
 
     return result;
+}
+
+/**
+ * Converts a given Falcon List to a Falcon string.
+ */
+ObjString *listToString(FalconVM *vm, ObjList *list) {
+    size_t allocationSize = MIN_COLLECTION_TO_STR;
+    char *string = FALCON_ALLOCATE(vm, char, allocationSize); /* Initial allocation */
+    int stringLen = sprintf(string, "[");
+    int elementsCount = list->elements.count;
+
+    /* Adds the elements to the string */
+    for (int i = 0; i < elementsCount; i++) {
+        char *elementString;
+        size_t elementLen, currLen;
+        bool isString;
+
+        /* Gets the current element string */
+        if (IS_STRING(list->elements.values[i])) {
+            ObjString *objString = AS_STRING(list->elements.values[i]);
+            elementString = objString->chars;
+            elementLen = objString->length;
+            currLen = stringLen + elementLen + 5; /* +5 = quotes (2) + ", " (2) + init space (1) */
+            isString = true;
+        } else {
+            elementString = valueToString(vm, &list->elements.values[i])->chars;
+            elementLen = strlen(elementString);
+            currLen = stringLen + elementLen + 3; /* +3 = ", " (2) + init space (1) */
+            isString = false;
+        }
+
+        /* Increases the allocation, if needed */
+        if (currLen > allocationSize) {
+            int oldSize = allocationSize;
+            allocationSize = increaseStringAllocation(currLen, allocationSize);
+            string = FALCON_INCREASE_ARRAY(vm, string, char, oldSize, allocationSize);
+        }
+
+        /* Appends the current element to the output string */
+        if (isString) {
+            stringLen += sprintf(string + stringLen, " \"%s\"", elementString);
+        } else {
+            stringLen += sprintf(string + stringLen, " %s", elementString);
+        }
+
+        /* Appends the separator or final space */
+        if (i != (elementsCount - 1)) {
+            stringLen += sprintf(string + stringLen, ",");
+        } else {
+            stringLen += sprintf(string + stringLen, " ");
+        }
+    }
+
+    sprintf(string + stringLen, "]");
+    return falconString(vm, string, strlen(string));
 }
