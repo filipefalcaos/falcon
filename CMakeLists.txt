@@ -21,7 +21,6 @@ add_compile_definitions(CMAKE_C_COMPILER_VERSION="${CMAKE_C_COMPILER_VERSION}")
 add_compile_definitions(CMAKE_SYSTEM_NAME="${CMAKE_SYSTEM_NAME}")
 
 # Debugging options
-option(DEBUG_LEVEL_01 "DEBUG_LEVEL_01" OFF)
 option(DEBUG_LEVEL_02 "DEBUG_LEVEL_02" OFF)
 option(DEBUG_STRESS_GC "DEBUG_STRESS_GC" OFF)
 

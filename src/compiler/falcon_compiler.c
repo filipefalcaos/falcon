@@ -253,7 +253,7 @@ static ObjFunction *endFunctionCompiler(FalconCompiler *compiler) {
     emitReturn(compiler);
     ObjFunction *function = currentFunction(compiler->fCompiler);
 
-    /* Dumps the function's bytecode if in debugging mode */
+    /* Dumps the function's bytecode if the option "-d" is set */
     if (compiler->vm->dumpOpcodes && !compiler->parser->hadError)
         dumpBytecode(compiler->vm, function);
 

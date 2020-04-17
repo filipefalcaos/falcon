@@ -59,13 +59,15 @@ static void printInfo() {
  * Prints Falcon's interpreter usage details.
  */
 void printUsage() {
-    printf("usage: %s\n", FALCON_USAGE);
+    printf("usage: %s\n\n", FALCON_USAGE);
     printf("Available options: \n"
            "  " FALCON_DEBUG_OPT "\n"
            "  " FALCON_HELP_OPT "\n"
            "  " FALCON_INPUT_OPT "\n"
+           "  " FALCON_TRACE_OPT "\n"
            "  " FALCON_VERSION_OPT "\n"
-           "  " FALCON_STOP_OPT "\n"
+           "  " FALCON_STOP_OPT "\n\n");
+    printf("Available arguments: \n"
            "  " FALCON_SCRIPT_ARG "\n");
 }
 
@@ -178,8 +180,9 @@ static void setRepl(FalconVM *vm) {
  * are available:
  *
  * "-d"        output basic interpreter debugging information
- * "-h"        output usage information
+ * "-h, -?"    output usage information
  * "-i input"  input code to execute (ends the option list)
+ * "-t"        output stack tracing debugging information
  * "-v"        output version information
  * "--"        stop parsing options
  * script      script file to interpret
@@ -204,6 +207,7 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
                 vm->dumpOpcodes = true;
                 break;
             case 'h':
+            case '?':
                 VALIDATE_OPTION(argv, optionId);
                 printUsage();
                 exit(FALCON_NO_ERR);
@@ -213,6 +217,10 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
                 VALIDATE_ARG(argv, optionId);
                 inputCommand = argv[optionId];
                 goto EXEC; /* Stop parsing on "-i"*/
+            case 't':
+                VALIDATE_OPTION(argv, optionId);
+                vm->traceExec = true;
+                break;
             case 'v':
                 VALIDATE_OPTION(argv, optionId);
                 printInfo();

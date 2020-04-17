@@ -202,19 +202,28 @@ int dumpInstruction(FalconVM *vm, const BytecodeChunk *bytecode, int offset) {
 }
 
 /**
- * Displays a complete bytecode chunk.
+ * Displays a complete bytecode chunk, including its opcodes and constants.
  */
 void dumpBytecode(FalconVM *vm, ObjFunction *function) {
     const ObjString *functionName = function->name;
     const BytecodeChunk *bytecode = &function->bytecode;
     bool isTopLevel = (functionName == NULL);
 
-    printf("== function \"%s\" from <%s> ==\n", isTopLevel ? FALCON_SCRIPT : functionName->chars,
-           vm->fileName);
+    PRINT_OPCODE_HEADER(isTopLevel, functionName->chars, vm->fileName);
     for (int offset = 0; offset < bytecode->count;)
         offset = dumpInstruction(vm, bytecode, offset); /* Disassembles each instruction */
 
     if (!isTopLevel) printf("\n");
+}
+
+/**
+ * Traces the execution of a given call frame, dumping the virtual machine stack and the opcodes
+ * that operate on the stack.
+ */
+void traceExecution(FalconVM *vm, CallFrame *frame) {
+    if (vm->stack != vm->stackTop) dumpStack(vm);
+    dumpInstruction(vm, &frame->closure->function->bytecode,
+                    (int) (frame->pc - frame->closure->function->bytecode.code));
 }
 
 /**

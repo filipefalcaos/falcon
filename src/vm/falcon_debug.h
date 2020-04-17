@@ -9,17 +9,24 @@
 
 #include "falcon_bytecode.h"
 #include "falcon_object.h"
+#include "falcon_vm.h"
 
-/* Compiler/VM debugging operations */
+/* Debug headers */
+#define PRINT_TRACE_HEADER() printf("== Execution Trace ==\n")
+#define PRINT_OPCODE_HEADER(isTopLevel, functionName, fileName) \
+    printf("== function \"%s\" from <%s> ==\n", isTopLevel ? FALCON_SCRIPT : functionName, fileName)
+
+/* Compiler/VM debugging functions */
 int dumpInstruction(FalconVM *vm, const BytecodeChunk *bytecode, int offset);
 void dumpBytecode(FalconVM *vm, ObjFunction *function);
 void dumpStack(FalconVM *vm);
+void traceExecution(FalconVM *vm, CallFrame *frame);
 
-/* Memory allocation debugging operations */
+/* Memory allocation debugging functions */
 void dumpAllocation(FalconObj *object, size_t size, ObjType type);
 void dumpFree(FalconObj *object);
 
-/* Garbage collection debugging operations */
+/* Garbage collection debugging functions */
 void dumpGCStatus(const char *status);
 void dumpMark(FalconObj *object);
 void dumpBlacken(FalconObj *object);

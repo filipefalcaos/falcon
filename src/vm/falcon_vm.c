@@ -5,10 +5,10 @@
  */
 
 #include "falcon_vm.h"
-#include "../compiler/falcon_compiler.h"
 #include "../lib/falcon_error.h"
 #include "../lib/falcon_natives.h"
 #include "../lib/falcon_string.h"
+#include "falcon_debug.h"
 #include "falcon_memory.h"
 #include <math.h>
 #include <stdio.h>
@@ -31,9 +31,12 @@ void initFalconVM(FalconVM *vm) {
     /* Inits the VM fields */
     vm->fileName = NULL;
     vm->isREPL = false;
-    vm->dumpOpcodes = false;
     vm->objects = NULL;
     vm->compiler = NULL;
+
+    /* Sets debugging options */
+    vm->dumpOpcodes = false;
+    vm->traceExec = false;
 
     /* Inits the garbage collection fields */
     vm->grayCount = 0;
@@ -365,13 +368,16 @@ static FalconResultCode run(FalconVM *vm) {
         }                                                                              \
     } while (false)
 
+    if (vm->traceExec && vm->dumpOpcodes) {
+        if (vm->dumpOpcodes) printf("\n");
+        PRINT_TRACE_HEADER() ;
+    }
+
     /* Main virtual machine loop */
     while (true) {
-#ifdef FALCON_DEBUG_LEVEL_01
-        if (vm->stack != vm->stackTop) dumpStack(vm);
-        dumpInstruction(vm, &frame->closure->function->bytecode,
-                        (int) (frame->pc - frame->closure->function->bytecode.code));
-#endif
+        if (vm->traceExec) { /* Prints the execution trace if the option "-t" is set */
+            traceExecution(vm, frame);
+        }
 
         uint8_t instruction = READ_BYTE();
         switch (instruction) { /* Reads the next byte and switches through the opcodes */
