@@ -260,20 +260,21 @@ ObjString *valueToString(FalconVM *vm, FalconValue *value) {
                     sprintf(string, "<instance of %s>", instance->class_->name->chars);
                     return falconString(vm, string, strlen(string));
                 }
-                case OBJ_LIST: {
-                    ObjList *list = AS_LIST(*value);
-                    return listToString(vm, list);
-                }
-                case OBJ_MAP: {
-                    ObjMap *map = AS_MAP(*value);
-                    return mapToString(vm, map);
-                }
                 case OBJ_NATIVE: {
                     ObjNative *native = AS_NATIVE(*value);
                     char *string = FALCON_ALLOCATE(vm, char, strlen(native->name) + 13);
                     sprintf(string, "<native fn %s>", native->name);
                     return falconString(vm, string, strlen(string));
                 }
+                case OBJ_BMETHOD: {
+                    ObjBMethod *bMethod = AS_BMETHOD(*value);
+                    ObjString *methodName = bMethod->method->function->name;
+                    char *string = FALCON_ALLOCATE(vm, char, methodName->length + 10);
+                    sprintf(string, "<method %s>", methodName->chars);
+                    return falconString(vm, string, strlen(string));
+                }
+                case OBJ_LIST: return listToString(vm, AS_LIST(*value));
+                case OBJ_MAP: return mapToString(vm, AS_MAP(*value));
                 default: break;
             }
         default: return NULL;
@@ -301,40 +302,17 @@ void printValue(FalconVM *vm, FalconValue value) {
         case VAL_NUM: printf("%g", AS_NUM(value)); break;
         case VAL_OBJ:
             switch (OBJ_TYPE(value)) {
-                case OBJ_STRING: {
-                    printf("\"%s\"", AS_CSTRING(value));
-                    break;
-                }
-                case OBJ_FUNCTION: {
-                    ObjFunction *function = AS_FUNCTION(value);
-                    printFunction(function);
-                    break;
-                }
-                case OBJ_CLOSURE: {
-                    ObjClosure *closure = AS_CLOSURE(value);
-                    printFunction(closure->function);
-                    break;
-                }
+                case OBJ_STRING: printf("\"%s\"", AS_CSTRING(value)); break;
+                case OBJ_FUNCTION: printFunction(AS_FUNCTION(value)); break;
+                case OBJ_CLOSURE: printFunction(AS_CLOSURE(value)->function); break;
                 case OBJ_CLASS: printf("<class %s>", AS_CLASS(value)->name->chars); break;
+                case OBJ_BMETHOD: printFunction(AS_BMETHOD(value)->method->function); break;
+                case OBJ_LIST: printf("%s", listToString(vm, AS_LIST(value))->chars); break;
+                case OBJ_MAP: printf("%s", mapToString(vm, AS_MAP(value))->chars); break;
+                case OBJ_NATIVE: printf("<native fn %s>", AS_NATIVE(value)->name); break;
                 case OBJ_INSTANCE:
                     printf("<instance of %s>", AS_INSTANCE(value)->class_->name->chars);
                     break;
-                case OBJ_BMETHOD: printFunction(AS_BMETHOD(value)->method->function); break;
-                case OBJ_LIST: {
-                    ObjList *list = AS_LIST(value);
-                    printf("%s", listToString(vm, list)->chars);
-                    break;
-                }
-                case OBJ_MAP: {
-                    ObjMap *map = AS_MAP(value);
-                    printf("%s", mapToString(vm, map)->chars);
-                    break;
-                }
-                case OBJ_NATIVE: {
-                    ObjNative *native = AS_NATIVE(value);
-                    printf("<native fn %s>", native->name);
-                    break;
-                }
                 default: break;
             }
         default: break;

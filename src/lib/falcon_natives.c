@@ -5,6 +5,7 @@
  */
 
 #include "falcon_natives.h"
+#include "../vm/falcon_memory.h"
 #include "falcon_error.h"
 #include "falcon_io.h"
 #include <math.h>
@@ -99,54 +100,44 @@ FALCON_NATIVE(time_) {
  */
 FALCON_NATIVE(type) {
     ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
-    char *typeString = NULL;
-    size_t typeStringLen = 0;
 
     /* Checks the value type */
     switch (args->type) {
         case VAL_BOOL:
-            typeString = "<bool>";
-            typeStringLen = 6;
-            break;
+            return OBJ_VAL(falconString(vm, "bool", 4));
         case VAL_NULL:
-            typeString = "<null>";
-            typeStringLen = 6;
-            break;
+            return OBJ_VAL(falconString(vm, "null", 4));
         case VAL_NUM:
-            typeString = "<number>";
-            typeStringLen = 8;
-            break;
+            return OBJ_VAL(falconString(vm, "number", 6));
         case VAL_OBJ:
             switch (OBJ_TYPE(*args)) {
                 case OBJ_STRING:
-                    typeString = "<string>";
-                    typeStringLen = 8;
-                    break;
+                    return OBJ_VAL(falconString(vm, "string", 6));
                 case OBJ_CLASS:
-                    typeString = "<class>";
-                    typeStringLen = 7;
-                    break;
+                    return OBJ_VAL(falconString(vm, "class", 5));
                 case OBJ_LIST:
-                    typeString = "<list>";
-                    typeStringLen = 6;
-                    break;
+                    return OBJ_VAL(falconString(vm, "list", 4));
                 case OBJ_MAP:
-                    typeString = "<map>";
-                    typeStringLen = 5;
-                    break;
+                    return OBJ_VAL(falconString(vm, "map", 3));
+                case OBJ_BMETHOD:
+                    return OBJ_VAL(falconString(vm, "method", 6));
                 case OBJ_CLOSURE:
                 case OBJ_FUNCTION:
                 case OBJ_NATIVE:
-                    typeString = "<function>";
-                    typeStringLen = 10;
-                    break;
+                    return OBJ_VAL(falconString(vm, "function", 8));
+                case OBJ_INSTANCE: {
+                    ObjInstance *instance = AS_INSTANCE(*args);
+                    char *typeStr = FALCON_ALLOCATE(vm, char, instance->class_->name->length + 6);
+                    sprintf(typeStr, "class %s", instance->class_->name->chars);
+                    return OBJ_VAL(falconString(vm, typeStr, instance->class_->name->length + 6));
+                }
                 default: break;
             }
             break;
         default: break;
     }
 
-    return OBJ_VAL(falconString(vm, typeString, typeStringLen));
+    return OBJ_VAL(falconString(vm, "unknown", 7)); /* Unknown type */
 }
 
 /**
