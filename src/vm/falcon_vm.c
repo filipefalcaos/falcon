@@ -47,11 +47,12 @@ void initFalconVM(FalconVM *vm) {
 
     initTable(&vm->strings); /* Inits the table of interned strings */
     initTable(&vm->globals); /* Inits the table of globals */
-    defineNatives(vm);       /* Sets native functions */
 
     /* Defines the string for class initializers */
     vm->initStr = NULL;
     vm->initStr = falconString(vm, "init", 4);
+
+    defineNatives(vm); /* Sets native functions */
 }
 
 /**
