@@ -14,7 +14,7 @@
 #include <stdio.h>
 
 /**
- * Resets the virtual machine stack.
+ * Resets the Falcon's virtual machine stack.
  */
 void resetStack(FalconVM *vm) {
     vm->stackTop = vm->stack;
@@ -65,7 +65,7 @@ void freeFalconVM(FalconVM *vm) {
 }
 
 /**
- * Pushes a value to the Falcon's virtual machine stack.
+ * Pushes a value to the top of the Falcon's virtual machine stack.
  */
 bool push(FalconVM *vm, FalconValue value) {
     if ((vm->stackTop - &vm->stack[0]) > FALCON_STACK_MAX - 1) {
@@ -79,7 +79,8 @@ bool push(FalconVM *vm, FalconValue value) {
 }
 
 /**
- * Pops a value from the Falcon's virtual machine stack.
+ * Pops a value from the top of the Falcon's virtual machine stack by decreasing the "stackTop"
+ * pointer.
  */
 FalconValue pop(FalconVM *vm) {
     vm->stackTop--;
@@ -115,7 +116,7 @@ static bool call(FalconVM *vm, ObjClosure *closure, int argCount) {
 
 /**
  * Tries to execute a call on a given Falcon value. If the call succeeds, "true" is returned, and
- * otherwise, "false".
+ * otherwise, "false". If the value is not callable, a runtime error message is also presented.
  */
 static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
     if (IS_OBJ(callee)) {
@@ -158,8 +159,9 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
 }
 
 /**
- * Tries to bind a method to the receiver, a class instance, on the top of the stack. If the binding
- * succeeds, "true" is returned, and otherwise, "false".
+ * Tries to bind a method to the receiver (i.e., a class instance), on the top of the stack. If the
+ * binding succeeds, "true" is returned, and otherwise, "false". If the method does not exist, a
+ * runtime error message is also presented.
  */
 static bool bindMethod(FalconVM *vm, ObjClass *class_, ObjString *methodName) {
     FalconValue method;
@@ -177,7 +179,8 @@ static bool bindMethod(FalconVM *vm, ObjClass *class_, ObjString *methodName) {
 
 /**
  * Tries to invoke a given method of a class instance. If the invocation succeeds, "true" is
- * returned, and otherwise, "false".
+ * returned, and otherwise, "false". If the method does not exist, a runtime error message is also
+ * presented.
  */
 static bool invokeFromClass(FalconVM *vm, ObjClass *class_, ObjString *methodName, int argCount) {
     FalconValue method;
@@ -191,7 +194,8 @@ static bool invokeFromClass(FalconVM *vm, ObjClass *class_, ObjString *methodNam
 
 /**
  * Tries to invoke a given property of a class instance. If the invocation succeeds, "true" is
- * returned, and otherwise, "false".
+ * returned, and otherwise, "false". If the receiver is not a class instance, a runtime error
+ * message is also presented.
  */
 static bool invoke(FalconVM *vm, ObjString *calleeName, int argCount) {
     FalconValue receiver = peek(vm, argCount);
@@ -211,7 +215,9 @@ static bool invoke(FalconVM *vm, ObjString *calleeName, int argCount) {
 }
 
 /**
- * Captures a given local upvalue.
+ * Captures a given local variable into a upvalue. If the local was already captured as an upvalue,
+ * this upvalue is returned. Otherwise, a new upvalue is created and added to the list of open
+ * upvalues in the virtual machine.
  */
 static ObjUpvalue *captureUpvalue(FalconVM *vm, FalconValue *local) {
     ObjUpvalue *prevUpvalue = NULL;
@@ -239,7 +245,8 @@ static ObjUpvalue *captureUpvalue(FalconVM *vm, FalconValue *local) {
 }
 
 /**
- * Closes the upvalues for a given stack slot.
+ * Closes the open upvalues created for the virtual machine stack slots that are above a given slot
+ * (including the slot itself).
  */
 static void closeUpvalues(FalconVM *vm, FalconValue *last) {
     while (vm->openUpvalues != NULL && vm->openUpvalues->slot >= last) {
@@ -261,7 +268,9 @@ static void defineMethod(FalconVM *vm, ObjString *name) {
 }
 
 /**
- * Compares the two string values on the top of the virtual machine stack.
+ * Compares the two string values on the top of the virtual machine stack. If the two strings are
+ * equal, returns 0. If the first string is lexicographically smaller, returns a negative integer.
+ * Otherwise, returns a positive one.
  */
 static int compareStrings(FalconVM *vm) {
     ObjString *str2 = AS_STRING(pop(vm));
@@ -284,8 +293,9 @@ static void concatenateStrings(FalconVM *vm) {
 }
 
 /**
- * Loops through all the instructions in a bytecode chunk. Each turn through the loop, it reads and
- * executes the current instruction.
+ * The main bytecode interpreter loop. It loops through all the instructions in the bytecode chunks
+ * of the running functions. Each turn through the loop, it reads and executes the current
+ * instruction.
  */
 static FalconResultCode run(FalconVM *vm) {
     CallFrame *frame = &vm->frames[vm->frameCount - 1]; /* Current call frame */
@@ -373,7 +383,7 @@ static FalconResultCode run(FalconVM *vm) {
         PRINT_TRACE_HEADER() ;
     }
 
-    /* Main virtual machine loop */
+    /* Main bytecode interpreter loop */
     while (true) {
         if (vm->traceExec) { /* Prints the execution trace if the option "-t" is set */
             traceExecution(vm, frame);

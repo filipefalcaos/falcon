@@ -13,14 +13,16 @@
 #include "falcon_bytecode.h"
 #include "falcon_object.h"
 
-/* Call frame representation */
+/* A call frame defines a "frame" within the VM's stack where the local variables of a function can
+ * be stored. A call frame will contain, the receiver, the function's parameters, the locals, and,
+ * finally, the temporaries (in that order) */
 typedef struct {
-    ObjClosure *closure; /* Running closure */
-    uint8_t *pc;         /* Function's program counter */
-    FalconValue *slots;  /* Function's stack pointer */
+    ObjClosure *closure; /* The Running closure */
+    uint8_t *pc;         /* A Pointer to the current instruction in the function's bytecode */
+    FalconValue *slots;  /* A pointer to the start of the call frame within the VM's stack */
 } CallFrame;
 
-/* Falcon's virtual machine representation */
+/* The Falcon's stack-based virtual machine */
 struct FalconVM {
 
     /* Basic info on the running program: (i) the name of the running file; and (ii) whether it is
@@ -35,58 +37,70 @@ struct FalconVM {
     bool traceExec;
     bool traceMemory;
 
-    /* Bytecode chunk to interpret and the program counter */
-    BytecodeChunk *bytecode;
-    uint8_t *pc;
-
-    /* VM's call frames */
+    /* Call frames: (i) the stack of call frames in the VM; and (ii) the current count of call
+     * frames in use */
     CallFrame frames[FALCON_FRAMES_MAX];
     int frameCount;
 
-    /* VM's stack and it's pointer to the stack top */
+    /* Value stack: (i) the stack of values of the VM; and (ii) a pointer to the top of VM's stack
+     * of values */
     FalconValue stack[FALCON_STACK_MAX];
     FalconValue *stackTop;
 
-    /* List of open upvalues */
+    /* A pointer to the first node on the list of open upvalues (pointing to values that are still
+     * on the value stack) */
     ObjUpvalue *openUpvalues;
 
-    /* List of runtime objects */
+    /* A pointer to the first node on the list of runtime objects */
     FalconObj *objects;
 
-    /* Table for the interned strings */
+    /* A hashtable for all the strings that are allocated in the runtime */
     Table strings;
 
-    /* Table for all global variables */
+    /* A hashtable for all the declared global variables */
     Table globals;
 
-    /* Current function compiler. This is necessary when the garbage collector is triggered during
-     * the compilation stage */
+    /* The current function compiler (necessary if the garbage collector is triggered during the
+     * compilation stage) */
     FunctionCompiler *compiler;
 
-    /* The stack of unprocessed objects (i.e., "greys") while garbage collection is in process */
+    /* "Gray" set: (i) the current count of objects in the "gray" stack; (ii) the current capacity
+     * of the "gray" stack; and (iii) the stack of "gray" objects while a garbage collection run is
+     * in process */
     int grayCount;
     int grayCapacity;
     FalconObj **grayStack;
 
-    /* The total number of bytes of managed memory the VM has allocated and the memory threshold
-     * that triggers the next garbage collection */
+    /* Memory management: (i) the total number of bytes of memory the VM has allocated; and (ii)
+     * the memory threshold that triggers the next garbage collection run */
     size_t bytesAllocated;
     size_t nextGC;
 
-    /* Default string to store the "init" initializer name */
+    /* The string object to store the default initializer name (i.e., "init") */
     ObjString *initStr;
 };
 
 /* Interpretation result codes */
 typedef enum { FALCON_OK, FALCON_COMPILE_ERROR, FALCON_RUNTIME_ERROR } FalconResultCode;
 
-/* Virtual machine operations */
+/* Initializes the Falcon's virtual machine */
 void initFalconVM(FalconVM *vm);
+
+/* Frees the Falcon's virtual machine and its allocated objects */
 void freeFalconVM(FalconVM *vm);
-void resetStack(FalconVM *vm);
-bool push(FalconVM *vm, FalconValue value);
-FalconValue pop(FalconVM *vm);
+
+/* Interprets a Falcon's source code string */
 FalconResultCode falconInterpret(FalconVM *vm, const char *source);
+
+/* Resets the Falcon's virtual machine stack */
+void resetStack(FalconVM *vm);
+
+/* Pushes a value to the top of the Falcon's virtual machine stack */
+bool push(FalconVM *vm, FalconValue value);
+
+/* Pops a value from the top of the Falcon's virtual machine stack by decreasing the "stackTop"
+ * pointer */
+FalconValue pop(FalconVM *vm);
 
 /* The initial allocation size for the heap, in bytes */
 #define VM_BASE_HEAP_SIZE 1000000 /* 1Mb */
