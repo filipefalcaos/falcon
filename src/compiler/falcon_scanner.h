@@ -7,9 +7,9 @@
 #ifndef FALCON_SCANNER_H
 #define FALCON_SCANNER_H
 
-#include "../commons.h"
 #include "../vm/falcon_value.h"
 #include "falcon_tokens.h"
+#include <stdint.h>
 
 /* Token representation */
 typedef struct {

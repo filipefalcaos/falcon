@@ -5,12 +5,9 @@
  */
 
 #include "falcon_gc.h"
+#include "falcon_debug.h"
 #include "falcon_memory.h"
 #include <stdlib.h>
-
-#ifdef FALCON_DEBUG_LEVEL_02
-#include "falcon_debug.h"
-#endif
 
 /* The grow factor for the heap allocation. It follows the logic:
  * - If factor > 1, then the number of bytes required for the next garbage collector will be higher
@@ -31,10 +28,7 @@ static void markObject(FalconVM *vm, FalconObj *object) {
     if (object->type == OBJ_NATIVE || object->type == OBJ_STRING)
         return; /* Strings and native functions contain no references to trace */
 
-#ifdef FALCON_DEBUG_LEVEL_02
-    dumpMark(object);
-#endif
-
+    if (vm->traceMemory) dumpMark(object);
     if (vm->grayCapacity < vm->grayCount + 1) {
         vm->grayCapacity = FALCON_INCREASE_CAPACITY(vm->grayCapacity); /* Increase the capacity */
         vm->grayStack = realloc(vm->grayStack, sizeof(FalconObj *) * vm->grayCapacity);
@@ -96,9 +90,7 @@ static void markUpvalues(FalconVM *vm, ObjClosure *closure) {
  * are not in the "grey" stack.
  */
 static void blackenObject(FalconVM *vm, FalconObj *object) {
-#ifdef FALCON_DEBUG_LEVEL_02
-    dumpBlacken(object);
-#endif
+    if (vm->traceMemory) dumpBlacken(object);
 
     switch (object->type) {
         case OBJ_FUNCTION: {
@@ -230,10 +222,11 @@ static void sweep(FalconVM *vm) {
  * and is freed.
  */
 void falconRunGC(FalconVM *vm) {
-#ifdef FALCON_DEBUG_LEVEL_02
-    dumpGCStatus("Start");
-    size_t bytesAllocated = vm->bytesAllocated;
-#endif
+    size_t bytesAllocated;
+    if (vm->traceMemory) {
+        dumpGCStatus("Start");
+        bytesAllocated = vm->bytesAllocated;
+    }
 
     markRoots(vm);                   /* Marks all roots */
     traceReferences(vm);             /* Traces the references of the "grey" objects */
@@ -241,8 +234,8 @@ void falconRunGC(FalconVM *vm) {
     sweep(vm);                       /* Reclaim the "white" objects - garbage */
     vm->nextGC = vm->bytesAllocated * HEAP_GROW_FACTOR; /* Adjust the next GC threshold */
 
-#ifdef FALCON_DEBUG_LEVEL_02
-    dumpGC(vm, bytesAllocated);
-    dumpGCStatus("End");
-#endif
+    if (vm->traceMemory) {
+        dumpGC(vm, bytesAllocated);
+        dumpGCStatus("End");
+    }
 }

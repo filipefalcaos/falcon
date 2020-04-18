@@ -1,6 +1,6 @@
 # Run in dir "/falcon"
-# Debug build:   cmake -DCMAKE_BUILD_TYPE=Debug CMakeLists.txt
-# Release build: cmake -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
+# Debug build:   cmake -DCMAKE_BUILD_TYPE=Debug [options] ... CMakeLists.txt
+# Release build: cmake -DCMAKE_BUILD_TYPE=Release [options] ... CMakeLists.txt
 
 # Project basic config
 cmake_minimum_required(VERSION 3.12)
@@ -20,24 +20,18 @@ add_compile_definitions(CMAKE_C_COMPILER_ID="${CMAKE_C_COMPILER_ID}")
 add_compile_definitions(CMAKE_C_COMPILER_VERSION="${CMAKE_C_COMPILER_VERSION}")
 add_compile_definitions(CMAKE_SYSTEM_NAME="${CMAKE_SYSTEM_NAME}")
 
-# Debugging options
-option(DEBUG_LEVEL_02 "DEBUG_LEVEL_02" OFF)
-option(DEBUG_STRESS_GC "DEBUG_STRESS_GC" OFF)
+# CMake options
+option(STRESS_GC "Stress the garbage collector by triggering a run every time an object is allocated" OFF)
 
-# Sets LEVEL_02 flag only if not in LEVEL_01 already
-if (DEBUG_LEVEL_02 AND (NOT DEBUG_LEVEL_01))
-    add_compile_definitions(FALCON_DEBUG_LEVEL_02)
-endif (DEBUG_LEVEL_02 AND (NOT DEBUG_LEVEL_01))
-
-# Sets the STRESS_GC flag
-if (DEBUG_STRESS_GC)
-    add_compile_definitions(FALCON_DEBUG_STRESS_GC)
-endif (DEBUG_STRESS_GC)
+# Sets the FALCON_STRESS_GC flag if requested
+if (STRESS_GC)
+    message("-- Flag STRESS_GC set to ON")
+    add_compile_definitions(FALCON_STRESS_GC)
+endif (STRESS_GC)
 
 # Build config
 add_executable(
     falcon
-    src/commons.h
     src/falcon.h
     src/falcon.c
 

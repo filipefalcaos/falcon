@@ -7,9 +7,9 @@
 #ifndef FALCON_BYTECODE_H
 #define FALCON_BYTECODE_H
 
-#include "../commons.h"
 #include "falcon_opcodes.h"
 #include "falcon_value.h"
+#include <stdint.h>
 
 /* Source code line representation */
 typedef struct {

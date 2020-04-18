@@ -61,14 +61,14 @@ static void printInfo() {
 void printUsage() {
     printf("usage: %s\n\n", FALCON_USAGE);
     printf("Available options: \n"
-           "  " FALCON_DEBUG_OPT "\n"
-           "  " FALCON_HELP_OPT "\n"
-           "  " FALCON_INPUT_OPT "\n"
-           "  " FALCON_TRACE_OPT "\n"
-           "  " FALCON_VERSION_OPT "\n"
-           "  " FALCON_STOP_OPT "\n\n");
+           "  -d        output bytecode instructions for debugging\n"
+           "  -h, -?    output usage information\n"
+           "  -i input  input code to execute (ends the option list)\n"
+           "  -t        output execution trace for debugging (-tt traces memory usage as well)\n"
+           "  -v        output version information\n"
+           "  --        stop parsing options\n\n");
     printf("Available arguments: \n"
-           "  " FALCON_SCRIPT_ARG "\n");
+           "  script    script file to interpret (ends the option list)\n");
 }
 
 /**
@@ -179,13 +179,13 @@ static void setRepl(FalconVM *vm) {
  * Processes the given CLI arguments and proceeds with the requested action. The following options
  * are available:
  *
- * "-d"        output basic interpreter debugging information
+ * "-d"        output bytecode instructions for debugging
  * "-h, -?"    output usage information
  * "-i input"  input code to execute (ends the option list)
- * "-t"        output stack tracing debugging information
+ * "-t"        output execution trace for debugging (-tt traces memory usage as well)
  * "-v"        output version information
  * "--"        stop parsing options
- * script      script file to interpret
+ * script      script file to interpret (ends the option list)
  *
  * The "-i" option requires a string argument and ends the parsing of the option list. Both the "-h"
  * and "-v" options print their information immediately after being parsed, and then exit the
@@ -218,7 +218,12 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
                 inputCommand = argv[optionId];
                 goto EXEC; /* Stop parsing on "-i"*/
             case 't':
-                VALIDATE_OPTION(argv, optionId);
+                if (argv[optionId][2] == 't') {
+                    vm->traceMemory = true;
+                } else {
+                    CLI_ERROR(argv, optionId, UNKNOWN_OPT_ERR);
+                }
+
                 vm->traceExec = true;
                 break;
             case 'v':

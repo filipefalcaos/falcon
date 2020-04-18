@@ -7,8 +7,10 @@
 #ifndef FALCON_TABLE_H
 #define FALCON_TABLE_H
 
-#include "../commons.h"
 #include "../vm/falcon_value.h"
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 /* Hashtable entry representation */
 typedef struct {

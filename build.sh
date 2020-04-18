@@ -1,23 +1,12 @@
-#!/usr/bin/env bash
-
-# Removes CMake build files
-remove_build_files() {
-  rm -rf CMakeFiles/
-  rm -rf cmake-build-debug/
-  rm -f cmake_install.cmake
-  rm -f CMakeCache.txt
-  rm -f Makefile
-  rm -f falcon.cbp
-}
+# Bash script to simplify the CMake build
+# Debug build:   cmake -DCMAKE_BUILD_TYPE=Debug [options] ... CMakeLists.txt
+# Release build: cmake -DCMAKE_BUILD_TYPE=Release [options] ... CMakeLists.txt
 
 # Builds Falcon
-# Debugging: cmake CMakeLists.txt -DDEBUG_PRINT_CODE=ON -DDEBUG_TRACE_EXECUTION=ON
-remove_build_files
 printf "Building Falcon with CMake...\n"
 cmake -DCMAKE_BUILD_TYPE=Debug CMakeLists.txt || exit 1
 printf "\nRunning Make...\n"
 make || exit 1
-remove_build_files || exit 1
 
 # Starts the Falcon's REPL
 printf "\nStarting Falcon's REPL...\n"

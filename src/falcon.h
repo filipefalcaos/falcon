@@ -24,13 +24,6 @@
 #define FALCON_REPL        "repl"
 #define FALCON_INPUT       "input"
 #define FALCON_USAGE       "falcon [options] ... [-i input | script]"
-#define FALCON_DEBUG_OPT   "-d        output basic interpreter debugging information"
-#define FALCON_HELP_OPT    "-h, -?    output usage information"
-#define FALCON_INPUT_OPT   "-i input  input code to execute (ends the option list)"
-#define FALCON_TRACE_OPT   "-t        output stack tracing debugging information"
-#define FALCON_VERSION_OPT "-v        output version information"
-#define FALCON_STOP_OPT    "--        stop parsing options"
-#define FALCON_SCRIPT_ARG  "script    script file to interpret"
 #define FALCON_MORE_INFO   "See full license in the \"LICENSE\" file"
 #define FALCON_LIC_FN      "\"license()\""
 #define FALCON_AUTHORS_FN  "\"authors()\""
@@ -50,5 +43,8 @@
 #define FALCON_ERR_RUNTIME  3
 #define FALCON_ERR_MEMORY   4
 #define FALCON_ERR_OS       5
+
+/* Forward declaration of the Falcon Virtual Machine */
+typedef struct FalconVM FalconVM;
 
 #endif // FALCON_H

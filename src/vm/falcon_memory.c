@@ -5,13 +5,10 @@
  */
 
 #include "falcon_memory.h"
+#include "falcon_debug.h"
 #include "falcon_gc.h"
 #include <stdio.h>
 #include <stdlib.h>
-
-#ifdef FALCON_DEBUG_LEVEL_02
-#include "falcon_debug.h"
-#endif
 
 /**
  * Presents a message indicating that a memory allocation error occurred.
@@ -30,7 +27,7 @@ void *falconReallocate(FalconVM *vm, void *previous, size_t oldSize, size_t newS
     vm->bytesAllocated += newSize - oldSize;
 
     if (newSize > oldSize) { /* More memory allocation? */
-#ifdef FALCON_DEBUG_STRESS_GC
+#ifdef FALCON_STRESS_GC
         falconRunGC(vm); /* Runs the garbage collector always */
 #else
         if (vm->bytesAllocated > vm->nextGC)
@@ -63,12 +60,9 @@ FalconObj *falconAllocateObj(FalconVM *vm, size_t size, ObjType type) {
     object->isMarked = false;
     object->type = type;        /* Sets the object type */
     object->next = vm->objects; /* Adds the new object to the object list */
+
     vm->objects = object;
-
-#ifdef FALCON_DEBUG_LEVEL_02
-    dumpAllocation(object, size, type);
-#endif
-
+    if (vm->traceMemory) dumpAllocation(object, size, type);
     return object;
 }
 
@@ -76,9 +70,7 @@ FalconObj *falconAllocateObj(FalconVM *vm, size_t size, ObjType type) {
  * Frees a given allocated object.
  */
 void falconFreeObj(FalconVM *vm, FalconObj *object) {
-#ifdef FALCON_DEBUG_LEVEL_02
-    dumpFree(object);
-#endif
+    if (vm->traceMemory) dumpFree(object);
 
     switch (object->type) {
         case OBJ_STRING: {

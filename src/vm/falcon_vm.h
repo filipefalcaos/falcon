@@ -28,10 +28,12 @@ struct FalconVM {
     const char *fileName;
     bool isREPL;
 
-    /* Debugging options: (i) whether opcodes should be displayed or not; and (ii) whether the
-     * execution should de traced or not */
+    /* Debugging options: (i) whether opcodes should be displayed or not; (ii) whether the
+     * execution should de traced or not; and (iii) whether the memory allocation should be traced
+     * or not */
     bool dumpOpcodes;
     bool traceExec;
+    bool traceMemory;
 
     /* Bytecode chunk to interpret and the program counter */
     BytecodeChunk *bytecode;

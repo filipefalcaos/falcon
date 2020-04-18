@@ -27,8 +27,6 @@ void resetStack(FalconVM *vm) {
  */
 void initFalconVM(FalconVM *vm) {
     resetStack(vm); /* Inits the VM stack */
-
-    /* Inits the VM fields */
     vm->fileName = NULL;
     vm->isREPL = false;
     vm->objects = NULL;
@@ -37,6 +35,7 @@ void initFalconVM(FalconVM *vm) {
     /* Sets debugging options */
     vm->dumpOpcodes = false;
     vm->traceExec = false;
+    vm->traceMemory = false;
 
     /* Inits the garbage collection fields */
     vm->grayCount = 0;
@@ -369,8 +368,8 @@ static FalconResultCode run(FalconVM *vm) {
         }                                                                              \
     } while (false)
 
-    if (vm->traceExec && vm->dumpOpcodes) {
-        if (vm->dumpOpcodes) printf("\n");
+    if (vm->traceExec) {
+        if (vm->dumpOpcodes || vm->traceMemory) printf("\n");
         PRINT_TRACE_HEADER() ;
     }
 

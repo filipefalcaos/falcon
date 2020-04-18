@@ -7,7 +7,8 @@
 #ifndef FALCON_VALUE_H
 #define FALCON_VALUE_H
 
-#include "../commons.h"
+#include "../falcon.h"
+#include <stdbool.h>
 
 /* Forward object declaration */
 typedef struct _Obj FalconObj;
