@@ -11,15 +11,17 @@
 
 /* Defines the "FALCON_READLINE", "FALCON_ADD_HISTORY", and "FALCON_FREE_INPUT" macros to handle
  * the user input in REPL mode.
- * If the "readline" lib is available, uses the "readline" and "add_history" functions from the lib
- * to handle user input and history management.
- * Otherwise, uses the standard IO "fputs" and "fgets" functions to handle user input and disables
+ * If the "readline" lib is available (macro FALCON_READLINE_AVAILABLE) and configured to be used
+ * (macro FALCON_USE_READLINE), uses the "readline" and "add_history" functions from the lib to
+ * handle user input and history management.
+ * Otherwise, uses the standard IO "fputs" and "fgets" functions to handle user input, and disables
  * history management */
-#ifdef FALCON_READLINE_AVAILABLE
+#if defined(FALCON_READLINE_AVAILABLE) && defined(FALCON_USE_READLINE)
 
 #if __APPLE__ || __linux__ || __unix__ /* MacOS only requires "readline/readline.h" */
 #include <readline/readline.h>
 #endif
+
 #if __linux__ || __unix__ /* Linux/Unix requires both */
 #include <readline/history.h>
 #endif
@@ -32,7 +34,7 @@
 
 #else
 
-/* Use fgets for input and disables history */
+/* Use "fputs" and "fgets" for input, and disables history */
 #define FALCON_READLINE(input, prompt) \
     (fputs(prompt, stdout), fflush(stdout), fgets(input, FALCON_REPL_MAX, stdin))
 #define FALCON_FREE_INPUT(input)  ((void) input)
