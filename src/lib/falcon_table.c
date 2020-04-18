@@ -39,10 +39,11 @@ static Entry *findEntry(Entry *entries, int capacity, ObjString *key) {
         Entry *entry = &entries[index];
 
         if (entry->key == NULL) { /* Checks if the entry is empty */
-            if (IS_NULL(entry->value))
+            if (IS_NULL(entry->value)) {
                 return tombstone != NULL ? tombstone : entry;
-            else if (tombstone == NULL)
-                tombstone = entry;      /* Tombstone found */
+            } else if (tombstone == NULL) {
+                tombstone = entry; /* Tombstone found */
+            }
         } else if (entry->key == key) { /* Checks if the key was found */
             return entry;
         }

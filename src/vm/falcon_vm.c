@@ -543,18 +543,24 @@ static FalconResultCode run(FalconVM *vm) {
             /* Relational operations */
             case OP_AND: {
                 uint16_t offset = READ_SHORT();
-                if (isFalsy(peek(vm, 0)))
+
+                if (isFalsy(peek(vm, 0))) {
                     frame->pc += offset;
-                else
+                } else {
                     pop(vm);
+                }
+
                 break;
             }
             case OP_OR: {
                 uint16_t offset = READ_SHORT();
-                if (isFalsy(peek(vm, 0)))
+
+                if (isFalsy(peek(vm, 0))) {
                     pop(vm);
-                else
+                } else {
                     frame->pc += offset;
+                }
+
                 break;
             }
             case OP_NOT: vm->stackTop[-1] = BOOL_VAL(isFalsy(vm->stackTop[-1])); break;

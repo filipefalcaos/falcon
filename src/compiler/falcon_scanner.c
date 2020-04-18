@@ -347,10 +347,11 @@ Token scanToken(Scanner *scanner, FalconVM *vm) {
         case ',': return simpleToken(TK_COMMA, scanner);
         case '.': return simpleToken(TK_DOT, scanner);
         case '-':
-            if (match('>', scanner))
+            if (match('>', scanner)) {
                 return simpleToken(TK_ARROW, scanner);
-            else
+            } else {
                 return simpleToken(TK_MINUS, scanner);
+            }
         case '+': return simpleToken(TK_PLUS, scanner);
         case '/': return simpleToken(TK_SLASH, scanner);
         case '%': return simpleToken(TK_PERCENT, scanner);
