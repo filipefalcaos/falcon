@@ -637,7 +637,7 @@ static FalconResultCode run(FalconVM *vm) {
             case OP_SETGLOBAL: {
                 ObjString *name = READ_STRING();
                 if (tableSet(vm, &vm->globals, name, peek(vm, 0))) { /* Checks if undefined */
-                    tableDelete(&(vm)->globals, name);
+                    tableDelete(&vm->globals, name);
                     interpreterError(vm, VM_UNDEF_VAR_ERR, (name)->chars);
                     return FALCON_RUNTIME_ERROR;
                 }
