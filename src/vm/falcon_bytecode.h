@@ -11,13 +11,15 @@
 #include "falcon_value.h"
 #include <stdint.h>
 
-/* Source code line representation */
+/* Marks the beginning of a new source code line and the corresponding offset of the first
+ * instruction on that same line */
 typedef struct {
     int offset;
     int line;
 } SourceLine;
 
-/* Bytecode chunk representation */
+/* A chunk of bytecode. It stores a dynamic array of instructions and a dynamic array of source
+ * lines of code. It also stores the list of constants in the bytecode chunk */
 typedef struct {
     int count;
     int capacity;
@@ -28,12 +30,19 @@ typedef struct {
     ValueArray constants;
 } BytecodeChunk;
 
-/* Bytecode chunk operations */
+/* Initializes an empty bytecode chunk */
 void initBytecode(BytecodeChunk *bytecode);
+
+/* Frees a previously allocated bytecode chunk and its list of constants */
 void freeBytecode(FalconVM *vm, BytecodeChunk *bytecode);
+
+/* Appends a byte to the end of a bytecode chunk */
 void writeBytecode(FalconVM *vm, BytecodeChunk *bytecode, uint8_t byte, int line);
+
+/* Searches for the line that contains a given instruction */
 int getLine(const BytecodeChunk *bytecode, int instruction);
+
+/* Adds a new constant to the constants list of a bytecode chunk and returns its index */
 int addConstant(FalconVM *vm, BytecodeChunk *bytecode, FalconValue value);
-void writeConstant(FalconVM *vm, BytecodeChunk *bytecode, uint16_t index, int line);
 
 #endif // FALCON_BYTECODE_H

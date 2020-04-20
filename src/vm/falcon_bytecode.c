@@ -21,7 +21,7 @@ void initBytecode(BytecodeChunk *bytecode) {
 }
 
 /**
- * Frees a bytecode chunk.
+ * Frees a previously allocated bytecode chunk and its list of constants.
  */
 void freeBytecode(FalconVM *vm, BytecodeChunk *bytecode) {
     FALCON_FREE_ARRAY(vm, uint8_t, bytecode->code, bytecode->capacity);
@@ -89,20 +89,11 @@ int getLine(const BytecodeChunk *bytecode, int instruction) {
 }
 
 /**
- * Adds a new constant to a bytecode chunk.
+ * Adds a new constant to the constants list of a bytecode chunk and returns its index.
  */
 int addConstant(FalconVM *vm, BytecodeChunk *bytecode, FalconValue value) {
     push(vm, value);                                /* Avoids GC */
     writeValArray(vm, &bytecode->constants, value); /* Adds the constant */
     pop(vm);
     return bytecode->constants.count - 1;
-}
-
-/**
- * Writes a 2 bytes constant to the bytecode chunk.
- */
-void writeConstant(FalconVM *vm, BytecodeChunk *bytecode, uint16_t index, int line) {
-    writeBytecode(vm, bytecode, OP_LOADCONST, line);
-    writeBytecode(vm, bytecode, (uint8_t)(index & 0xffu), line);
-    writeBytecode(vm, bytecode, (uint8_t)((uint16_t)(index >> 8u) & 0xffu), line);
 }
