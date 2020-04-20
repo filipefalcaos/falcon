@@ -36,7 +36,7 @@ ObjString *makeString(FalconVM *vm, size_t length) {
  */
 ObjString *falconString(FalconVM *vm, const char *chars, size_t length) {
     uint32_t hash = hashString((const unsigned char *) chars, length);
-    ObjString *interned = tableFindStr(&vm->strings, chars, length, hash); /* Checks if interned */
+    ObjString *interned = mapFindString(&vm->strings, chars, length, hash); /* Checks if interned */
     if (interned != NULL) return interned;
 
     /* Copies the characters to the ObjString */
@@ -45,8 +45,8 @@ ObjString *falconString(FalconVM *vm, const char *chars, size_t length) {
     str->chars[length] = '\0';
     str->hash = hash;
 
-    push(vm, OBJ_VAL(str));                    /* Avoids GC */
-    tableSet(vm, &vm->strings, str, NULL_VAL); /* Interns the string */
+    push(vm, OBJ_VAL(str));                  /* Avoids GC */
+    mapSet(vm, &vm->strings, str, NULL_VAL); /* Interns the string */
     pop(vm);
     return str;
 }
@@ -100,7 +100,7 @@ ObjClosure *falconClosure(FalconVM *vm, ObjFunction *function) {
 ObjClass *falconClass(FalconVM *vm, ObjString *name) {
     ObjClass *class_ = FALCON_ALLOCATE_OBJ(vm, ObjClass, OBJ_CLASS);
     class_->name = name;
-    initTable(&class_->methods);
+    class_->methods = *falconMap(vm);
     return class_;
 }
 
@@ -110,7 +110,7 @@ ObjClass *falconClass(FalconVM *vm, ObjString *name) {
 ObjInstance *falconInstance(FalconVM *vm, ObjClass *class_) {
     ObjInstance *instance = FALCON_ALLOCATE_OBJ(vm, ObjInstance, OBJ_INSTANCE);
     instance->class_ = class_;
-    initTable(&instance->fields);
+    instance->fields = *falconMap(vm);
     return instance;
 }
 
@@ -139,12 +139,13 @@ ObjList *falconList(FalconVM *vm, uint16_t size) {
 }
 
 /**
- * Allocates a new ObjMap and initializes its fields, setting a hashtable of a given size.
+ * Allocates a new empty ObjMap and initializes its fields.
  */
-ObjMap *falconMap(FalconVM *vm, uint16_t length) {
+ObjMap *falconMap(FalconVM *vm) {
     ObjMap *map = FALCON_ALLOCATE_OBJ(vm, ObjMap, OBJ_MAP);
-    initTable(&map->entries);
-    map->length = length;
+    map->capacity = 0;
+    map->count = 0;
+    map->entries = NULL;
     return map;
 }
 

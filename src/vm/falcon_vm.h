@@ -9,7 +9,7 @@
 
 #include "../compiler/falcon_compiler.h"
 #include "../falcon.h"
-#include "../lib/falcon_table.h"
+#include "../lib/falcon_map.h"
 #include "falcon_bytecode.h"
 #include "falcon_object.h"
 
@@ -55,10 +55,10 @@ struct FalconVM {
     FalconObj *objects;
 
     /* A hashtable for all the strings that are allocated in the runtime */
-    Table strings;
+    ObjMap strings;
 
     /* A hashtable for all the declared global variables */
-    Table globals;
+    ObjMap globals;
 
     /* The current function compiler (necessary if the garbage collector is triggered during the
      * compilation stage) */

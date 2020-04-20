@@ -98,8 +98,8 @@ void initFalconVM(FalconVM *vm) {
     vm->bytesAllocated = 0;
     vm->nextGC = VM_BASE_HEAP_SIZE;
 
-    initTable(&vm->strings); /* Inits the table of interned strings */
-    initTable(&vm->globals); /* Inits the table of globals */
+    vm->strings = *falconMap(vm); /* Inits the map of interned strings */
+    vm->globals = *falconMap(vm); /* Inits the map of globals */
 
     /* Defines the string for class initializers */
     vm->initStr = NULL;
@@ -113,8 +113,8 @@ void initFalconVM(FalconVM *vm) {
  */
 void freeFalconVM(FalconVM *vm) {
     vm->initStr = NULL;
-    freeTable(vm, &vm->strings);
-    freeTable(vm, &vm->globals);
+    freeMap(vm, &vm->strings);
+    freeMap(vm, &vm->globals);
     falconFreeObjs(vm);
 }
 
@@ -181,7 +181,7 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
                 vm->stackTop[-argCount - 1] = OBJ_VAL(falconInstance(vm, class_));
 
                 /* Calls the class "init" method, if existent */
-                if (tableGet(&class_->methods, vm->initStr, &init)) {
+                if (mapGet(&class_->methods, vm->initStr, &init)) {
                     return call(vm, AS_CLOSURE(init), argCount); /* Calls "init" as a closure */
                 } else if (argCount != 0) {
                     interpreterError(vm, VM_INIT_ERR, argCount);
@@ -219,7 +219,7 @@ static bool callValue(FalconVM *vm, FalconValue callee, int argCount) {
  */
 static bool bindMethod(FalconVM *vm, ObjClass *class_, ObjString *methodName) {
     FalconValue method;
-    if (!tableGet(&class_->methods, methodName, &method)) { /* Checks if the method is defined */
+    if (!mapGet(&class_->methods, methodName, &method)) { /* Checks if the method is defined */
         interpreterError(vm, VM_UNDEF_PROP_ERR, class_->name->chars, methodName->chars);
         return false;
     }
@@ -238,7 +238,7 @@ static bool bindMethod(FalconVM *vm, ObjClass *class_, ObjString *methodName) {
  */
 static bool invokeFromClass(FalconVM *vm, ObjClass *class_, ObjString *methodName, int argCount) {
     FalconValue method;
-    if (!tableGet(&class_->methods, methodName, &method)) { /* Checks if method is defined */
+    if (!mapGet(&class_->methods, methodName, &method)) { /* Checks if method is defined */
         interpreterError(vm, VM_UNDEF_PROP_ERR);
         return false;
     }
@@ -260,7 +260,7 @@ static bool invoke(FalconVM *vm, ObjString *calleeName, int argCount) {
 
     ObjInstance *instance = AS_INSTANCE(receiver);
     FalconValue property;
-    if (tableGet(&instance->fields, calleeName, &property)) { /* Checks if is shadowed by a field */
+    if (mapGet(&instance->fields, calleeName, &property)) { /* Checks if is shadowed by a field */
         vm->stackTop[-argCount - 1] = property;
         return callValue(vm, property, argCount); /* Tries to execute the field as a function */
     }
@@ -312,12 +312,12 @@ static void closeUpvalues(FalconVM *vm, FalconValue *last) {
 }
 
 /**
- * Defines a new class method by adding it to the table of methods in a class.
+ * Defines a new class method by adding it to the map of methods in a class.
  */
 static void defineMethod(FalconVM *vm, ObjString *name) {
-    FalconValue method = peek(vm, 0);             /* Avoids GC */
-    ObjClass *class_ = AS_CLASS(peek(vm, 1));     /* Avoids GC */
-    tableSet(vm, &class_->methods, name, method); /* Sets the new method */
+    FalconValue method = peek(vm, 0);           /* Avoids GC */
+    ObjClass *class_ = AS_CLASS(peek(vm, 1));   /* Avoids GC */
+    mapSet(vm, &class_->methods, name, method); /* Sets the new method */
     pop(vm);
 }
 
@@ -342,8 +342,8 @@ static void concatenateStrings(FalconVM *vm) {
 
     pop(vm);
     pop(vm);
-    push(vm, OBJ_VAL(result));                    /* Pushes concatenated string */
-    tableSet(vm, &vm->strings, result, NULL_VAL); /* Interns the string */
+    push(vm, OBJ_VAL(result));                  /* Pushes concatenated string */
+    mapSet(vm, &vm->strings, result, NULL_VAL); /* Interns the string */
 }
 
 /**
@@ -434,7 +434,7 @@ static FalconResultCode run(FalconVM *vm) {
 
     if (vm->traceExec) {
         if (vm->dumpOpcodes || vm->traceMemory) printf("\n");
-        PRINT_TRACE_HEADER() ;
+        PRINT_TRACE_HEADER();
     }
 
     /* Main bytecode interpreter loop */
@@ -478,14 +478,14 @@ static FalconResultCode run(FalconVM *vm) {
             }
             case OP_DEFMAP: {
                 uint16_t entriesCount = READ_SHORT();
-                ObjMap *map = falconMap(vm, entriesCount);
+                ObjMap *map = falconMap(vm);
 
                 /* Adds the entries to the map */
                 for (uint16_t i = 0; i < entriesCount; i++) {
                     FalconValue key = peek(vm, 1);
                     ASSERT_STR(vm, key, VM_MAP_INDEX_ERR);
                     FalconValue value = peek(vm, 0);
-                    tableSet(vm, &map->entries, AS_STRING(key), value);
+                    mapSet(vm, map, AS_STRING(key), value);
 
                     /* Discards the entry's key and value */
                     pop(vm);
@@ -527,7 +527,7 @@ static FalconResultCode run(FalconVM *vm) {
                         ObjMap *map = AS_MAP(subscript);
 
                         FalconValue value;
-                        if (!tableGet(&map->entries, string, &value)) { /* Checks if key exist */
+                        if (!mapGet(map, string, &value)) { /* Checks if key exist */
                             push(vm, NULL_VAL);
                         } else {
                             push(vm, value);
@@ -588,7 +588,7 @@ static FalconResultCode run(FalconVM *vm) {
                         ASSERT_STR(vm, index, VM_MAP_INDEX_ERR);
                         ObjString *key = AS_STRING(index);
                         ObjMap *map = AS_MAP(subscript);
-                        tableSet(vm, &map->entries, key, value);
+                        mapSet(vm, map, key, value);
                         push(vm, value);
                         break;
                     }
@@ -672,7 +672,7 @@ static FalconResultCode run(FalconVM *vm) {
             /* Variable operations */
             case OP_DEFGLOBAL: {
                 ObjString *name = READ_STRING();
-                tableSet(vm, &vm->globals, name, peek(vm, 0));
+                mapSet(vm, &vm->globals, name, peek(vm, 0));
                 pop(vm);
                 break;
             }
@@ -680,7 +680,7 @@ static FalconResultCode run(FalconVM *vm) {
                 ObjString *name = READ_STRING();
                 FalconValue value;
 
-                if (!tableGet(&vm->globals, name, &value)) { /* Checks if undefined */
+                if (!mapGet(&vm->globals, name, &value)) { /* Checks if undefined */
                     interpreterError(vm, VM_UNDEF_VAR_ERR, (name)->chars);
                     return FALCON_RUNTIME_ERROR;
                 }
@@ -690,8 +690,8 @@ static FalconResultCode run(FalconVM *vm) {
             }
             case OP_SETGLOBAL: {
                 ObjString *name = READ_STRING();
-                if (tableSet(vm, &vm->globals, name, peek(vm, 0))) { /* Checks if undefined */
-                    tableDelete(&vm->globals, name);
+                if (mapSet(vm, &vm->globals, name, peek(vm, 0))) { /* Checks if undefined */
+                    deleteFromMap(&vm->globals, name);
                     interpreterError(vm, VM_UNDEF_VAR_ERR, (name)->chars);
                     return FALCON_RUNTIME_ERROR;
                 }
@@ -816,7 +816,7 @@ static FalconResultCode run(FalconVM *vm) {
                 FalconValue value;
 
                 /* Looks for a valid field */
-                if (tableGet(&instance->fields, name, &value)) {
+                if (mapGet(&instance->fields, name, &value)) {
                     pop(vm);         /* Pops the instance */
                     push(vm, value); /* Pushes the field value */
                     break;
@@ -835,7 +835,7 @@ static FalconResultCode run(FalconVM *vm) {
                 }
 
                 ObjInstance *instance = AS_INSTANCE(peek(vm, 1));
-                tableSet(vm, &instance->fields, READ_STRING(), peek(vm, 0));
+                mapSet(vm, &instance->fields, READ_STRING(), peek(vm, 0));
 
                 FalconValue value = pop(vm); /* Pops the assigned value */
                 pop(vm);                     /* Pops the instance */

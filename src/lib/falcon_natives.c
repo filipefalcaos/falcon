@@ -102,28 +102,19 @@ FALCON_NATIVE(type) {
 
     /* Checks the value type */
     switch (args->type) {
-        case VAL_BOOL:
-            return OBJ_VAL(falconString(vm, "bool", 4));
-        case VAL_NULL:
-            return OBJ_VAL(falconString(vm, "null", 4));
-        case VAL_NUM:
-            return OBJ_VAL(falconString(vm, "number", 6));
+        case VAL_BOOL: return OBJ_VAL(falconString(vm, "bool", 4));
+        case VAL_NULL: return OBJ_VAL(falconString(vm, "null", 4));
+        case VAL_NUM: return OBJ_VAL(falconString(vm, "number", 6));
         case VAL_OBJ:
             switch (OBJ_TYPE(*args)) {
-                case OBJ_STRING:
-                    return OBJ_VAL(falconString(vm, "string", 6));
-                case OBJ_CLASS:
-                    return OBJ_VAL(falconString(vm, "class", 5));
-                case OBJ_LIST:
-                    return OBJ_VAL(falconString(vm, "list", 4));
-                case OBJ_MAP:
-                    return OBJ_VAL(falconString(vm, "map", 3));
-                case OBJ_BMETHOD:
-                    return OBJ_VAL(falconString(vm, "method", 6));
+                case OBJ_STRING: return OBJ_VAL(falconString(vm, "string", 6));
+                case OBJ_CLASS: return OBJ_VAL(falconString(vm, "class", 5));
+                case OBJ_LIST: return OBJ_VAL(falconString(vm, "list", 4));
+                case OBJ_MAP: return OBJ_VAL(falconString(vm, "map", 3));
+                case OBJ_BMETHOD: return OBJ_VAL(falconString(vm, "method", 6));
                 case OBJ_CLOSURE:
                 case OBJ_FUNCTION:
-                case OBJ_NATIVE:
-                    return OBJ_VAL(falconString(vm, "function", 8));
+                case OBJ_NATIVE: return OBJ_VAL(falconString(vm, "function", 8));
                 case OBJ_INSTANCE: {
                     ObjInstance *instance = AS_INSTANCE(*args);
                     char *typeStr = FALCON_ALLOCATE(vm, char, instance->class_->name->length + 6);
@@ -197,7 +188,7 @@ FALCON_NATIVE(len) {
     /* Handles the subscript types */
     switch (AS_OBJ(*args)->type) {
         case OBJ_LIST: return NUM_VAL(AS_LIST(*args)->elements.count); /* Returns the list length */
-        case OBJ_MAP: return NUM_VAL(AS_MAP(*args)->entries.count);    /* Returns the map length */
+        case OBJ_MAP: return NUM_VAL(AS_MAP(*args)->count);            /* Returns the map length */
         case OBJ_STRING: return NUM_VAL(AS_STRING(*args)->length); /* Returns the string length */
         default: interpreterError(vm, VM_ARGS_TYPE_ERR, 1, "list, map or string"); return ERR_VAL;
     }
@@ -220,7 +211,7 @@ FALCON_NATIVE(hasField) {
     /* Checks if the field is defined */
     ObjInstance *instance = AS_INSTANCE(args[0]);
     FalconValue value;
-    return BOOL_VAL(tableGet(&instance->fields, AS_STRING(args[1]), &value));
+    return BOOL_VAL(mapGet(&instance->fields, AS_STRING(args[1]), &value));
 }
 
 /**
@@ -235,7 +226,7 @@ FALCON_NATIVE(getField) {
     /* Gets the field value */
     ObjInstance *instance = AS_INSTANCE(args[0]);
     FalconValue value;
-    if (tableGet(&instance->fields, AS_STRING(args[1]), &value)) return value;
+    if (mapGet(&instance->fields, AS_STRING(args[1]), &value)) return value;
 
     /* Undefined field error */
     interpreterError(vm, VM_UNDEF_PROP_ERR, instance->class_->name->chars,
@@ -254,7 +245,7 @@ FALCON_NATIVE(setField) {
 
     /* Sets the field value */
     ObjInstance *instance = AS_INSTANCE(args[0]);
-    tableSet(vm, &instance->fields, AS_STRING(args[1]), args[2]);
+    mapSet(vm, &instance->fields, AS_STRING(args[1]), args[2]);
     return args[2];
 }
 
@@ -268,7 +259,7 @@ FALCON_NATIVE(delField) {
 
     /* Deletes the field */
     ObjInstance *instance = AS_INSTANCE(args[0]);
-    tableDelete(&instance->fields, AS_STRING(args[1]));
+    deleteFromMap(&instance->fields, AS_STRING(args[1]));
     return NULL_VAL;
 }
 
@@ -365,7 +356,7 @@ FALCON_NATIVE(print) {
 static void defNative(FalconVM *vm, const char *name, FalconNativeFn function) {
     push(vm, OBJ_VAL(falconString(vm, name, (int) strlen(name)))); /* Avoids GC */
     push(vm, OBJ_VAL(falconNative(vm, function, name)));           /* Avoids GC */
-    tableSet(vm, &vm->globals, AS_STRING(vm->stack[0]), vm->stack[1]);
+    mapSet(vm, &vm->globals, AS_STRING(vm->stack[0]), vm->stack[1]);
     pop(vm);
     pop(vm);
 }

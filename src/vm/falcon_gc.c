@@ -59,11 +59,11 @@ static void markValue(FalconVM *vm, FalconValue value) {
 }
 
 /**
- * Marks every key/value pair in a given hashtable for garbage collection.
+ * Marks every key-value pair in a given ObjMap for garbage collection.
  */
-static void markTable(FalconVM *vm, Table *table) {
-    for (int i = 0; i < table->capacity; i++) {
-        Entry *entry = &table->entries[i];
+static void markMap(FalconVM *vm, ObjMap *map) {
+    for (int i = 0; i < map->capacity; i++) {
+        MapEntry *entry = &map->entries[i];
         markObject(vm, (FalconObj *) entry->key);
         markValue(vm, entry->value);
     }
@@ -110,13 +110,13 @@ static void blackenObject(FalconVM *vm, FalconObj *object) {
         case OBJ_CLASS: {
             ObjClass *class_ = (ObjClass *) object;
             markObject(vm, (FalconObj *) class_->name);
-            markTable(vm, &class_->methods);
+            markMap(vm, &class_->methods);
             break;
         }
         case OBJ_INSTANCE: {
             ObjInstance *instance = (ObjInstance *) object;
             markObject(vm, (FalconObj *) instance->class_);
-            markTable(vm, &instance->fields);
+            markMap(vm, &instance->fields);
             break;
         }
         case OBJ_BMETHOD: {
@@ -132,7 +132,7 @@ static void blackenObject(FalconVM *vm, FalconObj *object) {
         }
         case OBJ_MAP: {
             ObjMap *map = (ObjMap *) object;
-            markTable(vm, &map->entries);
+            markMap(vm, map);
             break;
         }
         case OBJ_STRING:
@@ -157,7 +157,7 @@ static void markRoots(FalconVM *vm) {
         markObject(vm, (FalconObj *) upvalue); /* Marks open upvalues */
     }
 
-    markTable(vm, &vm->globals);               /* Marks global variables */
+    markMap(vm, &vm->globals);                 /* Marks global variables */
     markCompilerRoots(vm);                     /* Marks compilation roots */
     markObject(vm, (FalconObj *) vm->initStr); /* Marks the "init" string */
 }
@@ -174,13 +174,13 @@ static void traceReferences(FalconVM *vm) {
 }
 
 /**
- * Removes every key/value pair of "white" objects in the hashtable for garbage collection.
+ * Removes every key-value pair of "white" objects in a given ObjMap for garbage collection.
  */
-static void removeWhitesTable(Table *table) {
-    for (int i = 0; i < table->capacity; i++) {
-        Entry *current = &table->entries[i];
+static void removeWhitesMap(ObjMap *map) {
+    for (int i = 0; i < map->capacity; i++) {
+        MapEntry *current = &map->entries[i];
         if (current->key != NULL && !current->key->obj.isMarked) /* Is a "white" object? */
-            tableDelete(table, current->key); /* Removes key/value pair from the table */
+            deleteFromMap(map, current->key); /* Removes the key-value pair from the map */
     }
 }
 
@@ -228,10 +228,10 @@ void falconRunGC(FalconVM *vm) {
         bytesAllocated = vm->bytesAllocated;
     }
 
-    markRoots(vm);                   /* Marks all roots */
-    traceReferences(vm);             /* Traces the references of the "gray" objects */
-    removeWhitesTable(&vm->strings); /* Removes the "white" strings from the table */
-    sweep(vm);                       /* Reclaim the "white" objects - garbage */
+    markRoots(vm);                 /* Marks all roots */
+    traceReferences(vm);           /* Traces the references of the "gray" objects */
+    removeWhitesMap(&vm->strings); /* Removes the "white" strings from the map */
+    sweep(vm);                     /* Reclaim the "white" objects - garbage */
     vm->nextGC = vm->bytesAllocated * HEAP_GROW_FACTOR; /* Adjust the next GC threshold */
 
     if (vm->traceMemory) {

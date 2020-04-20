@@ -69,7 +69,7 @@ bool isFalsy(FalconValue value) {
            (IS_NUM(value) && AS_NUM(value) == 0) ||
            (IS_STRING(value) && AS_STRING(value)->length == 0) ||
            (IS_LIST(value) && AS_LIST(value)->elements.count == 0) ||
-           (IS_MAP(value) && AS_MAP(value)->entries.count == 0);
+           (IS_MAP(value) && AS_MAP(value)->count == 0);
 }
 
 /**

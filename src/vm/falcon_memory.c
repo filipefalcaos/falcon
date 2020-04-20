@@ -98,13 +98,13 @@ void falconFreeObj(FalconVM *vm, FalconObj *object) {
         }
         case OBJ_CLASS: {
             ObjClass *class_ = (ObjClass *) object;
-            freeTable(vm, &class_->methods);
+            freeMap(vm, &class_->methods);
             FALCON_FREE(vm, ObjClass, object);
             break;
         }
         case OBJ_INSTANCE: {
             ObjInstance *instance = (ObjInstance *) object;
-            freeTable(vm, &instance->fields);
+            freeMap(vm, &instance->fields);
             FALCON_FREE(vm, ObjInstance, object);
             break;
         }
@@ -117,7 +117,7 @@ void falconFreeObj(FalconVM *vm, FalconObj *object) {
         }
         case OBJ_MAP: {
             ObjMap *map = (ObjMap *) object;
-            freeTable(vm, &map->entries);
+            freeMap(vm, map);
             FALCON_FREE(vm, ObjMap, object);
             break;
         }
