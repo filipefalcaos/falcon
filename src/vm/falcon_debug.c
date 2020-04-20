@@ -9,7 +9,7 @@
 #include <stdio.h>
 
 /**
- * Displays a simple bytecode instruction.
+ * Prints to stdout a instruction that has no arguments.
  */
 static int simpleInstruction(const char *name, int offset) {
     printf("%s\n", name);
@@ -17,7 +17,7 @@ static int simpleInstruction(const char *name, int offset) {
 }
 
 /**
- * Displays a byte instruction.
+ * Prints to stdout a instruction that has a single byte argument.
  */
 static int byteInstruction(const char *name, const BytecodeChunk *bytecode, int offset) {
     uint8_t slot = bytecode->code[offset + 1];
@@ -26,7 +26,7 @@ static int byteInstruction(const char *name, const BytecodeChunk *bytecode, int 
 }
 
 /**
- * Displays a collection (list or maps) instruction.
+ * Prints to stdout a collection ("OP_DEFLIST" or "OP_DEFMAP") instruction.
  */
 static int collectionInstruction(const char *name, const BytecodeChunk *bytecode, int offset) {
     uint16_t length = (uint16_t)(bytecode->code[offset + 1] << 8u);
@@ -36,7 +36,8 @@ static int collectionInstruction(const char *name, const BytecodeChunk *bytecode
 }
 
 /**
- * Displays a jump (conditional) instruction.
+ * Prints to stdout a jump instruction. The given sign defines if the jump will be forward or
+ * backwards.
  */
 static int jumpInstruction(const char *name, int sign, const BytecodeChunk *bytecode, int offset) {
     uint16_t jump = (uint16_t)(bytecode->code[offset + 1] << 8u);
@@ -46,7 +47,8 @@ static int jumpInstruction(const char *name, int sign, const BytecodeChunk *byte
 }
 
 /**
- * Displays a constant instruction (8 bits).
+ * Prints to stdout a instruction that loads a constant from the constants table (constant index
+ * has 8 bits).
  */
 static int constantInstruction(const char *name, FalconVM *vm, const BytecodeChunk *bytecode,
                                int offset) {
@@ -61,7 +63,7 @@ static int constantInstruction(const char *name, FalconVM *vm, const BytecodeChu
 }
 
 /**
- * Displays a constant instruction (16 bits).
+ * Prints to stdout a "OP_LOADCONST" instruction (constant index has 16 bits).
  */
 static int constantInstruction16(const char *name, FalconVM *vm, const BytecodeChunk *bytecode,
                                  int offset) {
@@ -76,7 +78,7 @@ static int constantInstruction16(const char *name, FalconVM *vm, const BytecodeC
 }
 
 /**
- * Displays a method invocation instruction.
+ * Prints to stdout a method invocation ("OP_INVPROP" or "OP_INVSUPER") instruction.
  */
 static int invokeInstruction(const char *name, FalconVM *vm, const BytecodeChunk *bytecode,
                              int offset) {
@@ -89,7 +91,7 @@ static int invokeInstruction(const char *name, FalconVM *vm, const BytecodeChunk
 }
 
 /**
- * Displays a closure instruction.
+ * Prints to stdout a "OP_CLOSURE" instruction.
  */
 static int closureInstruction(const char *name, FalconVM *vm, const BytecodeChunk *bytecode,
                               int offset) {
@@ -112,7 +114,7 @@ static int closureInstruction(const char *name, FalconVM *vm, const BytecodeChun
 }
 
 /**
- * Displays a single instruction in a bytecode chunk.
+ * Prints to stdout a single instruction from a given bytecode chunk.
  * TODO: check if all opcodes are covered.
  */
 int dumpInstruction(FalconVM *vm, const BytecodeChunk *bytecode, int offset) {
@@ -202,7 +204,7 @@ int dumpInstruction(FalconVM *vm, const BytecodeChunk *bytecode, int offset) {
 }
 
 /**
- * Displays a complete bytecode chunk, including its opcodes and constants.
+ * Prints to stdout a complete bytecode chunk, including its opcodes and constants.
  */
 void dumpBytecode(FalconVM *vm, ObjFunction *function) {
     const ObjString *functionName = function->name;
@@ -217,8 +219,8 @@ void dumpBytecode(FalconVM *vm, ObjFunction *function) {
 }
 
 /**
- * Traces the execution of a given call frame, dumping the virtual machine stack and the opcodes
- * that operate on the stack.
+ * Traces the execution of a given call frame, printing to stdout the virtual machine stack and the
+ * opcodes that operate on the stack.
  */
 void traceExecution(FalconVM *vm, CallFrame *frame) {
     if (vm->stack != vm->stackTop) dumpStack(vm);
@@ -227,7 +229,7 @@ void traceExecution(FalconVM *vm, CallFrame *frame) {
 }
 
 /**
- * Displays the Falcon's virtual machine stack.
+ * Prints to stdout the current state of the virtual machine stack.
  */
 void dumpStack(FalconVM *vm) {
     printf("Stack:  ");
@@ -240,7 +242,7 @@ void dumpStack(FalconVM *vm) {
 }
 
 /**
- * Displays debug information on the allocation of a Falcon Object on the heap.
+ * Prints to stdout debug information on the allocation of a FalconObj.
  */
 void dumpAllocation(FalconObj *object, size_t size, ObjType type) {
     printf("Allocated %ld bytes for type \"%s\" at address %p\n", size, getObjName(type),
@@ -248,7 +250,7 @@ void dumpAllocation(FalconObj *object, size_t size, ObjType type) {
 }
 
 /**
- * Displays debug information on the free of a Falcon Object on the heap.
+ * Prints to stdout debug information on the freeing of an allocated FalconObj.
  */
 void dumpFree(FalconObj *object) {
     printf("Freed object from type \"%s\" at address %p\n", getObjName(object->type),
@@ -256,23 +258,23 @@ void dumpFree(FalconObj *object) {
 }
 
 /**
- * Displays the current status of the garbage collector.
+ * Prints to stdout the current status of the garbage collector.
  */
 void dumpGCStatus(const char *status) { printf("== Garbage Collector %s ==\n", status); }
 
 /**
- * Displays debug information on the "marking" of a Falcon Object for garbage collection.
+ * Prints to stdout debug information on the "marking" of a FalconObj for garbage collection.
  */
 void dumpMark(FalconObj *object) { printf("Object at address %p marked\n", (void *) object); }
 
 /**
- * Displays debug information on the "blacken" of a Falcon Object for garbage collection.
+ * Prints to stdout debug information on the "blackening" of a FalconObj for garbage collection.
  */
 void dumpBlacken(FalconObj *object) { printf("Object at address %p blackened\n", (void *) object); }
 
 /**
- * Display the number of collected bytes after a garbage collection process, and the number of
- * bytes required for the next garbage collector activation.
+ * Prints to stdout the number of collected bytes after a garbage collection process, and the
+ * number of bytes required for the next garbage collector activation.
  */
 void dumpGC(FalconVM *vm, size_t bytesAllocated) {
     printf("Collected %ld bytes (from %ld to %ld)\n", bytesAllocated - vm->bytesAllocated,
