@@ -10,7 +10,7 @@
 #include <string.h>
 
 /**
- * Gets the name (string) of a given Falcon Object type.
+ * Returns the name, as a string, of a given ObjType.
  */
 const char *getObjName(ObjType type) {
     const char *objectTypeNames[] = {"OBJ_STRING", "OBJ_FUNCTION", "OBJ_UPVALUE", "OBJ_CLOSURE",
@@ -20,8 +20,8 @@ const char *getObjName(ObjType type) {
 }
 
 /**
- * Creates a new ObjString by claiming ownership of the given string. In this case, the
- * characters of a ObjString can be freed when no longer needed.
+ * Creates a new empty ObjString of a given length by claiming ownership of the new string. In this
+ * case, the characters of the ObjString can be later freed when no longer needed.
  */
 ObjString *makeString(FalconVM *vm, size_t length) {
     ObjString *str =
@@ -31,8 +31,8 @@ ObjString *makeString(FalconVM *vm, size_t length) {
 }
 
 /**
- * Copies and allocates a given string to the heap. This way, every ObjString reliably owns its
- * character array and can free it.
+ * Copies and allocates a given string, of a given length, to the heap. This way, the resulting
+ * ObjString reliably owns its character array and can later free it.
  */
 ObjString *falconString(FalconVM *vm, const char *chars, size_t length) {
     uint32_t hash = hashString((const unsigned char *) chars, length);
@@ -52,7 +52,7 @@ ObjString *falconString(FalconVM *vm, const char *chars, size_t length) {
 }
 
 /**
- * Allocates a new Falcon function object.
+ * Allocates a new ObjFunction and initializes its fields.
  */
 ObjFunction *falconFunction(FalconVM *vm) {
     ObjFunction *function = FALCON_ALLOCATE_OBJ(vm, ObjFunction, OBJ_FUNCTION);
@@ -64,7 +64,8 @@ ObjFunction *falconFunction(FalconVM *vm) {
 }
 
 /**
- * Allocates a new Falcon upvalue object.
+ * Allocates a new ObjUpvalue and initializes its fields, setting the upvalue slot to a given
+ * FalconValue.
  */
 ObjUpvalue *falconUpvalue(FalconVM *vm, FalconValue *slot) {
     ObjUpvalue *upvalue = FALCON_ALLOCATE_OBJ(vm, ObjUpvalue, OBJ_UPVALUE);
@@ -75,7 +76,8 @@ ObjUpvalue *falconUpvalue(FalconVM *vm, FalconValue *slot) {
 }
 
 /**
- * Allocates a new Falcon closure object.
+ * Allocates a new ObjClosure and initializes its fields, also allocating a list of ObjUpvalues and
+ * setting the closure function to a given ObjFunction.
  */
 ObjClosure *falconClosure(FalconVM *vm, ObjFunction *function) {
     ObjUpvalue **upvalues =
@@ -93,7 +95,7 @@ ObjClosure *falconClosure(FalconVM *vm, ObjFunction *function) {
 }
 
 /**
- * Allocates a new Falcon class object.
+ * Allocates a new ObjClass and initializes its fields, setting its name to a given ObjString.
  */
 ObjClass *falconClass(FalconVM *vm, ObjString *name) {
     ObjClass *class_ = FALCON_ALLOCATE_OBJ(vm, ObjClass, OBJ_CLASS);
@@ -103,7 +105,7 @@ ObjClass *falconClass(FalconVM *vm, ObjString *name) {
 }
 
 /**
- * Allocates a new Falcon instance (of a class) object.
+ * Allocates a new ObjInstance and initializes its fields, setting its class to a given ObjClass.
  */
 ObjInstance *falconInstance(FalconVM *vm, ObjClass *class_) {
     ObjInstance *instance = FALCON_ALLOCATE_OBJ(vm, ObjInstance, OBJ_INSTANCE);
@@ -113,7 +115,8 @@ ObjInstance *falconInstance(FalconVM *vm, ObjClass *class_) {
 }
 
 /**
- * Allocates a new Falcon bound method object.
+ * Allocates a new ObjBMethod and initializes its fields, setting its receiver to a given
+ * FalconValue and its method to a given ObjClosure.
  */
 ObjBMethod *falconBMethod(FalconVM *vm, FalconValue receiver, ObjClosure *method) {
     ObjBMethod *bound = FALCON_ALLOCATE_OBJ(vm, ObjBMethod, OBJ_BMETHOD);
@@ -123,7 +126,8 @@ ObjBMethod *falconBMethod(FalconVM *vm, FalconValue receiver, ObjClosure *method
 }
 
 /**
- * Allocates a new Falcon list object.
+ * Allocates a new ObjList and initializes its fields, also allocating a list of FalconValues of a
+ * given size.
  */
 ObjList *falconList(FalconVM *vm, uint16_t size) {
     FalconValue *elements = FALCON_ALLOCATE(vm, FalconValue, size); /* Avoids GC */
@@ -135,7 +139,7 @@ ObjList *falconList(FalconVM *vm, uint16_t size) {
 }
 
 /**
- * Allocates a new Falcon map object.
+ * Allocates a new ObjMap and initializes its fields, setting a hashtable of a given size.
  */
 ObjMap *falconMap(FalconVM *vm, uint16_t length) {
     ObjMap *map = FALCON_ALLOCATE_OBJ(vm, ObjMap, OBJ_MAP);
@@ -145,7 +149,8 @@ ObjMap *falconMap(FalconVM *vm, uint16_t length) {
 }
 
 /**
- * Allocates a new Falcon native function object.
+ * Allocates a new ObjNative and initializes its fields, setting its function to a given
+ * FalconNativeFn and its name to a given string.
  */
 ObjNative *falconNative(FalconVM *vm, FalconNativeFn function, const char *name) {
     ObjNative *native = FALCON_ALLOCATE_OBJ(vm, ObjNative, OBJ_NATIVE);

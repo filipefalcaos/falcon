@@ -11,7 +11,7 @@
 #include <stdlib.h>
 
 /**
- * Presents a message indicating that a memory allocation error occurred.
+ * Prints a message to stderr indicating that a memory allocation error occurred.
  */
 void falconMemoryError() {
     fprintf(stderr, FALCON_OUT_OF_MEM_ERR);
@@ -20,8 +20,12 @@ void falconMemoryError() {
 }
 
 /**
- * Handles all dynamic memory management — allocating memory, freeing it, and changing the size of
- * an existing allocation.
+ * Handles all dynamic memory management: allocating memory, freeing it, and changing the size of
+ * an existing allocation. It follows the logic:
+ * - If oldSize < newSize, shrinks the memory allocated;
+ * - If newSize > oldSize, increases the memory allocated (garbage collector run may be triggered
+ * before the new allocation);
+ * - If newSize == 0, frees the memory allocated.
  */
 void *falconReallocate(FalconVM *vm, void *previous, size_t oldSize, size_t newSize) {
     vm->bytesAllocated += newSize - oldSize;
@@ -53,21 +57,22 @@ void *falconReallocate(FalconVM *vm, void *previous, size_t oldSize, size_t newS
 }
 
 /**
- * Allocates a new Falcon object.
+ * Allocates a new FalconObj with a given size and initializes the object fields, also adding it to
+ * the list of objects in the virtual machine.
  */
 FalconObj *falconAllocateObj(FalconVM *vm, size_t size, ObjType type) {
     FalconObj *object = (FalconObj *) falconReallocate(vm, NULL, 0, size); /* Sets a new object */
     object->isMarked = false;
     object->type = type;        /* Sets the object type */
-    object->next = vm->objects; /* Adds the new object to the object list */
-
+    object->next = vm->objects; /* Adds the new object to the objects list */
     vm->objects = object;
+
     if (vm->traceMemory) dumpAllocation(object, size, type);
     return object;
 }
 
 /**
- * Frees a given allocated object.
+ * Frees the memory previously allocated to a given FalconObj.
  */
 void falconFreeObj(FalconVM *vm, FalconObj *object) {
     if (vm->traceMemory) dumpFree(object);
@@ -121,7 +126,7 @@ void falconFreeObj(FalconVM *vm, FalconObj *object) {
 }
 
 /**
- * Frees all the objects allocated in the virtual machine.
+ * Frees the memory previously allocated to all FalconObjs allocated by the virtual machine.
  */
 void falconFreeObjs(FalconVM *vm) {
     FalconObj *object = vm->objects;
@@ -131,5 +136,5 @@ void falconFreeObjs(FalconVM *vm) {
         object = next;
     }
 
-    free(vm->grayStack); /* Frees the GC's grey stack */
+    free(vm->grayStack); /* Frees the GC's gray stack */
 }

@@ -165,12 +165,21 @@ static void emitCollection(FalconCompiler *compiler, uint8_t opcode, uint16_t el
  */
 static uint8_t makeConstant(FalconCompiler *compiler, FalconValue value) {
     int constant = addConstant(compiler->vm, currentBytecode(compiler->fCompiler), value);
-    if (constant > UINT8_MAX) {
+    if (constant > UINT8_MAX) { /* TODO: update that limit */
         compilerError(compiler, &compiler->parser->previous, COMP_CONST_LIMIT_ERR);
         return 0;
     }
 
     return (uint8_t) constant;
+}
+
+/**
+ * Writes a to a bytecode chunk the "OP_LOADCONST" instruction with a 16 bits argument.
+ */
+static void writeConstant(FalconVM *vm, BytecodeChunk *bytecode, uint16_t index, int line) {
+    writeBytecode(vm, bytecode, OP_LOADCONST, line);
+    writeBytecode(vm, bytecode, (uint8_t)(index & 0xffu), line);
+    writeBytecode(vm, bytecode, (uint8_t)((uint16_t)(index >> 8u) & 0xffu), line);
 }
 
 /**

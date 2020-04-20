@@ -11,14 +11,15 @@
 
 /* The grow factor for the heap allocation. It follows the logic:
  * - If factor > 1, then the number of bytes required for the next garbage collector will be higher
- * than the current number of allocated bytes
- * - If factor < 1, then the number of bytes required for the next garbage collector will be lower
+ * than the current number of allocated bytes;
+ * - If factor < 1, then the number of bytes required for the next garbage collector will be lower;
  * - If factor = 1, then the number of bytes required for the next garbage collector will be the
  * current number of allocated bytes */
 #define HEAP_GROW_FACTOR 2
 
 /**
- * Marks a Falcon Object for garbage collection.
+ * Marks a FalconObj for garbage collection. Strings and native functions are objects that do not
+ * contain any references to trace.
  */
 static void markObject(FalconVM *vm, FalconObj *object) {
     if (object == NULL) return;
@@ -50,7 +51,7 @@ static void markCompilerRoots(FalconVM *vm) {
 }
 
 /**
- * Marks a Falcon Value for garbage collection.
+ * Marks a FalconValue for garbage collection.
  */
 static void markValue(FalconVM *vm, FalconValue value) {
     if (!IS_OBJ(value)) return; /* Num, bool, and null are not dynamically allocated */
@@ -58,7 +59,7 @@ static void markValue(FalconVM *vm, FalconValue value) {
 }
 
 /**
- * Marks every key/value pair in the hashtable for garbage collection.
+ * Marks every key/value pair in a given hashtable for garbage collection.
  */
 static void markTable(FalconVM *vm, Table *table) {
     for (int i = 0; i < table->capacity; i++) {
@@ -69,14 +70,14 @@ static void markTable(FalconVM *vm, Table *table) {
 }
 
 /**
- * Marks all Falcon Values in a value array for garbage collection.
+ * Marks all FalconValues in a given ValueArray for garbage collection.
  */
 static void markArray(FalconVM *vm, ValueArray *array) {
     for (int i = 0; i < array->count; i++) markValue(vm, array->values[i]);
 }
 
 /**
- * Marks all the captured upvalues of a closure for garbage collection.
+ * Marks all the captured upvalues of a given closure for garbage collection.
  */
 static void markUpvalues(FalconVM *vm, ObjClosure *closure) {
     for (int i = 0; i < closure->upvalueCount; i++) {
@@ -85,9 +86,9 @@ static void markUpvalues(FalconVM *vm, ObjClosure *closure) {
 }
 
 /**
- * Traces all the references of a Falcon Object, marking the "grey", and turns the object "black"
- * for the garbage collection. "Black" objects are the ones with "isMarked" set to true and that
- * are not in the "grey" stack.
+ * Traces all the references of a FalconObj, marking these references "gray", and turning the
+ * object "black" for the garbage collection. "Black" objects are the ones with "isMarked" set to
+ * true and that are not in the "gray" stack.
  */
 static void blackenObject(FalconVM *vm, FalconObj *object) {
     if (vm->traceMemory) dumpBlacken(object);
@@ -140,8 +141,8 @@ static void blackenObject(FalconVM *vm, FalconObj *object) {
 }
 
 /**
- * Marks all root objects in the VM. Root objects are any object that the VM can reach directly,
- * mostly global variables or objects on the stack.
+ * Marks all root objects in the virtual machine. Root objects are mostly global variables or
+ * objects on the stack.
  */
 static void markRoots(FalconVM *vm) {
     for (FalconValue *slot = vm->stack; slot < vm->stackTop; slot++) {
@@ -162,8 +163,8 @@ static void markRoots(FalconVM *vm) {
 }
 
 /**
- * Traces the references of the "grey" objects while there are still "grey" objects to trace. After
- * being traced, a "grey" object is turned "black".
+ * Traces the references of the "gray" objects while there are still "gray" objects to trace. After
+ * being traced, a "gray" object is turned "black".
  */
 static void traceReferences(FalconVM *vm) {
     while (vm->grayCount > 0) {
@@ -184,8 +185,8 @@ static void removeWhitesTable(Table *table) {
 }
 
 /**
- * Traverses the list of objects in the VM looking for the "white" ones. When found, "white"
- * objects are removed from the list and freed.
+ * Traverses the list of objects allocated by the virtual machine looking for the "white" ones.
+ * When found, "white" objects are removed from the object list and freed.
  */
 static void sweep(FalconVM *vm) {
     FalconObj *previous = NULL;
@@ -215,9 +216,8 @@ static void sweep(FalconVM *vm) {
 /**
  * Starts an immediate garbage collection procedure to free unused memory. Garbage collection
  * follows the Mark-sweep algorithm. It consists in two steps:
- *
- * - Marking: starting from the roots (any object that the VM can reach directly), trace all of the
- * objects those roots refer to. Each time an object is visited, it is marked.
+ * - Marking: starting from the roots (any object that the virtual machine can reach directly),
+ * trace all of the objects those roots refer to. Each time an object is visited, it is marked;
  * - Sweeping: every object traced is examined: any unmarked object are unreachable, thus garbage,
  * and is freed.
  */
@@ -229,7 +229,7 @@ void falconRunGC(FalconVM *vm) {
     }
 
     markRoots(vm);                   /* Marks all roots */
-    traceReferences(vm);             /* Traces the references of the "grey" objects */
+    traceReferences(vm);             /* Traces the references of the "gray" objects */
     removeWhitesTable(&vm->strings); /* Removes the "white" strings from the table */
     sweep(vm);                       /* Reclaim the "white" objects - garbage */
     vm->nextGC = vm->bytesAllocated * HEAP_GROW_FACTOR; /* Adjust the next GC threshold */

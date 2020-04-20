@@ -12,7 +12,7 @@
 #include <string.h>
 
 /**
- * Initializes an empty ValueArray.
+ * Initializes an empty dynamic array of FalconValues.
  */
 void initValArray(ValueArray *valueArray) {
     valueArray->count = 0;
@@ -21,7 +21,7 @@ void initValArray(ValueArray *valueArray) {
 }
 
 /**
- * Frees a ValueArray.
+ * Frees a dynamic array of FalconValues.
  */
 void freeValArray(FalconVM *vm, ValueArray *valueArray) {
     FALCON_FREE_ARRAY(vm, FalconValue, valueArray->values, valueArray->capacity);
@@ -29,8 +29,8 @@ void freeValArray(FalconVM *vm, ValueArray *valueArray) {
 }
 
 /**
- * Appends a Value to the end of a ValueArray. If the current size is not enough, the capacity of
- * the array is increased to fit the new Value.
+ * Appends a given FalconValue to the end of a ValueArray. If the current size is not enough, the
+ * capacity of the array is increased to fit the new Value.
  */
 void writeValArray(FalconVM *vm, ValueArray *valueArray, FalconValue value) {
     if (valueArray->capacity < valueArray->count + 1) {
@@ -45,7 +45,8 @@ void writeValArray(FalconVM *vm, ValueArray *valueArray, FalconValue value) {
 }
 
 /**
- * Checks if two Falcon Values are equal.
+ * Checks if two FalconValues are equal. For unboxed values, this is a value comparison, while for
+ * object values, this is an identity comparison.
  */
 bool valuesEqual(FalconValue a, FalconValue b) {
     if (a.type != b.type) return false;
@@ -60,8 +61,8 @@ bool valuesEqual(FalconValue a, FalconValue b) {
 }
 
 /**
- * Takes the logical not of a value. In Falcon, "null", "false", the number zero, and an empty
- * string are falsy, while every other value behaves like "true".
+ * Takes the "logical not" of a FalconValue. In Falcon, "null", "false", the number zero, and an
+ * empty string are falsy, while every other value behaves like "true".
  */
 bool isFalsy(FalconValue value) {
     return IS_NULL(value) || (IS_BOOL(value) && !AS_BOOL(value)) ||
@@ -72,7 +73,7 @@ bool isFalsy(FalconValue value) {
 }
 
 /**
- * Converts a given Falcon Function to a Falcon string.
+ * Converts a given ObjFunction to a ObjString.
  */
 ObjString *functionToString(FalconVM *vm, ObjFunction *function) {
     if (function->name == NULL) {
@@ -85,9 +86,11 @@ ObjString *functionToString(FalconVM *vm, ObjFunction *function) {
 }
 
 /**
- * Converts a given Falcon Value that is not already a string into a Falcon string.
+ * Converts a given FalconValue, that is not already a string, into a ObjString.
  */
 ObjString *valueToString(FalconVM *vm, FalconValue *value) {
+    if (IS_STRING(*value)) return AS_STRING(*value);
+
     switch (value->type) {
         case VAL_BOOL: {
             char *string = FALCON_ALLOCATE(vm, char, 6);
@@ -148,7 +151,7 @@ ObjString *valueToString(FalconVM *vm, FalconValue *value) {
 }
 
 /**
- * Prints a given Falcon Function.
+ * Prints a given ObjFunction.
  */
 void printFunction(ObjFunction *function) {
     if (function->name == NULL) {
@@ -159,7 +162,7 @@ void printFunction(ObjFunction *function) {
 }
 
 /**
- * Prints a single Falcon Value.
+ * Prints a single FalconValue to stdout.
  */
 void printValue(FalconVM *vm, FalconValue value) {
     switch (value.type) {

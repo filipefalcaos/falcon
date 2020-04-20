@@ -9,7 +9,7 @@
 
 #include "falcon_vm.h"
 
-/* Garbage collector operations */
+/* Starts a new garbage collector run */
 void falconRunGC(FalconVM *vm);
 
 #endif // FALCON_GC_H
