@@ -136,5 +136,5 @@ void falconFreeObjs(FalconVM *vm) {
         object = next;
     }
 
-    free(vm->grayStack); /* Frees the GC's grey stack */
+    free(vm->grayStack); /* Frees the GC's gray stack */
 }
