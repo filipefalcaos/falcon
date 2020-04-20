@@ -83,6 +83,10 @@ struct FalconVM {
 /* Interpretation result codes */
 typedef enum { FALCON_OK, FALCON_COMPILE_ERROR, FALCON_RUNTIME_ERROR } FalconResultCode;
 
+/* Prints a runtime error to stderr and resets the virtual machine stack. The error message is
+ * composed of a given format, followed by the arguments of that format */
+void interpreterError(FalconVM *vm, const char *format, ...);
+
 /* Initializes the Falcon's virtual machine */
 void initFalconVM(FalconVM *vm);
 

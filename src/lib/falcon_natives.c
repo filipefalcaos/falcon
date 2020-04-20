@@ -6,7 +6,6 @@
 
 #include "falcon_natives.h"
 #include "../vm/falcon_memory.h"
-#include "falcon_error.h"
 #include "falcon_io.h"
 #include <math.h>
 #include <stdio.h>

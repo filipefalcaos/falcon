@@ -50,8 +50,6 @@ add_executable(
     src/compiler/falcon_tokens.h
 
     # Standard Lib
-    src/lib/falcon_error.h
-    src/lib/falcon_error.c
     src/lib/falcon_io.h
     src/lib/falcon_io.c
     src/lib/falcon_list.h

@@ -68,13 +68,3 @@ char *readStrStdin(FalconVM *vm) {
 }
 
 #undef STR_INITIAL_ALLOC
-
-/**
- * Prints a string character by character until a specified character is found.
- */
-void printUntil(FILE *file, const char *str, char delimiter) {
-    for (int i = 0; str[i] != '\0'; i++) {
-        if (str[i] == delimiter) break;
-        fprintf(file, "%c", str[i]);
-    }
-}

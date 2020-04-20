@@ -5,9 +5,9 @@
  */
 
 #include "falcon_compiler.h"
-#include "../lib/falcon_error.h"
 #include "../lib/falcon_string.h"
 #include "../vm/falcon_debug.h"
+#include <stdio.h>
 #include <string.h>
 
 /* Precedence levels, from lowest to highest */
@@ -35,6 +35,43 @@ typedef struct {
     ParseFunction infix;
     PrecedenceLevels precedence;
 } ParseRule;
+
+/**
+ * Prints to stderr a compile-time error. The error message consists of a given message and some
+ * debugging information, such as line and column numbers of where the error occurred.
+ */
+static void compileTimeError(FalconVM *vm, Scanner *scanner, Token *token, const char *message) {
+    int offset = 0;
+    uint32_t tkLine = token->line;
+    uint32_t tkColumn = token->column;
+    const char *fileName = vm->fileName;
+    const char *sourceLine = getSourceFromLine(scanner);
+
+    /* Prints the file, the line, the error message, and the source line */
+    fprintf(stderr, "%s:%d:%d => ", fileName, tkLine, tkColumn);
+    fprintf(stderr, "CompilerError: %s\n", message);
+    fprintf(stderr, "%d | ", tkLine);
+
+    for (int i = 0; sourceLine[i] != '\0'; i++) {
+        if (sourceLine[i] == '\n') break;
+        fprintf(stderr, "%c", sourceLine[i]);
+    }
+
+    /* Prints error indicator */
+    if (token->type == TK_EOF) offset = 1;
+    fprintf(stderr, "\n");
+    fprintf(stderr, "%*c^\n", tkColumn + 3 + offset, ' ');
+}
+
+/**
+ * Prints to stderr a syntax/compiler error and sets the parser to go on panic mode.
+ */
+static void compilerError(FalconCompiler *compiler, Token *token, const char *message) {
+    if (compiler->parser->panicMode) return; /* Checks and sets error recovery */
+    compiler->parser->panicMode = true;
+    compileTimeError(compiler->vm, compiler->scanner, token, message); /* Presents the error */
+    compiler->parser->hadError = true;
+}
 
 /**
  * Initializes a given Parser instance as error-free and with no loops.

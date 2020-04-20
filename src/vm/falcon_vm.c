@@ -5,13 +5,67 @@
  */
 
 #include "falcon_vm.h"
-#include "../lib/falcon_error.h"
 #include "../lib/falcon_natives.h"
 #include "../lib/falcon_string.h"
 #include "falcon_debug.h"
 #include "falcon_memory.h"
 #include <math.h>
+#include <stdarg.h>
 #include <stdio.h>
+
+/**
+ * Prints to stderr a stack trace of call frames from a given initial one to a given final one.
+ */
+static void printCallFrames(FalconVM *vm, int initial, int final) {
+    for (int i = initial; i >= final; i--) {
+        CallFrame *currentFrame = &vm->frames[i];
+        ObjFunction *currentFunction = currentFrame->closure->function;
+        size_t currentInstruction = currentFrame->pc - currentFunction->bytecode.code - 1;
+        int currentLine = getLine(&currentFunction->bytecode, (int) currentInstruction);
+
+        /* Prints line and function name */
+        fprintf(stderr, "    [Line %d] in ", currentLine);
+        if (currentFunction->name == NULL) {
+            fprintf(stderr, "%s\n", FALCON_SCRIPT);
+        } else {
+            fprintf(stderr, "%s()\n", currentFunction->name->chars);
+        }
+    }
+}
+
+/**
+ * Prints a runtime error to stderr based on the given format and args. The error message also
+ * includes a stack trace (last call first).
+ */
+static void runtimeError(FalconVM *vm, const char *format, va_list args) {
+    fprintf(stderr, "RuntimeError: ");
+    vfprintf(stderr, format, args); /* Prints the error */
+    fprintf(stderr, "\n");
+
+    /* Prints a stack trace */
+    fprintf(stderr, "Stack trace (last call first):\n");
+    if (vm->frameCount > FALCON_MAX_TRACE) {
+        printCallFrames(vm, vm->frameCount - 1, vm->frameCount - (FALCON_MAX_TRACE / 2));
+        fprintf(stderr, "    ...\n");
+        printCallFrames(vm, (FALCON_MAX_TRACE / 2) - 1, 0);
+        fprintf(stderr, "%d call frames not listed. Run with option \"--debug\" to see all.\n",
+                vm->frameCount - FALCON_MAX_TRACE);
+    } else {
+        printCallFrames(vm, vm->frameCount - 1, 0);
+    }
+}
+
+/**
+ * Prints a runtime error to stderr and resets the virtual machine stack. The error message is
+ * composed of a given format, followed by the arguments of that format.
+ */
+void interpreterError(FalconVM *vm, const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    runtimeError(vm, format, args); /* Presents the error */
+    va_end(args);
+    resetStack(vm); /* Resets the stack due to error */
+}
 
 /**
  * Resets the Falcon's virtual machine stack.

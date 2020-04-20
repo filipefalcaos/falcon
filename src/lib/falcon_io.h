@@ -13,7 +13,6 @@
 /* File operations */
 char *readFile(FalconVM *vm, const char *path);
 char *readStrStdin(FalconVM *vm);
-void printUntil(FILE *file, const char *str, char delimiter);
 
 /* Readline errors */
 #define IO_READLINE_ERR "Could not read input line."
