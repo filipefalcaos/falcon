@@ -42,26 +42,6 @@
  */
 
 /**
- * Native Falcon function to print Falcon's authors.
- */
-FALCON_NATIVE(authors) {
-    (void) args; /* Unused */
-    ASSERT_ARGS_COUNT(vm, !=, argCount, 0);
-    printf("Falcon authors: %s\n", FALCON_AUTHORS);
-    return NULL_VAL;
-}
-
-/**
- * Native Falcon function to print Falcon's MIT license.
- */
-FALCON_NATIVE(license) {
-    (void) args; /* Unused */
-    ASSERT_ARGS_COUNT(vm, !=, argCount, 0);
-    printf("%s\n%s\n", FALCON_COPYRIGHT, FALCON_MORE_INFO);
-    return NULL_VAL;
-}
-
-/**
  * Native Falcon function to exit the running process with a given exit code.
  */
 FALCON_NATIVE(exit_) {
@@ -354,9 +334,13 @@ FALCON_NATIVE(print) {
  * Defines a new native function for Falcon.
  */
 static void defNative(FalconVM *vm, const char *name, FalconNativeFn function) {
+    DISABLE_GC(vm); /* Avoids GC from the "defNative" ahead */
     ObjString *strName = falconString(vm, name, (int) strlen(name));
+    ENABLE_GC(vm);
+    DISABLE_GC(vm); /* Avoids GC from the "defNative" ahead */
     ObjNative *nativeFn = falconNative(vm, function, name);
     mapSet(vm, &vm->globals, strName, OBJ_VAL(nativeFn));
+    ENABLE_GC(vm);
 }
 
 /**
@@ -365,7 +349,6 @@ static void defNative(FalconVM *vm, const char *name, FalconNativeFn function) {
 void defineNatives(FalconVM *vm) {
     const ObjNative nativeFunctions[] = {
         /* Native functions implementations */
-        {.function = authors, .name = "authors"},   {.function = license, .name = "license"},
         {.function = exit_, .name = "exit"},        {.function = clock_, .name = "clock"},
         {.function = time_, .name = "time"},        {.function = type, .name = "type"},
         {.function = bool_, .name = "bool"},        {.function = num, .name = "num"},
@@ -376,8 +359,6 @@ void defineNatives(FalconVM *vm) {
         {.function = pow_, .name = "pow"},          {.function = input, .name = "input"},
         {.function = print, .name = "print"}};
 
-    DISABLE_GC(vm); /* Avoids GC from the "defNative" ahead */
     for (unsigned long i = 0; i < sizeof(nativeFunctions) / sizeof(nativeFunctions[0]); i++)
         defNative(vm, nativeFunctions[i].name, nativeFunctions[i].function);
-    ENABLE_GC(vm);
 }

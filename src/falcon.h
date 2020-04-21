@@ -27,10 +27,10 @@
 #define FALCON_REPL       "repl"
 #define FALCON_INPUT      "input"
 #define FALCON_USAGE      "falcon [options] ... [-i input | script]"
-#define FALCON_MORE_INFO  "See full license in the \"LICENSE\" file"
-#define FALCON_LIC_FN     "\"license()\""
-#define FALCON_AUTHORS_FN "\"authors()\""
-#define FALCON_HELP       "Call " FALCON_LIC_FN " or " FALCON_AUTHORS_FN " for more information."
+#define FALCON_FULL_LIC   "See full license in the \"LICENSE\" file"
+#define FALCON_LIC_FN     "\"license\""
+#define FALCON_AUTHORS_FN "\"authors\""
+#define FALCON_HELP       "Type " FALCON_LIC_FN " or " FALCON_AUTHORS_FN " for more information."
 
 /* Values and limits */
 #define FALCON_REPL_MAX   500

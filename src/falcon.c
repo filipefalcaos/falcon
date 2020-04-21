@@ -8,6 +8,7 @@
 #include "lib/falcon_io.h"
 #include "vm/falcon_vm.h"
 #include <stdlib.h>
+#include <string.h>
 
 /* Defines the "FALCON_READLINE", "FALCON_ADD_HISTORY", and "FALCON_FREE_INPUT" macros to handle
  * the user input in REPL mode.
@@ -123,15 +124,22 @@ char *readLine() {
  */
 static void repl(FalconVM *vm) {
     while (true) {
-        char *input = readLine();     /* Reads the input line */
-        if (!input) {                 /* Checks if failed to read */
-            FALCON_FREE_INPUT(input); /* Frees the input line */
+        char *input = readLine(); /* Reads the input line */
+        if (!input) {
+            FALCON_FREE_INPUT(input);
             fprintf(stderr, "%s\n", IO_READLINE_ERR);
             exit(FALCON_ERR_OS);
         }
 
-        FALCON_ADD_HISTORY(input);  /* Adds history to the REPL */
-        falconInterpret(vm, input); /* Interprets the source line */
+        FALCON_ADD_HISTORY(input); /* Adds the input line to history */
+
+        if (strcmp(input, "license") == 0) {
+            printf("%s\n%s\n", FALCON_COPYRIGHT, FALCON_FULL_LIC);
+        } else if (strcmp(input, "authors") == 0) {
+            printf("%s\n", FALCON_AUTHORS);
+        } else {
+            falconInterpret(vm, input); /* Interprets the input line */
+        }
     }
 }
 
