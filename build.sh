@@ -2,6 +2,10 @@
 # Debug build:   cmake -DCMAKE_BUILD_TYPE=Debug [options] ... CMakeLists.txt
 # Release build: cmake -DCMAKE_BUILD_TYPE=Release [options] ... CMakeLists.txt
 
+# Cleans variable cache
+printf "Cleaning CMake cache...\n"
+rm CMakeCache.txt || exit 1
+
 # Builds Falcon
 printf "Building Falcon with CMake...\n"
 cmake -DCMAKE_BUILD_TYPE=Debug CMakeLists.txt || exit 1

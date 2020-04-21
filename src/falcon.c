@@ -66,7 +66,7 @@ void printUsage() {
            "  -d        output bytecode instructions for debugging\n"
            "  -h, -?    output usage information\n"
            "  -i input  input code to execute (ends the option list)\n"
-           "  -t        output execution trace for debugging (-tt traces memory usage as well)\n"
+           "  -t        output execution trace for debugging (-tt traces only the memory usage)\n"
            "  -v        output version information\n"
            "  --        stop parsing options\n\n");
     printf("Available arguments: \n"
@@ -184,7 +184,7 @@ static void setRepl(FalconVM *vm) {
  * "-d"        output bytecode instructions for debugging
  * "-h, -?"    output usage information
  * "-i input"  input code to execute (ends the option list)
- * "-t"        output execution trace for debugging (-tt traces memory usage as well)
+ * "-t"        output execution trace for debugging (-tt traces only the memory usage)
  * "-v"        output version information
  * "--"        stop parsing options
  * script      script file to interpret (ends the option list)
@@ -220,13 +220,17 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
                 inputCommand = argv[optionId];
                 goto EXEC; /* Stop parsing on "-i"*/
             case 't':
-                if (argv[optionId][2] == 't') {
-                    vm->traceMemory = true;
-                } else {
-                    CLI_ERROR(argv, optionId, UNKNOWN_OPT_ERR);
+                switch (argv[optionId][2]) {
+                    case '\0':
+                        vm->traceExec = true;
+                        break;
+                    case 't':
+                        vm->traceMemory = true;
+                        break;
+                    default:
+                        CLI_ERROR(argv, optionId, UNKNOWN_OPT_ERR);
                 }
 
-                vm->traceExec = true;
                 break;
             case 'v':
                 VALIDATE_OPTION(argv, optionId);

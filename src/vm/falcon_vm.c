@@ -98,14 +98,11 @@ void initFalconVM(FalconVM *vm) {
     vm->bytesAllocated = 0;
     vm->nextGC = VM_BASE_HEAP_SIZE;
 
-    vm->strings = *falconMap(vm); /* Inits the map of interned strings */
-    vm->globals = *falconMap(vm); /* Inits the map of globals */
-
-    /* Defines the string for class initializers */
     vm->initStr = NULL;
-    vm->initStr = falconString(vm, "init", 4);
-
-    defineNatives(vm); /* Sets native functions */
+    vm->strings = *falconMap(vm);              /* Inits the map of interned strings */
+    vm->globals = *falconMap(vm);              /* Inits the map of globals */
+    vm->initStr = falconString(vm, "init", 4); /* Defines the string for class initializers */
+    defineNatives(vm);                         /* Sets native functions */
 }
 
 /**
