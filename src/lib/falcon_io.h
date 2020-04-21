@@ -10,9 +10,18 @@
 #include "../vm/falcon_vm.h"
 #include <stdio.h>
 
-/* File operations */
+/* Reads the content of an input file, given its path. If the function fails to read the file, an
+ * error message will be printed and the process will exit. Otherwise, a string with the file
+ * content will be returned */
 char *readFile(FalconVM *vm, const char *path);
-char *readStrStdin(FalconVM *vm);
+
+/* Prompts the user for an input and returns the given input as a ObjString. Accepts only one
+ * optional argument, a ObjString that represents a prompt (e.g., ">>>") */
+FalconValue lib_input(FalconVM *vm, int argCount, FalconValue *args);
+
+/* Prints to stdout (with a new line at the end) a given list of FalconValues. Any type of value in
+ * Falcon can be printed and any number of arguments are accepted */
+FalconValue lib_print(FalconVM *vm, int argCount, FalconValue *args);
 
 /* Readline errors */
 #define IO_READLINE_ERR "Could not read input line."

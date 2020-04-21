@@ -193,49 +193,6 @@ FALCON_NATIVE(delField) {
 
 /*
  * ================================================================================================
- * ====================================== IO native functions =====================================
- * ================================================================================================
- */
-
-/**
- * Native Falcon function to prompt the user for an input and return the given input as an Falcon
- * Value.
- */
-FALCON_NATIVE(input) {
-    ASSERT_ARGS_COUNT(vm, >, argCount, 1);
-    if (argCount == 1) {
-        FalconValue prompt = *args;
-        ASSERT_ARG_TYPE(IS_STRING, "string", prompt, vm, 1); /* Checks if is valid */
-        printf("%s", AS_CSTRING(prompt));                    /* Prints the prompt */
-    }
-
-    char *inputString = readStrStdin(vm); /* Reads the input string */
-    return OBJ_VAL(falconString(vm, inputString, strlen(inputString)));
-}
-
-/**
- * Native Falcon function to print (with a new line) a given Falcon value.
- */
-FALCON_NATIVE(print) {
-    if (argCount > 1) {
-        for (int i = 0; i < argCount; i++) {
-            printValue(vm, args[i]);
-            if (i < argCount - 1) printf(" "); /* Separator */
-        }
-    } else {
-        printValue(vm, *args);
-    }
-
-    printf("\n"); /* End */
-    return NULL_VAL;
-}
-
-#undef ASSERT_ARGS_COUNT
-#undef ASSERT_ARG_TYPE
-#undef FALCON_NATIVE
-
-/*
- * ================================================================================================
  * ==================================== Native functions setup ====================================
  * ================================================================================================
  */
@@ -266,8 +223,8 @@ void defineNatives(FalconVM *vm) {
         {.function = hasField, .name = "hasField"}, {.function = getField, .name = "getField"},
         {.function = setField, .name = "setField"}, {.function = delField, .name = "delField"},
         {.function = lib_abs, .name = "abs"},       {.function = lib_sqrt, .name = "sqrt"},
-        {.function = lib_pow, .name = "pow"},       {.function = input, .name = "input"},
-        {.function = print, .name = "print"}};
+        {.function = lib_pow, .name = "pow"},       {.function = lib_input, .name = "input"},
+        {.function = lib_print, .name = "print"}};
 
     for (unsigned long i = 0; i < sizeof(nativeFunctions) / sizeof(nativeFunctions[0]); i++)
         defNative(vm, nativeFunctions[i].name, nativeFunctions[i].function);

@@ -7,9 +7,12 @@
 #include "falcon_io.h"
 #include "../vm/falcon_memory.h"
 #include <stdlib.h>
+#include <string.h>
 
 /**
- * Reads the content of an input file.
+ * Reads the content of an input file, given its path. If the function fails to open the file or to
+ * allocate memory to read its content, an error message will be printed and the process will exit.
+ * Otherwise, a string with the file content will be returned.
  */
 char *readFile(FalconVM *vm, const char *path) {
     char *buffer;
@@ -42,9 +45,9 @@ char *readFile(FalconVM *vm, const char *path) {
 #define STR_INITIAL_ALLOC 128
 
 /**
- * Reads an input string from the standard input dynamically allocating memory.
+ * Reads an input string from stdin, dynamically allocating memory if needed.
  */
-char *readStrStdin(FalconVM *vm) {
+static char *readStrStdin(FalconVM *vm) {
     uint64_t currentSize = 0;
     uint64_t initialLength = STR_INITIAL_ALLOC;             /* Initial allocation size */
     char *input = FALCON_ALLOCATE(vm, char, initialLength); /* Allocates initial space */
@@ -68,3 +71,38 @@ char *readStrStdin(FalconVM *vm) {
 }
 
 #undef STR_INITIAL_ALLOC
+
+/**
+ * Prompts the user for an input and returns the given input as a ObjString. Accepts only one
+ * optional argument, a ObjString that represents a prompt (e.g., ">>>").
+ * TODO: check if stdin is a tty
+ */
+FalconValue lib_input(FalconVM *vm, int argCount, FalconValue *args) {
+    ASSERT_ARGS_COUNT(vm, >, argCount, 1);
+    if (argCount == 1) {
+        FalconValue prompt = *args;
+        ASSERT_ARG_TYPE(IS_STRING, "string", prompt, vm, 1); /* Checks if is valid */
+        printf("%s", AS_CSTRING(prompt));                    /* Prints the prompt */
+    }
+
+    char *inputString = readStrStdin(vm); /* Reads the input string */
+    return OBJ_VAL(falconString(vm, inputString, strlen(inputString)));
+}
+
+/**
+ * Prints to stdout (with a new line at the end) a given list of FalconValues. Any type of value in
+ * Falcon can be printed and any number of arguments are accepted.
+ */
+FalconValue lib_print(FalconVM *vm, int argCount, FalconValue *args) {
+    if (argCount > 1) {
+        for (int i = 0; i < argCount; i++) {
+            printValue(vm, args[i]);
+            if (i < argCount - 1) printf(" "); /* Separator */
+        }
+    } else {
+        printValue(vm, *args);
+    }
+
+    printf("\n"); /* End */
+    return NULL_VAL;
+}
