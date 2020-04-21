@@ -6,196 +6,19 @@
 
 #include "falcon_natives.h"
 #include "../vm/falcon_memory.h"
-#include "falcon_io.h"
-#include "falcon_math.h"
-#include "falcon_sys.h"
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
-/* Defines a common interface to all Falcon native functions */
-#define FALCON_NATIVE(name) static FalconValue name(FalconVM *vm, int argCount, FalconValue *args)
-
-/*
- * ================================================================================================
- * ================================= Type-related native functions ================================
- * ================================================================================================
- */
-
-/**
- * Native Falcon function to get the type of a given Falcon Value, as a string.
- */
-FALCON_NATIVE(type) {
-    ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
-
-    /* Checks the value type */
-    switch (args->type) {
-        case VAL_BOOL: return OBJ_VAL(falconString(vm, "bool", 4));
-        case VAL_NULL: return OBJ_VAL(falconString(vm, "null", 4));
-        case VAL_NUM: return OBJ_VAL(falconString(vm, "number", 6));
-        case VAL_OBJ:
-            switch (OBJ_TYPE(*args)) {
-                case OBJ_STRING: return OBJ_VAL(falconString(vm, "string", 6));
-                case OBJ_CLASS: return OBJ_VAL(falconString(vm, "class", 5));
-                case OBJ_LIST: return OBJ_VAL(falconString(vm, "list", 4));
-                case OBJ_MAP: return OBJ_VAL(falconString(vm, "map", 3));
-                case OBJ_BMETHOD: return OBJ_VAL(falconString(vm, "method", 6));
-                case OBJ_CLOSURE:
-                case OBJ_FUNCTION:
-                case OBJ_NATIVE: return OBJ_VAL(falconString(vm, "function", 8));
-                case OBJ_INSTANCE: {
-                    ObjInstance *instance = AS_INSTANCE(*args);
-                    char *typeStr = FALCON_ALLOCATE(vm, char, instance->class_->name->length + 6);
-                    sprintf(typeStr, "class %s", instance->class_->name->chars);
-                    return OBJ_VAL(falconString(vm, typeStr, instance->class_->name->length + 6));
-                }
-                default: break;
-            }
-            break;
-        default: break;
-    }
-
-    return OBJ_VAL(falconString(vm, "unknown", 7)); /* Unknown type */
-}
-
-/**
- * Native Falcon function to convert a given Falcon Value to a number. The conversion is implemented
- * through the "isFalsy" function.
- */
-FALCON_NATIVE(bool_) {
-    ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
-    if (!IS_BOOL(*args)) return BOOL_VAL(!isFalsy(*args));
-    return *args; /* Given value is already a boolean */
-}
-
-/**
- * Native Falcon function to convert a given Falcon Value to a number.
- */
-FALCON_NATIVE(num) {
-    ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
-    if (!IS_NUM(*args)) {
-        if (!IS_STRING(*args) && !IS_BOOL(*args)) {
-            interpreterError(vm, VM_ARGS_TYPE_ERR, 1, "string, boolean, or number");
-            return ERR_VAL;
-        }
-
-        if (IS_STRING(*args)) { /* String to number */
-            char *start = AS_CSTRING(*args), *end;
-            double number = strtod(AS_CSTRING(*args), &end); /* Converts to double */
-
-            if (start == end) { /* Checks for conversion success */
-                interpreterError(vm, FALCON_CONV_STR_NUM_ERR);
-                return ERR_VAL;
-            }
-
-            return NUM_VAL(number);
-        } else { /* Boolean to number */
-            return NUM_VAL(AS_BOOL(*args) ? 1 : 0);
-        }
-    }
-
-    return *args; /* Given value is already a number */
-}
-
-/**
- * Native Falcon function to convert a given Falcon Value to a string. The conversion is implemented
- * through the "valueToString" function.
- */
-FALCON_NATIVE(str) {
-    ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
-    return OBJ_VAL(valueToString(vm, args)); /* Converts value to a string */
-}
-
-/**
- * Native function to get the length of a Falcon Value (lists or strings only).
- */
-FALCON_NATIVE(len) {
-    ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
-    ASSERT_ARG_TYPE(IS_OBJ, "list, map or string", *args, vm, 1);
-
-    /* Handles the subscript types */
-    switch (AS_OBJ(*args)->type) {
-        case OBJ_LIST: return NUM_VAL(AS_LIST(*args)->elements.count); /* Returns the list length */
-        case OBJ_MAP: return NUM_VAL(AS_MAP(*args)->count);            /* Returns the map length */
-        case OBJ_STRING: return NUM_VAL(AS_STRING(*args)->length); /* Returns the string length */
-        default: interpreterError(vm, VM_ARGS_TYPE_ERR, 1, "list, map or string"); return ERR_VAL;
-    }
-}
-
-/*
- * ================================================================================================
- * ================================ Class-related native functions ================================
- * ================================================================================================
- */
-
-/**
- * Native function to test if a given Falcon Value has a given field (string).
- */
-FALCON_NATIVE(hasField) {
-    ASSERT_ARGS_COUNT(vm, !=, argCount, 2);
-    ASSERT_ARG_TYPE(IS_INSTANCE, "class instance", args[0], vm, 1);
-    ASSERT_ARG_TYPE(IS_STRING, "string", args[1], vm, 2);
-
-    /* Checks if the field is defined */
-    ObjInstance *instance = AS_INSTANCE(args[0]);
-    FalconValue value;
-    return BOOL_VAL(mapGet(&instance->fields, AS_STRING(args[1]), &value));
-}
-
-/**
- * Native function to get the value of a given field (string) from a given Falcon Value (class
- * instance).
- */
-FALCON_NATIVE(getField) {
-    ASSERT_ARGS_COUNT(vm, !=, argCount, 2);
-    ASSERT_ARG_TYPE(IS_INSTANCE, "class instance", args[0], vm, 1);
-    ASSERT_ARG_TYPE(IS_STRING, "string", args[1], vm, 2);
-
-    /* Gets the field value */
-    ObjInstance *instance = AS_INSTANCE(args[0]);
-    FalconValue value;
-    if (mapGet(&instance->fields, AS_STRING(args[1]), &value)) return value;
-
-    /* Undefined field error */
-    interpreterError(vm, VM_UNDEF_PROP_ERR, instance->class_->name->chars,
-                     AS_STRING(args[1])->chars);
-    return ERR_VAL;
-}
-
-/**
- * Native function to set a given Falcon Value to a given field (string) from another given Falcon
- * Value (class instance).
- */
-FALCON_NATIVE(setField) {
-    ASSERT_ARGS_COUNT(vm, !=, argCount, 3);
-    ASSERT_ARG_TYPE(IS_INSTANCE, "class instance", args[0], vm, 1);
-    ASSERT_ARG_TYPE(IS_STRING, "string", args[1], vm, 2);
-
-    /* Sets the field value */
-    ObjInstance *instance = AS_INSTANCE(args[0]);
-    mapSet(vm, &instance->fields, AS_STRING(args[1]), args[2]);
-    return args[2];
-}
-
-/**
- * Native function to delete a given field (string) from a given Falcon Value (class instance).
- */
-FALCON_NATIVE(delField) {
-    ASSERT_ARGS_COUNT(vm, !=, argCount, 2);
-    ASSERT_ARG_TYPE(IS_INSTANCE, "class instance", args[0], vm, 1);
-    ASSERT_ARG_TYPE(IS_STRING, "string", args[1], vm, 2);
-
-    /* Deletes the field */
-    ObjInstance *instance = AS_INSTANCE(args[0]);
-    deleteFromMap(&instance->fields, AS_STRING(args[1]));
-    return NULL_VAL;
-}
-
-/*
- * ================================================================================================
- * ==================================== Native functions setup ====================================
- * ================================================================================================
- */
+/* Native functions implementations */
+const ObjNative nativeFunctions[] = {
+    {.function = lib_exit, .name = "exit"},         {.function = lib_clock, .name = "clock"},
+    {.function = lib_time, .name = "time"},         {.function = lib_type, .name = "type"},
+    {.function = lib_bool, .name = "bool"},         {.function = lib_num, .name = "num"},
+    {.function = lib_str, .name = "str"},           {.function = lib_len, .name = "len"},
+    {.function = lib_hasField, .name = "hasField"}, {.function = lib_getField, .name = "getField"},
+    {.function = lib_setField, .name = "setField"}, {.function = lib_delField, .name = "delField"},
+    {.function = lib_abs, .name = "abs"},           {.function = lib_sqrt, .name = "sqrt"},
+    {.function = lib_pow, .name = "pow"},           {.function = lib_input, .name = "input"},
+    {.function = lib_print, .name = "print"}};
 
 /**
  * Defines a new native function for Falcon.
@@ -214,18 +37,6 @@ static void defNative(FalconVM *vm, const char *name, FalconNativeFn function) {
  * Defines the complete set of native function for Falcon.
  */
 void defineNatives(FalconVM *vm) {
-    const ObjNative nativeFunctions[] = {
-        /* Native functions implementations */
-        {.function = lib_exit, .name = "exit"},     {.function = lib_clock, .name = "clock"},
-        {.function = lib_time, .name = "time"},     {.function = type, .name = "type"},
-        {.function = bool_, .name = "bool"},        {.function = num, .name = "num"},
-        {.function = str, .name = "str"},           {.function = len, .name = "len"},
-        {.function = hasField, .name = "hasField"}, {.function = getField, .name = "getField"},
-        {.function = setField, .name = "setField"}, {.function = delField, .name = "delField"},
-        {.function = lib_abs, .name = "abs"},       {.function = lib_sqrt, .name = "sqrt"},
-        {.function = lib_pow, .name = "pow"},       {.function = lib_input, .name = "input"},
-        {.function = lib_print, .name = "print"}};
-
     for (unsigned long i = 0; i < sizeof(nativeFunctions) / sizeof(nativeFunctions[0]); i++)
         defNative(vm, nativeFunctions[i].name, nativeFunctions[i].function);
 }

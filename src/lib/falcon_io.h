@@ -19,10 +19,6 @@ char *readFile(FalconVM *vm, const char *path);
  * optional argument, a ObjString that represents a prompt (e.g., ">>>") */
 FalconValue lib_input(FalconVM *vm, int argCount, FalconValue *args);
 
-/* Prints to stdout (with a new line at the end) a given list of FalconValues. Any type of value in
- * Falcon can be printed and any number of arguments are accepted */
-FalconValue lib_print(FalconVM *vm, int argCount, FalconValue *args);
-
 /* Readline errors */
 #define IO_READLINE_ERR "Could not read input line."
 

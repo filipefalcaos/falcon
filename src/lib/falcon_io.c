@@ -88,21 +88,3 @@ FalconValue lib_input(FalconVM *vm, int argCount, FalconValue *args) {
     char *inputString = readStrStdin(vm); /* Reads the input string */
     return OBJ_VAL(falconString(vm, inputString, strlen(inputString)));
 }
-
-/**
- * Prints to stdout (with a new line at the end) a given list of FalconValues. Any type of value in
- * Falcon can be printed and any number of arguments are accepted.
- */
-FalconValue lib_print(FalconVM *vm, int argCount, FalconValue *args) {
-    if (argCount > 1) {
-        for (int i = 0; i < argCount; i++) {
-            printValue(vm, args[i]);
-            if (i < argCount - 1) printf(" "); /* Separator */
-        }
-    } else {
-        printValue(vm, *args);
-    }
-
-    printf("\n"); /* End */
-    return NULL_VAL;
-}

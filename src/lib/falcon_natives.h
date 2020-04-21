@@ -8,11 +8,12 @@
 #define FALCON_NATIVES_H
 
 #include "../vm/falcon_vm.h"
+#include "falcon_baselib.h"
+#include "falcon_io.h"
+#include "falcon_math.h"
+#include "falcon_sys.h"
 
 /* Native functions operations */
 void defineNatives(FalconVM *vm);
-
-/* Native functions errors */
-#define FALCON_CONV_STR_NUM_ERR "Could not convert string to number." // TODO: Move
 
 #endif // FALCON_NATIVES_H
