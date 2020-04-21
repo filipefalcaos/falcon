@@ -7,20 +7,14 @@
 #include "falcon_natives.h"
 #include "../vm/falcon_memory.h"
 #include "falcon_io.h"
+#include "falcon_math.h"
 #include "falcon_sys.h"
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 /* Defines a common interface to all Falcon native functions */
 #define FALCON_NATIVE(name) static FalconValue name(FalconVM *vm, int argCount, FalconValue *args)
-
-/*
- * ================================================================================================
- * ================================ System-related native functions ===============================
- * ================================================================================================
- */
 
 /*
  * ================================================================================================
@@ -199,44 +193,6 @@ FALCON_NATIVE(delField) {
 
 /*
  * ================================================================================================
- * ===================================== Math native functions ====================================
- * ================================================================================================
- */
-
-/**
- * Native Falcon function to get the absolute value of a given Falcon Value.
- */
-FALCON_NATIVE(abs_) {
-    ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
-    ASSERT_ARG_TYPE(IS_NUM, "number", *args, vm, 1);
-    double absValue = fabs(AS_NUM(*args)); /* Gets the abs value */
-    return NUM_VAL(absValue);
-}
-
-/**
- * Native Falcon function to get the square root of a given Falcon Value.
- */
-FALCON_NATIVE(sqrt_) {
-    ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
-    ASSERT_ARG_TYPE(IS_NUM, "number", *args, vm, 1);
-    double sqrtValue = sqrt(AS_NUM(*args)); /* Gets the sqrt value */
-    return NUM_VAL(sqrtValue);
-}
-
-/**
- * Native Falcon function to get the value of a number "x" to the power of a number "y".
- */
-FALCON_NATIVE(pow_) {
-    ASSERT_ARGS_COUNT(vm, !=, argCount, 2);
-    ASSERT_ARG_TYPE(IS_NUM, "number", args[0], vm, 1);
-    ASSERT_ARG_TYPE(IS_NUM, "number", args[1], vm, 2);
-
-    double powValue = pow(AS_NUM(args[0]), AS_NUM(args[1])); /* Gets the pow value */
-    return NUM_VAL(powValue);
-}
-
-/*
- * ================================================================================================
  * ====================================== IO native functions =====================================
  * ================================================================================================
  */
@@ -309,8 +265,8 @@ void defineNatives(FalconVM *vm) {
         {.function = str, .name = "str"},           {.function = len, .name = "len"},
         {.function = hasField, .name = "hasField"}, {.function = getField, .name = "getField"},
         {.function = setField, .name = "setField"}, {.function = delField, .name = "delField"},
-        {.function = abs_, .name = "abs"},          {.function = sqrt_, .name = "sqrt"},
-        {.function = pow_, .name = "pow"},          {.function = input, .name = "input"},
+        {.function = lib_abs, .name = "abs"},       {.function = lib_sqrt, .name = "sqrt"},
+        {.function = lib_pow, .name = "pow"},       {.function = input, .name = "input"},
         {.function = print, .name = "print"}};
 
     for (unsigned long i = 0; i < sizeof(nativeFunctions) / sizeof(nativeFunctions[0]); i++)

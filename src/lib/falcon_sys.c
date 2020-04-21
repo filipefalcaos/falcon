@@ -9,8 +9,8 @@
 #include <time.h>
 
 /**
- * Exits the running process with a given exit code. Only one numerical is accepted. If the
- * argument is a double number, it will be casted to C's int. No return value is provided.
+ * Exits the running process with a given exit code. Only one numerical argument is accepted. If
+ * the argument is a double, it will be casted to C's int. No return value is provided.
  */
 FalconValue lib_exit(FalconVM *vm, int argCount, FalconValue *args) {
     ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
