@@ -41,9 +41,9 @@ typedef struct {
  * debugging information, such as line and column numbers of where the error occurred.
  */
 static void compileTimeError(FalconVM *vm, Scanner *scanner, Token *token, const char *message) {
-    int offset = 0;
     uint32_t tkLine = token->line;
     uint32_t tkColumn = token->column;
+    const int offset = (token->type == TK_EOF) ? 1 : 0;
     const char *fileName = vm->fileName;
     const char *sourceLine = getSourceFromLine(scanner);
 
@@ -58,7 +58,6 @@ static void compileTimeError(FalconVM *vm, Scanner *scanner, Token *token, const
     }
 
     /* Prints error indicator */
-    if (token->type == TK_EOF) offset = 1;
     fprintf(stderr, "\n");
     fprintf(stderr, "%*c^\n", tkColumn + 3 + offset, ' ');
 }
