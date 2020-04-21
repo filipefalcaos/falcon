@@ -9,6 +9,10 @@
 
 #include "falcon_vm.h"
 
+/* Enables/disables the garbage collector */
+#define ENABLE_GC(vm)  vm->gcEnabled = true
+#define DISABLE_GC(vm) vm->gcEnabled = false
+
 /* Starts a new garbage collector run */
 void falconRunGC(FalconVM *vm);
 

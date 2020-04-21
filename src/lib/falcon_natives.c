@@ -354,11 +354,9 @@ FALCON_NATIVE(print) {
  * Defines a new native function for Falcon.
  */
 static void defNative(FalconVM *vm, const char *name, FalconNativeFn function) {
-    push(vm, OBJ_VAL(falconString(vm, name, (int) strlen(name)))); /* Avoids GC */
-    push(vm, OBJ_VAL(falconNative(vm, function, name)));           /* Avoids GC */
-    mapSet(vm, &vm->globals, AS_STRING(vm->stack[0]), vm->stack[1]);
-    pop(vm);
-    pop(vm);
+    ObjString *strName = falconString(vm, name, (int) strlen(name));
+    ObjNative *nativeFn = falconNative(vm, function, name);
+    mapSet(vm, &vm->globals, strName, OBJ_VAL(nativeFn));
 }
 
 /**
@@ -378,7 +376,8 @@ void defineNatives(FalconVM *vm) {
         {.function = pow_, .name = "pow"},          {.function = input, .name = "input"},
         {.function = print, .name = "print"}};
 
-    /* Define listed native functions */
+    DISABLE_GC(vm); /* Avoids GC from the "defNative" ahead */
     for (unsigned long i = 0; i < sizeof(nativeFunctions) / sizeof(nativeFunctions[0]); i++)
         defNative(vm, nativeFunctions[i].name, nativeFunctions[i].function);
+    ENABLE_GC(vm);
 }

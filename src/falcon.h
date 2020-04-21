@@ -7,6 +7,9 @@
 #ifndef FALCON_H
 #define FALCON_H
 
+//TODO: run some benchmarks to test if the macros "ENABLE_GC" and "DISABLE_GC" perform better than the stack juggling
+// previously used
+
 /* Falcon version and copyright */
 #define FALCON_VERSION_MAJOR   "0"
 #define FALCON_VERSION_MINOR   "0"

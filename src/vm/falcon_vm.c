@@ -92,6 +92,7 @@ void initFalconVM(FalconVM *vm) {
     vm->traceMemory = false;
 
     /* Inits the garbage collection fields */
+    vm->gcEnabled = true;
     vm->grayCount = 0;
     vm->grayCapacity = 0;
     vm->grayStack = NULL;
@@ -312,10 +313,11 @@ static void closeUpvalues(FalconVM *vm, FalconValue *last) {
  * Defines a new class method by adding it to the map of methods in a class.
  */
 static void defineMethod(FalconVM *vm, ObjString *name) {
-    FalconValue method = peek(vm, 0);           /* Avoids GC */
-    ObjClass *class_ = AS_CLASS(peek(vm, 1));   /* Avoids GC */
+    FalconValue method = pop(vm);
+    ObjClass *class_ = AS_CLASS(peek(vm, 0));
+    DISABLE_GC(vm);                             /* Avoids GC from the "mapSet" ahead */
     mapSet(vm, &class_->methods, name, method); /* Sets the new method */
-    pop(vm);
+    DISABLE_GC(vm);
 }
 
 /**
@@ -333,12 +335,12 @@ static int compareStrings(FalconVM *vm) {
  * string to the stack.
  */
 static void concatenateStrings(FalconVM *vm) {
-    ObjString *b = AS_STRING(peek(vm, 0));       /* Avoids GC */
-    ObjString *a = AS_STRING(peek(vm, 1));       /* Avoids GC */
-    ObjString *result = concatStrings(vm, b, a); /* Concatenates both strings */
+    ObjString *b = AS_STRING(pop(vm));
+    ObjString *a = AS_STRING(pop(vm));
 
-    pop(vm);
-    pop(vm);
+    DISABLE_GC(vm);                              /* Avoids GC from the "concatStrings" ahead */
+    ObjString *result = concatStrings(vm, b, a); /* Concatenates both strings */
+    ENABLE_GC(vm);
     push(vm, OBJ_VAL(result));                  /* Pushes concatenated string */
     mapSet(vm, &vm->strings, result, NULL_VAL); /* Interns the string */
 }

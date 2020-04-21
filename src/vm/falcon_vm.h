@@ -71,10 +71,12 @@ struct FalconVM {
     int grayCapacity;
     FalconObj **grayStack;
 
-    /* Memory management: (i) the total number of bytes of memory the VM has allocated; and (ii)
-     * the memory threshold that triggers the next garbage collection run */
+    /* Memory management: (i) the total number of bytes of memory the VM has allocated; (ii) the
+     * memory threshold that triggers the next garbage collection run; and (iii) whether the
+     * garbage collector is enabled or not */
     size_t bytesAllocated;
     size_t nextGC;
+    bool gcEnabled;
 
     /* The string object to store the default initializer name (i.e., "init") */
     ObjString *initStr;

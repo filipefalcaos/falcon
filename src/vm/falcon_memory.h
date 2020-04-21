@@ -7,6 +7,7 @@
 #ifndef FALCON_MEMORY_H
 #define FALCON_MEMORY_H
 
+#include "falcon_gc.h"
 #include "falcon_object.h"
 #include "falcon_vm.h"
 

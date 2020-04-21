@@ -45,9 +45,9 @@ ObjString *falconString(FalconVM *vm, const char *chars, size_t length) {
     str->chars[length] = '\0';
     str->hash = hash;
 
-    push(vm, OBJ_VAL(str));                  /* Avoids GC */
+    DISABLE_GC(vm);                          /* Avoids GC from the "mapSet" ahead */
     mapSet(vm, &vm->strings, str, NULL_VAL); /* Interns the string */
-    pop(vm);
+    ENABLE_GC(vm);
     return str;
 }
 
@@ -99,8 +99,10 @@ ObjClosure *falconClosure(FalconVM *vm, ObjFunction *function) {
  */
 ObjClass *falconClass(FalconVM *vm, ObjString *name) {
     ObjClass *class_ = FALCON_ALLOCATE_OBJ(vm, ObjClass, OBJ_CLASS);
+    DISABLE_GC(vm); /* Avoids GC from the "falconMap" ahead */
     class_->name = name;
     class_->methods = *falconMap(vm);
+    ENABLE_GC(vm);
     return class_;
 }
 
@@ -109,8 +111,10 @@ ObjClass *falconClass(FalconVM *vm, ObjString *name) {
  */
 ObjInstance *falconInstance(FalconVM *vm, ObjClass *class_) {
     ObjInstance *instance = FALCON_ALLOCATE_OBJ(vm, ObjInstance, OBJ_INSTANCE);
+    DISABLE_GC(vm); /* Avoids GC from the "falconMap" ahead */
     instance->class_ = class_;
     instance->fields = *falconMap(vm);
+    ENABLE_GC(vm);
     return instance;
 }
 
@@ -130,7 +134,7 @@ ObjBMethod *falconBMethod(FalconVM *vm, FalconValue receiver, ObjClosure *method
  * given size.
  */
 ObjList *falconList(FalconVM *vm, uint16_t size) {
-    FalconValue *elements = FALCON_ALLOCATE(vm, FalconValue, size); /* Avoids GC */
+    FalconValue *elements = FALCON_ALLOCATE(vm, FalconValue, size);
     ObjList *list = FALCON_ALLOCATE_OBJ(vm, ObjList, OBJ_LIST);
     list->elements.count = size;
     list->elements.capacity = size;

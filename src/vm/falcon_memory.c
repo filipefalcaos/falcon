@@ -6,7 +6,6 @@
 
 #include "falcon_memory.h"
 #include "falcon_debug.h"
-#include "falcon_gc.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -30,7 +29,7 @@ void falconMemoryError() {
 void *falconReallocate(FalconVM *vm, void *previous, size_t oldSize, size_t newSize) {
     vm->bytesAllocated += newSize - oldSize;
 
-    if (newSize > oldSize) { /* More memory allocation? */
+    if ((newSize > oldSize) && vm->gcEnabled) {
 #ifdef FALCON_STRESS_GC
         falconRunGC(vm); /* Runs the garbage collector always */
 #else
