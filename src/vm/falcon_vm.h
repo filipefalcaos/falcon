@@ -108,6 +108,25 @@ bool push(FalconVM *vm, FalconValue value);
  * pointer */
 FalconValue pop(FalconVM *vm);
 
+/* Checks the validity of a given argument count based on an expected argument count */
+#define ASSERT_ARGS_COUNT(vm, op, argCount, expectedCount)                    \
+    do {                                                                      \
+        if (argCount op expectedCount) {                                      \
+            interpreterError(vm, VM_ARGS_COUNT_ERR, expectedCount, argCount); \
+            return ERR_VAL;                                                   \
+        }                                                                     \
+    } while (false)
+
+/* Checks if a given value "value" of a given type "type" at a given argument position "pos" is a
+ * value of the requested type */
+#define ASSERT_ARG_TYPE(type, typeName, value, vm, pos)            \
+    do {                                                           \
+        if (!type(value)) {                                        \
+            interpreterError(vm, VM_ARGS_TYPE_ERR, pos, typeName); \
+            return ERR_VAL;                                        \
+        }                                                          \
+    } while (false)
+
 /* The initial allocation size for the heap, in bytes */
 #define VM_BASE_HEAP_SIZE 1000000 /* 1Mb */
 

@@ -7,30 +7,11 @@
 #include "falcon_natives.h"
 #include "../vm/falcon_memory.h"
 #include "falcon_io.h"
+#include "falcon_sys.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-
-/* Checks the validity of a given argument count */
-#define ASSERT_ARGS_COUNT(vm, op, argCount, expectedCount)                    \
-    do {                                                                      \
-        if (argCount op expectedCount) {                                      \
-            interpreterError(vm, VM_ARGS_COUNT_ERR, expectedCount, argCount); \
-            return ERR_VAL;                                                   \
-        }                                                                     \
-    } while (false)
-
-/* Checks if a given value "value" of a given type "type" at a given position "pos" is a value of
- * the requested type */
-#define ASSERT_ARG_TYPE(type, typeName, value, vm, pos)            \
-    do {                                                           \
-        if (!type(value)) {                                        \
-            interpreterError(vm, VM_ARGS_TYPE_ERR, pos, typeName); \
-            return ERR_VAL;                                        \
-        }                                                          \
-    } while (false)
 
 /* Defines a common interface to all Falcon native functions */
 #define FALCON_NATIVE(name) static FalconValue name(FalconVM *vm, int argCount, FalconValue *args)
@@ -40,33 +21,6 @@
  * ================================ System-related native functions ===============================
  * ================================================================================================
  */
-
-/**
- * Native Falcon function to exit the running process with a given exit code.
- */
-FALCON_NATIVE(exit_) {
-    ASSERT_ARGS_COUNT(vm, !=, argCount, 1);
-    ASSERT_ARG_TYPE(IS_NUM, "number", *args, vm, 1);
-    exit((int) AS_NUM(*args)); /* Exits the process */
-}
-
-/**
- * Native Falcon function to compute the elapsed time since the program started running, in seconds.
- */
-FALCON_NATIVE(clock_) {
-    (void) args; /* Unused */
-    ASSERT_ARGS_COUNT(vm, !=, argCount, 0);
-    return NUM_VAL((double) clock() / CLOCKS_PER_SEC);
-}
-
-/**
- * Native Falcon function to compute the UNIX timestamp, in seconds.
- */
-FALCON_NATIVE(time_) {
-    (void) args; /* Unused */
-    ASSERT_ARGS_COUNT(vm, !=, argCount, 0);
-    return NUM_VAL((double) time(NULL));
-}
 
 /*
  * ================================================================================================
@@ -349,8 +303,8 @@ static void defNative(FalconVM *vm, const char *name, FalconNativeFn function) {
 void defineNatives(FalconVM *vm) {
     const ObjNative nativeFunctions[] = {
         /* Native functions implementations */
-        {.function = exit_, .name = "exit"},        {.function = clock_, .name = "clock"},
-        {.function = time_, .name = "time"},        {.function = type, .name = "type"},
+        {.function = lib_exit, .name = "exit"},     {.function = lib_clock, .name = "clock"},
+        {.function = lib_time, .name = "time"},     {.function = type, .name = "type"},
         {.function = bool_, .name = "bool"},        {.function = num, .name = "num"},
         {.function = str, .name = "str"},           {.function = len, .name = "len"},
         {.function = hasField, .name = "hasField"}, {.function = getField, .name = "getField"},
