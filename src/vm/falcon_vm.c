@@ -5,13 +5,17 @@
  */
 
 #include "falcon_vm.h"
-#include "../lib/falcon_natives.h"
+#include "../lib/falcon_baselib.h"
+#include "../lib/falcon_io.h"
+#include "../lib/falcon_math.h"
 #include "../lib/falcon_string.h"
+#include "../lib/falcon_sys.h"
 #include "falcon_debug.h"
 #include "falcon_memory.h"
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 /**
  * Prints to stderr a stack trace of call frames from a given initial one to a given final one.
@@ -74,6 +78,59 @@ void resetStack(FalconVM *vm) {
     vm->stackTop = vm->stack;
     vm->openUpvalues = NULL;
     vm->frameCount = 0;
+}
+
+/* Native functions implementations. It is composed by a name (string) and a function
+ * (FalconNativeFn implementation) */
+const ObjNative nativeFunctions[] = {
+
+    /* Base lib */
+    {.function = lib_print, .name = "print"},
+    {.function = lib_type, .name = "type"},
+    {.function = lib_bool, .name = "bool"},
+    {.function = lib_num, .name = "num"},
+    {.function = lib_str, .name = "str"},
+    {.function = lib_len, .name = "len"},
+    {.function = lib_hasField, .name = "hasField"},
+    {.function = lib_getField, .name = "getField"},
+    {.function = lib_setField, .name = "setField"},
+    {.function = lib_delField, .name = "delField"},
+
+    /* System lib */
+    {.function = lib_exit, .name = "exit"},
+    {.function = lib_clock, .name = "clock"},
+    {.function = lib_time, .name = "time"},
+
+    /* Math lib */
+    {.function = lib_abs, .name = "abs"},
+    {.function = lib_sqrt, .name = "sqrt"},
+    {.function = lib_pow, .name = "pow"},
+
+    /* IO lib */
+    {.function = lib_input, .name = "input"}
+
+};
+
+/**
+ * Defines a new native function for Falcon with a given name and a given implementation.
+ */
+static void defNative(FalconVM *vm, const char *name, FalconNativeFn function) {
+    DISABLE_GC(vm); /* Avoids GC from the "defNative" ahead */
+    ObjString *strName = falconString(vm, name, (int) strlen(name));
+    ENABLE_GC(vm);
+    DISABLE_GC(vm); /* Avoids GC from the "defNative" ahead */
+    ObjNative *nativeFn = falconNative(vm, function, name);
+    mapSet(vm, &vm->globals, strName, OBJ_VAL(nativeFn));
+    ENABLE_GC(vm);
+}
+
+/**
+ * Defines the complete set (see the constant "nativeFunctions" above) of native functions for
+ * Falcon.
+ */
+static void defineNatives(FalconVM *vm) {
+    for (unsigned long i = 0; i < sizeof(nativeFunctions) / sizeof(nativeFunctions[0]); i++)
+        defNative(vm, nativeFunctions[i].name, nativeFunctions[i].function);
 }
 
 /**
