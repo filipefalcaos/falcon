@@ -14,6 +14,6 @@
 #define DISABLE_GC(vm) vm->gcEnabled = false
 
 /* Starts a new garbage collector run */
-void falconRunGC(FalconVM *vm);
+void run_GC(FalconVM *vm);
 
 #endif // FALCON_GC_H

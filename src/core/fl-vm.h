@@ -87,19 +87,19 @@ typedef enum { FALCON_OK, FALCON_COMPILE_ERROR, FALCON_RUNTIME_ERROR } FalconRes
 
 /* Prints a runtime error to stderr and resets the virtual machine stack. The error message is
  * composed of a given format, followed by the arguments of that format */
-void interpreterError(FalconVM *vm, const char *format, ...);
+void interpreter_error(FalconVM *vm, const char *format, ...);
 
 /* Initializes the Falcon's virtual machine */
-void initFalconVM(FalconVM *vm);
+void init_FalconVM(FalconVM *vm);
 
 /* Frees the Falcon's virtual machine and its allocated objects */
-void freeFalconVM(FalconVM *vm);
+void free_FalconVM(FalconVM *vm);
 
 /* Interprets a Falcon's source code string */
-FalconResultCode falconInterpret(FalconVM *vm, const char *source);
+FalconResultCode interpret_source(FalconVM *vm, const char *source);
 
 /* Resets the Falcon's virtual machine stack */
-void resetStack(FalconVM *vm);
+void reset_stack(FalconVM *vm);
 
 /* Pushes a value to the top of the Falcon's virtual machine stack */
 bool push(FalconVM *vm, FalconValue value);
@@ -109,22 +109,22 @@ bool push(FalconVM *vm, FalconValue value);
 FalconValue pop(FalconVM *vm);
 
 /* Checks the validity of a given argument count based on an expected argument count */
-#define ASSERT_ARGS_COUNT(vm, op, argCount, expectedCount)                    \
-    do {                                                                      \
-        if (argCount op expectedCount) {                                      \
-            interpreterError(vm, VM_ARGS_COUNT_ERR, expectedCount, argCount); \
-            return ERR_VAL;                                                   \
-        }                                                                     \
+#define ASSERT_ARGS_COUNT(vm, op, argCount, expectedCount)                     \
+    do {                                                                       \
+        if (argCount op expectedCount) {                                       \
+            interpreter_error(vm, VM_ARGS_COUNT_ERR, expectedCount, argCount); \
+            return ERR_VAL;                                                    \
+        }                                                                      \
     } while (false)
 
 /* Checks if a given value "value" of a given type "type" at a given argument position "pos" is a
  * value of the requested type */
-#define ASSERT_ARG_TYPE(type, typeName, value, vm, pos)            \
-    do {                                                           \
-        if (!type(value)) {                                        \
-            interpreterError(vm, VM_ARGS_TYPE_ERR, pos, typeName); \
-            return ERR_VAL;                                        \
-        }                                                          \
+#define ASSERT_ARG_TYPE(type, typeName, value, vm, pos)             \
+    do {                                                            \
+        if (!type(value)) {                                         \
+            interpreter_error(vm, VM_ARGS_TYPE_ERR, pos, typeName); \
+            return ERR_VAL;                                         \
+        }                                                           \
     } while (false)
 
 /* The initial allocation size for the heap, in bytes */

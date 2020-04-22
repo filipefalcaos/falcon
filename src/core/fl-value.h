@@ -69,26 +69,26 @@ typedef struct {
 } ValueArray;
 
 /* Initializes an empty dynamic array of FalconValues */
-void initValArray(ValueArray *valueArray);
+void init_value_array(ValueArray *valueArray);
 
 /* Frees a dynamic array of FalconValues */
-void freeValArray(FalconVM *vm, ValueArray *valueArray);
+void free_value_array(FalconVM *vm, ValueArray *valueArray);
 
 /* Appends a given FalconValue to the end of a ValueArray */
-void writeValArray(FalconVM *vm, ValueArray *valueArray, FalconValue value);
+void write_value_array(FalconVM *vm, ValueArray *valueArray, FalconValue value);
 
 /* Checks if two FalconValues are equal. For unboxed values, this is a value comparison, while for
  * object values, this is an identity comparison */
-bool valuesEqual(FalconValue a, FalconValue b);
+bool values_equal(FalconValue a, FalconValue b);
 
 /* Takes the "logical not" of a FalconValue. In Falcon, "null", "false", the number zero, and an
  * empty string are falsy, while every other value behaves like "true". */
-bool isFalsy(FalconValue value);
+bool is_falsy(FalconValue value);
 
 /* Converts a given FalconValue, that is not already a string, into a ObjString */
-ObjString *valueToString(FalconVM *vm, FalconValue *value);
+ObjString *value_to_string(FalconVM *vm, FalconValue *value);
 
 /* Prints a single FalconValue to stdout */
-void printValue(FalconVM *vm, FalconValue value);
+void print_value(FalconVM *vm, FalconValue value);
 
 #endif // FALCON_VALUE_H

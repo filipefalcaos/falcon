@@ -16,29 +16,29 @@
 #define FALCON_TABLE_MAX_LOAD 0.75
 
 /* Frees a previously allocated ObjMap */
-void freeMap(FalconVM *vm, ObjMap *map);
+void free_map(FalconVM *vm, ObjMap *map);
 
 /* Tries to get the value corresponding to a given key in a given ObjMap. If an entry for the key
  * cannot be found, "false" is returned. Otherwise, true is returned a "value" is set to point for
  * found value */
-bool mapGet(ObjMap *map, ObjString *key, FalconValue *value);
+bool map_get(ObjMap *map, ObjString *key, FalconValue *value);
 
 /* Adds the given key-value pair into the given ObjMap. Returns a boolean indicating if the key was
  * already existent */
-bool mapSet(FalconVM *vm, ObjMap *map, ObjString *key, FalconValue value);
+bool map_set(FalconVM *vm, ObjMap *map, ObjString *key, FalconValue value);
 
 /* Tries to delete a key-value pair from a given ObjMap based on a given key. Returns a boolean
  * indicating if the deletion was successful */
-bool deleteFromMap(ObjMap *map, ObjString *key);
+bool map_remove(ObjMap *map, ObjString *key);
 
 /* Tries to find a ObjString stored in a given ObjMap. If a ObjString is not found in the ObjMap
  * entries, NULL is returned. Otherwise, the found ObjString is returned */
-ObjString *mapFindString(ObjMap *map, const char *chars, size_t length, uint32_t hash);
+ObjString *find_string(ObjMap *map, const char *chars, size_t length, uint32_t hash);
 
 /* Copies all the entries from a given ObjMap to another given one */
-void copyEntries(FalconVM *vm, ObjMap *from, ObjMap *to);
+void copy_entries(FalconVM *vm, ObjMap *from, ObjMap *to);
 
 /* Converts a given ObjMap to a ObjString */
-ObjString *mapToString(FalconVM *vm, ObjMap *map);
+ObjString *map_to_string(FalconVM *vm, ObjMap *map);
 
 #endif // FALCON_MAP_H

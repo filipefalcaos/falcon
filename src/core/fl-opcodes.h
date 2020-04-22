@@ -79,7 +79,7 @@ typedef enum {
     OP_POPEXPR,    /* |           | Pops from the stack and prints the old St                  */
     OP_TEMP        /* |           | Marks a compiler temporary (should not be executed)        */
 
-} FalconOpCodes;
+} FalconOpcodes;
 
 /* clang-format on */
 

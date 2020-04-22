@@ -31,9 +31,9 @@ typedef struct {
 } Scanner;
 
 /* Scanning operations */
-void initScanner(const char *source, Scanner *scanner);
-const char *getSourceFromLine(Scanner *scanner);
-Token scanToken(Scanner *scanner, FalconVM *vm);
+void init_scanner(const char *source, Scanner *scanner);
+const char *get_current_line(Scanner *scanner);
+Token scan_token(Scanner *scanner, FalconVM *vm);
 
 /* Scanning error messages */
 #define SCAN_BIG_NUM_ERR          "Number literal is too large for an IEEE double."

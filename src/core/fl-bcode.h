@@ -31,18 +31,18 @@ typedef struct {
 } BytecodeChunk;
 
 /* Initializes an empty bytecode chunk */
-void initBytecode(BytecodeChunk *bytecode);
+void init_bytecode(BytecodeChunk *bytecode);
 
 /* Frees a previously allocated bytecode chunk and its list of constants */
-void freeBytecode(FalconVM *vm, BytecodeChunk *bytecode);
+void free_bytecode(FalconVM *vm, BytecodeChunk *bytecode);
 
 /* Appends a byte to the end of a bytecode chunk */
-void writeBytecode(FalconVM *vm, BytecodeChunk *bytecode, uint8_t byte, int line);
+void write_bytecode(FalconVM *vm, BytecodeChunk *bytecode, uint8_t byte, int line);
 
 /* Searches for the line that contains a given instruction */
-int getLine(const BytecodeChunk *bytecode, int instruction);
+int get_source_line(const BytecodeChunk *bytecode, int instruction);
 
 /* Adds a new constant to the constants list of a bytecode chunk and returns its index */
-int addConstant(FalconVM *vm, BytecodeChunk *bytecode, FalconValue value);
+int add_constant(FalconVM *vm, BytecodeChunk *bytecode, FalconValue value);
 
 #endif // FALCON_BYTECODE_H

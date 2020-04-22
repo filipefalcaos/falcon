@@ -12,7 +12,7 @@
 /**
  * Prints a message to stderr indicating that a memory allocation error occurred.
  */
-void falconMemoryError() {
+void memory_error() {
     fprintf(stderr, FALCON_OUT_OF_MEM_ERR);
     fprintf(stderr, "\n");
     exit(FALCON_ERR_MEMORY);
@@ -26,15 +26,14 @@ void falconMemoryError() {
  * before the new allocation);
  * - If newSize == 0, frees the memory allocated.
  */
-void *falconReallocate(FalconVM *vm, void *previous, size_t oldSize, size_t newSize) {
+void *reallocate(FalconVM *vm, void *previous, size_t oldSize, size_t newSize) {
     vm->bytesAllocated += newSize - oldSize;
 
     if ((newSize > oldSize) && vm->gcEnabled) {
 #ifdef FALCON_STRESS_GC
-        falconRunGC(vm); /* Runs the garbage collector always */
+        run_GC(vm); /* Runs the garbage collector always */
 #else
-        if (vm->bytesAllocated > vm->nextGC)
-            falconRunGC(vm); /* Runs the garbage collector, if needed */
+        if (vm->bytesAllocated > vm->nextGC) run_GC(vm); /* Runs the garbage collector, if needed */
 #endif
     }
 
@@ -45,11 +44,11 @@ void *falconReallocate(FalconVM *vm, void *previous, size_t oldSize, size_t newS
 
     void *allocatedMemory = realloc(previous, newSize); /* Reallocates memory */
     if (allocatedMemory == NULL) {                      /* Allocation failed? */
-        falconRunGC(vm); /* Runs the garbage collector to free some memory */
+        run_GC(vm); /* Runs the garbage collector to free some memory */
         allocatedMemory = realloc(previous, newSize); /* Retries to reallocate memory */
 
         if (allocatedMemory == NULL) /* Allocation still failed? */
-            falconMemoryError();     /* No memory available, exit */
+            memory_error();          /* No memory available, exit */
     }
 
     return allocatedMemory;
@@ -59,32 +58,32 @@ void *falconReallocate(FalconVM *vm, void *previous, size_t oldSize, size_t newS
  * Allocates a new FalconObj with a given size and initializes the object fields, also adding it to
  * the list of objects in the virtual machine.
  */
-FalconObj *falconAllocateObj(FalconVM *vm, size_t size, ObjType type) {
-    FalconObj *object = (FalconObj *) falconReallocate(vm, NULL, 0, size); /* Sets a new object */
+FalconObj *allocate_object(FalconVM *vm, size_t size, ObjType type) {
+    FalconObj *object = (FalconObj *) reallocate(vm, NULL, 0, size); /* Sets a new object */
     object->isMarked = false;
     object->type = type;        /* Sets the object type */
     object->next = vm->objects; /* Adds the new object to the objects list */
     vm->objects = object;
 
-    if (vm->traceMemory) dumpAllocation(object, size, type);
+    if (vm->traceMemory) dump_allocation(object, size, type);
     return object;
 }
 
 /**
  * Frees the memory previously allocated to a given FalconObj.
  */
-void falconFreeObj(FalconVM *vm, FalconObj *object) {
-    if (vm->traceMemory) dumpFree(object);
+void free_object(FalconVM *vm, FalconObj *object) {
+    if (vm->traceMemory) dump_free(object);
 
     switch (object->type) {
         case OBJ_STRING: {
             ObjString *string = (ObjString *) object;
-            falconReallocate(vm, object, sizeof(ObjString) + string->length + 1, 0);
+            reallocate(vm, object, sizeof(ObjString) + string->length + 1, 0);
             break;
         }
         case OBJ_FUNCTION: {
             ObjFunction *function = (ObjFunction *) object;
-            freeBytecode(vm, &function->bytecode);
+            free_bytecode(vm, &function->bytecode);
             FALCON_FREE(vm, ObjFunction, object);
             break;
         }
@@ -97,13 +96,13 @@ void falconFreeObj(FalconVM *vm, FalconObj *object) {
         }
         case OBJ_CLASS: {
             ObjClass *class_ = (ObjClass *) object;
-            freeMap(vm, &class_->methods);
+            free_map(vm, &class_->methods);
             FALCON_FREE(vm, ObjClass, object);
             break;
         }
         case OBJ_INSTANCE: {
             ObjInstance *instance = (ObjInstance *) object;
-            freeMap(vm, &instance->fields);
+            free_map(vm, &instance->fields);
             FALCON_FREE(vm, ObjInstance, object);
             break;
         }
@@ -114,9 +113,7 @@ void falconFreeObj(FalconVM *vm, FalconObj *object) {
             FALCON_FREE(vm, ObjList, object);
             break;
         }
-        case OBJ_MAP:
-            freeMap(vm, (ObjMap *) object);
-            break;
+        case OBJ_MAP: free_map(vm, (ObjMap *) object); break;
         case OBJ_NATIVE: FALCON_FREE(vm, ObjNative, object); break;
     }
 }
@@ -124,11 +121,11 @@ void falconFreeObj(FalconVM *vm, FalconObj *object) {
 /**
  * Frees the memory previously allocated to all FalconObjs allocated by the virtual machine.
  */
-void falconFreeObjs(FalconVM *vm) {
+void free_vm_objects(FalconVM *vm) {
     FalconObj *object = vm->objects;
     while (object != NULL) {
         FalconObj *next = object->next;
-        falconFreeObj(vm, object);
+        free_object(vm, object);
         object = next;
     }
 

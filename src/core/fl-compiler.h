@@ -97,7 +97,7 @@ typedef struct {
 } FalconCompiler;
 
 /* Compiler operations */
-ObjFunction *falconCompile(FalconVM *vm, const char *source);
+ObjFunction *compile_source(FalconVM *vm, const char *source);
 
 /* Compilation flags */
 #define COMP_ERROR_STATE      (-1)

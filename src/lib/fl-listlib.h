@@ -10,7 +10,7 @@
 #include "../core/fl-object.h"
 
 /* List functions */
-ObjList *concatLists(FalconVM *vm, const ObjList *list1, const ObjList *list2);
-ObjString *listToString(FalconVM *vm, ObjList *list);
+ObjList *concat_lists(FalconVM *vm, const ObjList *list1, const ObjList *list2);
+ObjString *list_to_string(FalconVM *vm, ObjList *list);
 
 #endif // FALCON_LIST_H

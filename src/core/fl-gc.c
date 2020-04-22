@@ -21,7 +21,7 @@
  * Marks a FalconObj for garbage collection. Strings and native functions are objects that do not
  * contain any references to trace.
  */
-static void markObject(FalconVM *vm, FalconObj *object) {
+static void mark_object(FalconVM *vm, FalconObj *object) {
     if (object == NULL) return;
     if (object->isMarked) return;
 
@@ -29,7 +29,7 @@ static void markObject(FalconVM *vm, FalconObj *object) {
     if (object->type == OBJ_NATIVE || object->type == OBJ_STRING)
         return; /* Strings and native functions contain no references to trace */
 
-    if (vm->traceMemory) dumpMark(object);
+    if (vm->traceMemory) dump_mark(object);
     if (vm->grayCapacity < vm->grayCount + 1) {
         vm->grayCapacity = FALCON_INCREASE_CAPACITY(vm->grayCapacity); /* Increase the capacity */
         vm->grayStack = realloc(vm->grayStack, sizeof(FalconObj *) * vm->grayCapacity);
@@ -42,10 +42,10 @@ static void markObject(FalconVM *vm, FalconObj *object) {
  * Marks compilation roots (the ObjFunction the compiler is compiling into) for garbage
  * collection.
  */
-static void markCompilerRoots(FalconVM *vm) {
+static void mark_compiler_roots(FalconVM *vm) {
     FunctionCompiler *compiler = vm->compiler;
     while (compiler != NULL) {
-        markObject(vm, (FalconObj *) compiler->function);
+        mark_object(vm, (FalconObj *) compiler->function);
         compiler = compiler->enclosing;
     }
 }
@@ -53,35 +53,35 @@ static void markCompilerRoots(FalconVM *vm) {
 /**
  * Marks a FalconValue for garbage collection.
  */
-static void markValue(FalconVM *vm, FalconValue value) {
+static void mark_value(FalconVM *vm, FalconValue value) {
     if (!IS_OBJ(value)) return; /* Num, bool, and null are not dynamically allocated */
-    markObject(vm, AS_OBJ(value));
+    mark_object(vm, AS_OBJ(value));
 }
 
 /**
  * Marks every key-value pair in a given ObjMap for garbage collection.
  */
-static void markMap(FalconVM *vm, ObjMap *map) {
+static void mark_map(FalconVM *vm, ObjMap *map) {
     for (int i = 0; i < map->capacity; i++) {
         MapEntry *entry = &map->entries[i];
-        markObject(vm, (FalconObj *) entry->key);
-        markValue(vm, entry->value);
+        mark_object(vm, (FalconObj *) entry->key);
+        mark_value(vm, entry->value);
     }
 }
 
 /**
  * Marks all FalconValues in a given ValueArray for garbage collection.
  */
-static void markArray(FalconVM *vm, ValueArray *array) {
-    for (int i = 0; i < array->count; i++) markValue(vm, array->values[i]);
+static void mark_array(FalconVM *vm, ValueArray *array) {
+    for (int i = 0; i < array->count; i++) mark_value(vm, array->values[i]);
 }
 
 /**
  * Marks all the captured upvalues of a given closure for garbage collection.
  */
-static void markUpvalues(FalconVM *vm, ObjClosure *closure) {
+static void mark_upvalues(FalconVM *vm, ObjClosure *closure) {
     for (int i = 0; i < closure->upvalueCount; i++) {
-        markObject(vm, (FalconObj *) closure->upvalues[i]);
+        mark_object(vm, (FalconObj *) closure->upvalues[i]);
     }
 }
 
@@ -90,49 +90,49 @@ static void markUpvalues(FalconVM *vm, ObjClosure *closure) {
  * object "black" for the garbage collection. "Black" objects are the ones with "isMarked" set to
  * true and that are not in the "gray" stack.
  */
-static void blackenObject(FalconVM *vm, FalconObj *object) {
-    if (vm->traceMemory) dumpBlacken(object);
+static void blacken_object(FalconVM *vm, FalconObj *object) {
+    if (vm->traceMemory) dump_blacken(object);
 
     switch (object->type) {
         case OBJ_FUNCTION: {
             ObjFunction *function = (ObjFunction *) object;
-            markObject(vm, (FalconObj *) function->name);
-            markArray(vm, &function->bytecode.constants);
+            mark_object(vm, (FalconObj *) function->name);
+            mark_array(vm, &function->bytecode.constants);
             break;
         }
-        case OBJ_UPVALUE: markValue(vm, ((ObjUpvalue *) object)->closed); break;
+        case OBJ_UPVALUE: mark_value(vm, ((ObjUpvalue *) object)->closed); break;
         case OBJ_CLOSURE: {
             ObjClosure *closure = (ObjClosure *) object;
-            markObject(vm, (FalconObj *) closure->function);
-            markUpvalues(vm, closure);
+            mark_object(vm, (FalconObj *) closure->function);
+            mark_upvalues(vm, closure);
             break;
         }
         case OBJ_CLASS: {
             ObjClass *class_ = (ObjClass *) object;
-            markObject(vm, (FalconObj *) class_->name);
-            markMap(vm, &class_->methods);
+            mark_object(vm, (FalconObj *) class_->name);
+            mark_map(vm, &class_->methods);
             break;
         }
         case OBJ_INSTANCE: {
             ObjInstance *instance = (ObjInstance *) object;
-            markObject(vm, (FalconObj *) instance->class_);
-            markMap(vm, &instance->fields);
+            mark_object(vm, (FalconObj *) instance->class_);
+            mark_map(vm, &instance->fields);
             break;
         }
         case OBJ_BMETHOD: {
             ObjBMethod *bound = (ObjBMethod *) object;
-            markValue(vm, bound->receiver);
-            markObject(vm, (FalconObj *) bound->method);
+            mark_value(vm, bound->receiver);
+            mark_object(vm, (FalconObj *) bound->method);
             break;
         }
         case OBJ_LIST: {
             ObjList *list = (ObjList *) object;
-            markArray(vm, &list->elements);
+            mark_array(vm, &list->elements);
             break;
         }
         case OBJ_MAP: {
             ObjMap *map = (ObjMap *) object;
-            markMap(vm, map);
+            mark_map(vm, map);
             break;
         }
         case OBJ_STRING:
@@ -144,43 +144,43 @@ static void blackenObject(FalconVM *vm, FalconObj *object) {
  * Marks all root objects in the virtual machine. Root objects are mostly global variables or
  * objects on the stack.
  */
-static void markRoots(FalconVM *vm) {
+static void mark_roots(FalconVM *vm) {
     for (FalconValue *slot = vm->stack; slot < vm->stackTop; slot++) {
-        markValue(vm, *slot); /* Marks stack objects */
+        mark_value(vm, *slot); /* Marks stack objects */
     }
 
     for (int i = 0; i < vm->frameCount; i++) {
-        markObject(vm, (FalconObj *) vm->frames[i].closure); /* Marks closure objects */
+        mark_object(vm, (FalconObj *) vm->frames[i].closure); /* Marks closure objects */
     }
 
     for (ObjUpvalue *upvalue = vm->openUpvalues; upvalue != NULL; upvalue = upvalue->next) {
-        markObject(vm, (FalconObj *) upvalue); /* Marks open upvalues */
+        mark_object(vm, (FalconObj *) upvalue); /* Marks open upvalues */
     }
 
-    markMap(vm, &vm->globals);                 /* Marks global variables */
-    markCompilerRoots(vm);                     /* Marks compilation roots */
-    markObject(vm, (FalconObj *) vm->initStr); /* Marks the "init" string */
+    mark_map(vm, &vm->globals);                 /* Marks global variables */
+    mark_compiler_roots(vm);                    /* Marks compilation roots */
+    mark_object(vm, (FalconObj *) vm->initStr); /* Marks the "init" string */
 }
 
 /**
  * Traces the references of the "gray" objects while there are still "gray" objects to trace. After
  * being traced, a "gray" object is turned "black".
  */
-static void traceReferences(FalconVM *vm) {
+static void trace_references(FalconVM *vm) {
     while (vm->grayCount > 0) {
         FalconObj *object = vm->grayStack[--vm->grayCount];
-        blackenObject(vm, object);
+        blacken_object(vm, object);
     }
 }
 
 /**
  * Removes every key-value pair of "white" objects in a given ObjMap for garbage collection.
  */
-static void removeWhitesMap(ObjMap *map) {
+static void remove_whites_from_map(ObjMap *map) {
     for (int i = 0; i < map->capacity; i++) {
         MapEntry *current = &map->entries[i];
         if (current->key != NULL && !current->key->obj.isMarked) /* Is a "white" object? */
-            deleteFromMap(map, current->key); /* Removes the key-value pair from the map */
+            map_remove(map, current->key); /* Removes the key-value pair from the map */
     }
 }
 
@@ -208,7 +208,7 @@ static void sweep(FalconVM *vm) {
                 vm->objects = current;
             }
 
-            falconFreeObj(vm, white); /* Frees the "white" object */
+            free_object(vm, white); /* Frees the "white" object */
         }
     }
 }
@@ -221,21 +221,21 @@ static void sweep(FalconVM *vm) {
  * - Sweeping: every object traced is examined: any unmarked object are unreachable, thus garbage,
  * and is freed.
  */
-void falconRunGC(FalconVM *vm) {
+void run_GC(FalconVM *vm) {
     size_t bytesAllocated;
     if (vm->traceMemory) {
-        dumpGCStatus("Start");
+        dump_GC_status("Start");
         bytesAllocated = vm->bytesAllocated;
     }
 
-    markRoots(vm);                 /* Marks all roots */
-    traceReferences(vm);           /* Traces the references of the "gray" objects */
-    removeWhitesMap(&vm->strings); /* Removes the "white" strings from the map */
-    sweep(vm);                     /* Reclaim the "white" objects - garbage */
+    mark_roots(vm);                       /* Marks all roots */
+    trace_references(vm);                 /* Traces the references of the "gray" objects */
+    remove_whites_from_map(&vm->strings); /* Removes the "white" strings from the map */
+    sweep(vm);                            /* Reclaim the "white" objects - garbage */
     vm->nextGC = vm->bytesAllocated * HEAP_GROW_FACTOR; /* Adjust the next GC threshold */
 
     if (vm->traceMemory) {
-        dumpGC(vm, bytesAllocated);
-        dumpGCStatus("End");
+        dump_GC(vm, bytesAllocated);
+        dump_GC_status("End");
     }
 }

@@ -78,8 +78,8 @@ void printUsage() {
  * Interprets a Falcon source file.
  */
 static void runFile(FalconVM *vm) {
-    char *source = readFile(vm, vm->fileName);                 /* Gets the source content */
-    FalconResultCode resultCode = falconInterpret(vm, source); /* Interprets the source code */
+    char *source = read_file(vm, vm->fileName);                 /* Gets the source content */
+    FalconResultCode resultCode = interpret_source(vm, source); /* Interprets the source code */
     free(source);
     if (resultCode == FALCON_COMPILE_ERROR) exit(FALCON_ERR_COMPILER);
     if (resultCode == FALCON_RUNTIME_ERROR) exit(FALCON_ERR_RUNTIME);
@@ -100,7 +100,7 @@ void setFile(FalconVM *vm, const char *fileName) {
 void setCommand(FalconVM *vm, const char *inputCommand) {
     vm->isREPL = false;
     vm->fileName = FALCON_INPUT;
-    falconInterpret(vm, inputCommand); /* Interprets the input command */
+    interpret_source(vm, inputCommand); /* Interprets the input command */
 }
 
 /**
@@ -138,7 +138,7 @@ static void repl(FalconVM *vm) {
         } else if (strcmp(input, "authors") == 0) {
             printf("%s\n", FALCON_AUTHORS);
         } else {
-            falconInterpret(vm, input); /* Interprets the input line */
+            interpret_source(vm, input); /* Interprets the input line */
         }
     }
 }
@@ -229,14 +229,9 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
                 goto EXEC; /* Stop parsing on "-i"*/
             case 't':
                 switch (argv[optionId][2]) {
-                    case '\0':
-                        vm->traceExec = true;
-                        break;
-                    case 't':
-                        vm->traceMemory = true;
-                        break;
-                    default:
-                        CLI_ERROR(argv, optionId, UNKNOWN_OPT_ERR);
+                    case '\0': vm->traceExec = true; break;
+                    case 't': vm->traceMemory = true; break;
+                    default: CLI_ERROR(argv, optionId, UNKNOWN_OPT_ERR);
                 }
 
                 break;
@@ -270,8 +265,8 @@ EXEC:
 
 int main(int argc, char **argv) {
     FalconVM vm;
-    initFalconVM(&vm);
+    init_FalconVM(&vm);
     processArgs(&vm, argc, argv);
-    freeFalconVM(&vm);
+    free_FalconVM(&vm);
     return 0;
 }

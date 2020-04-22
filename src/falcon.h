@@ -7,7 +7,8 @@
 #ifndef FALCON_H
 #define FALCON_H
 
-//TODO: run some benchmarks to test if the macros "ENABLE_GC" and "DISABLE_GC" perform better than the stack juggling
+// TODO: run some benchmarks to test if the macros "ENABLE_GC" and "DISABLE_GC" perform better than
+// the stack juggling
 // previously used
 
 /* Falcon version and copyright */

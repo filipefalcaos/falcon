@@ -13,7 +13,7 @@
 /* Reads the content of an input file, given its path. If the function fails to read the file, an
  * error message will be printed and the process will exit. Otherwise, a string with the file
  * content will be returned */
-char *readFile(FalconVM *vm, const char *path);
+char *read_file(FalconVM *vm, const char *path);
 
 /* Prompts the user for an input and returns the given input as a ObjString. Accepts only one
  * optional argument, a ObjString that represents a prompt (e.g., ">>>") */

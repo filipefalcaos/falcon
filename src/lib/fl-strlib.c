@@ -10,7 +10,7 @@
 /**
  * Hashes an input string using FNV-1a hash function.
  */
-uint32_t hashString(const unsigned char *key, size_t length) {
+uint32_t hash_string(const unsigned char *key, size_t length) {
     uint32_t hash = 2166136261u;
 
     for (uint64_t i = 0; i < length; i++) {
@@ -25,7 +25,7 @@ uint32_t hashString(const unsigned char *key, size_t length) {
  * Compares two given Falcon strings. If the two strings are equal, returns 0. If the first string
  * is lexicographically smaller, returns a negative integer. Otherwise, returns a positive one.
  */
-int cmpStrings(const ObjString *str1, const ObjString *str2) {
+int cmp_strings(const ObjString *str1, const ObjString *str2) {
     const unsigned char *s1 = (const unsigned char *) str1->chars;
     const unsigned char *s2 = (const unsigned char *) str2->chars;
 
@@ -40,12 +40,12 @@ int cmpStrings(const ObjString *str1, const ObjString *str2) {
 /**
  * Concatenates two given Falcon strings.
  */
-ObjString *concatStrings(FalconVM *vm, const ObjString *str1, const ObjString *str2) {
+ObjString *concat_strings(FalconVM *vm, const ObjString *str1, const ObjString *str2) {
     size_t length = str2->length + str1->length;
-    ObjString *result = makeString(vm, length);
+    ObjString *result = make_string(vm, length);
     memcpy(result->chars, str2->chars, str2->length);
     memcpy(result->chars + str2->length, str1->chars, str1->length);
     result->chars[length] = '\0';
-    result->hash = hashString((const unsigned char *) result->chars, length);
+    result->hash = hash_string((const unsigned char *) result->chars, length);
     return result;
 }

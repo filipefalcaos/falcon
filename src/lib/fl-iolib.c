@@ -14,7 +14,7 @@
  * allocate memory to read its content, an error message will be printed and the process will exit.
  * Otherwise, a string with the file content will be returned.
  */
-char *readFile(FalconVM *vm, const char *path) {
+char *read_file(FalconVM *vm, const char *path) {
     char *buffer;
     FILE *file = fopen(path, "rb"); /* Opens the input file */
 
@@ -47,11 +47,10 @@ char *readFile(FalconVM *vm, const char *path) {
 /**
  * Reads an input string from stdin, dynamically allocating memory if needed.
  */
-static char *readStrStdin(FalconVM *vm) {
-    uint64_t currentSize = 0;
+static char *read_str_stdin(FalconVM *vm) {
     uint64_t initialLength = STR_INITIAL_ALLOC;             /* Initial allocation size */
     char *input = FALCON_ALLOCATE(vm, char, initialLength); /* Allocates initial space */
-    currentSize = initialLength;
+    uint64_t currentSize = initialLength;
 
     uint64_t i = 0;
     int currentChar = getchar(); /* Reads the first char */
@@ -60,7 +59,7 @@ static char *readStrStdin(FalconVM *vm) {
         input[i++] = (char) currentChar;
         if (i == currentSize) {
             currentSize = FALCON_INCREASE_CAPACITY(i);
-            input = falconReallocate(vm, input, i, currentSize); /* Increases string size */
+            input = reallocate(vm, input, i, currentSize); /* Increases string size */
         }
 
         currentChar = getchar(); /* Reads the next char */
@@ -85,6 +84,6 @@ FalconValue lib_input(FalconVM *vm, int argCount, FalconValue *args) {
         printf("%s", AS_CSTRING(prompt));                    /* Prints the prompt */
     }
 
-    char *inputString = readStrStdin(vm); /* Reads the input string */
-    return OBJ_VAL(falconString(vm, inputString, strlen(inputString)));
+    char *inputString = read_str_stdin(vm); /* Reads the input string */
+    return OBJ_VAL(new_ObjString(vm, inputString, strlen(inputString)));
 }

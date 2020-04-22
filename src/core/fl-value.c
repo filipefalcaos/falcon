@@ -14,7 +14,7 @@
 /**
  * Initializes an empty dynamic array of FalconValues.
  */
-void initValArray(ValueArray *valueArray) {
+void init_value_array(ValueArray *valueArray) {
     valueArray->count = 0;
     valueArray->capacity = 0;
     valueArray->values = NULL;
@@ -23,16 +23,16 @@ void initValArray(ValueArray *valueArray) {
 /**
  * Frees a dynamic array of FalconValues.
  */
-void freeValArray(FalconVM *vm, ValueArray *valueArray) {
+void free_value_array(FalconVM *vm, ValueArray *valueArray) {
     FALCON_FREE_ARRAY(vm, FalconValue, valueArray->values, valueArray->capacity);
-    initValArray(valueArray);
+    init_value_array(valueArray);
 }
 
 /**
  * Appends a given FalconValue to the end of a ValueArray. If the current size is not enough, the
  * capacity of the array is increased to fit the new Value.
  */
-void writeValArray(FalconVM *vm, ValueArray *valueArray, FalconValue value) {
+void write_value_array(FalconVM *vm, ValueArray *valueArray, FalconValue value) {
     if (valueArray->capacity < valueArray->count + 1) {
         int oldCapacity = valueArray->capacity;
         valueArray->capacity = FALCON_INCREASE_CAPACITY(oldCapacity);
@@ -48,7 +48,7 @@ void writeValArray(FalconVM *vm, ValueArray *valueArray, FalconValue value) {
  * Checks if two FalconValues are equal. For unboxed values, this is a value comparison, while for
  * object values, this is an identity comparison.
  */
-bool valuesEqual(FalconValue a, FalconValue b) {
+bool values_equal(FalconValue a, FalconValue b) {
     if (a.type != b.type) return false;
 
     switch (a.type) {
@@ -64,7 +64,7 @@ bool valuesEqual(FalconValue a, FalconValue b) {
  * Takes the "logical not" of a FalconValue. In Falcon, "null", "false", the number zero, and an
  * empty string are falsy, while every other value behaves like "true".
  */
-bool isFalsy(FalconValue value) {
+bool is_falsy(FalconValue value) {
     return IS_NULL(value) || (IS_BOOL(value) && !AS_BOOL(value)) ||
            (IS_NUM(value) && AS_NUM(value) == 0) ||
            (IS_STRING(value) && AS_STRING(value)->length == 0) ||
@@ -75,75 +75,75 @@ bool isFalsy(FalconValue value) {
 /**
  * Converts a given ObjFunction to a ObjString.
  */
-ObjString *functionToString(FalconVM *vm, ObjFunction *function) {
+ObjString *fn_to_string(FalconVM *vm, ObjFunction *function) {
     if (function->name == NULL) {
-        return falconString(vm, FALCON_SCRIPT, 6);
+        return new_ObjString(vm, FALCON_SCRIPT, 6);
     } else {
         char *string = FALCON_ALLOCATE(vm, char, function->name->length + 6);
         sprintf(string, "<fn %s>", function->name->chars);
-        return falconString(vm, string, strlen(string));
+        return new_ObjString(vm, string, strlen(string));
     }
 }
 
 /**
  * Converts a given FalconValue, that is not already a string, into a ObjString.
  */
-ObjString *valueToString(FalconVM *vm, FalconValue *value) {
+ObjString *value_to_string(FalconVM *vm, FalconValue *value) {
     if (IS_STRING(*value)) return AS_STRING(*value);
 
     switch (value->type) {
         case VAL_BOOL: {
             char *string = FALCON_ALLOCATE(vm, char, 6);
             sprintf(string, "%s", AS_BOOL(*value) ? "true" : "false");
-            return falconString(vm, string, strlen(string));
+            return new_ObjString(vm, string, strlen(string));
         }
         case VAL_NULL: {
             char *string = FALCON_ALLOCATE(vm, char, 5);
             sprintf(string, "%s", "null");
-            return falconString(vm, string, strlen(string));
+            return new_ObjString(vm, string, strlen(string));
         }
         case VAL_NUM: {
             char *string = FALCON_ALLOCATE(vm, char, MAX_NUM_TO_STR);
             sprintf(string, NUM_TO_STR_FORMATTER, AS_NUM(*value));
-            return falconString(vm, string, strlen(string));
+            return new_ObjString(vm, string, strlen(string));
         }
         case VAL_OBJ:
             switch (OBJ_TYPE(*value)) {
                 case OBJ_FUNCTION: {
                     ObjFunction *function = AS_FUNCTION(*value);
-                    return functionToString(vm, function);
+                    return fn_to_string(vm, function);
                 }
                 case OBJ_CLOSURE: {
                     ObjClosure *closure = AS_CLOSURE(*value);
-                    return functionToString(vm, closure->function);
+                    return fn_to_string(vm, closure->function);
                 }
                 case OBJ_CLASS: {
                     ObjClass *class_ = AS_CLASS(*value);
                     char *string = FALCON_ALLOCATE(vm, char, class_->name->length + 9);
                     sprintf(string, "<class %s>", class_->name->chars);
-                    return falconString(vm, string, strlen(string));
+                    return new_ObjString(vm, string, strlen(string));
                 }
                 case OBJ_INSTANCE: {
                     ObjInstance *instance = AS_INSTANCE(*value);
                     char *string = FALCON_ALLOCATE(vm, char, instance->class_->name->length + 15);
                     sprintf(string, "<instance of %s>", instance->class_->name->chars);
-                    return falconString(vm, string, strlen(string));
+                    return new_ObjString(vm, string, strlen(string));
                 }
                 case OBJ_NATIVE: {
                     ObjNative *native = AS_NATIVE(*value);
                     char *string = FALCON_ALLOCATE(vm, char, strlen(native->name) + 13);
                     sprintf(string, "<native fn %s>", native->name);
-                    return falconString(vm, string, strlen(string));
+                    return new_ObjString(vm, string, strlen(string));
                 }
                 case OBJ_BMETHOD: {
                     ObjBMethod *bMethod = AS_BMETHOD(*value);
                     ObjString *methodName = bMethod->method->function->name;
                     char *string = FALCON_ALLOCATE(vm, char, methodName->length + 10);
                     sprintf(string, "<method %s>", methodName->chars);
-                    return falconString(vm, string, strlen(string));
+                    return new_ObjString(vm, string, strlen(string));
                 }
-                case OBJ_LIST: return listToString(vm, AS_LIST(*value));
-                case OBJ_MAP: return mapToString(vm, AS_MAP(*value));
+                case OBJ_LIST: return list_to_string(vm, AS_LIST(*value));
+                case OBJ_MAP: return map_to_string(vm, AS_MAP(*value));
                 default: break;
             }
         default: return NULL;
@@ -151,9 +151,9 @@ ObjString *valueToString(FalconVM *vm, FalconValue *value) {
 }
 
 /**
- * Prints a given ObjFunction.
+ * Prints to stdout a given ObjFunction.
  */
-void printFunction(ObjFunction *function) {
+void print_fn(ObjFunction *function) {
     if (function->name == NULL) {
         printf("%s", FALCON_SCRIPT);
     } else {
@@ -164,7 +164,7 @@ void printFunction(ObjFunction *function) {
 /**
  * Prints a single FalconValue to stdout.
  */
-void printValue(FalconVM *vm, FalconValue value) {
+void print_value(FalconVM *vm, FalconValue value) {
     switch (value.type) {
         case VAL_BOOL: printf("%s", AS_BOOL(value) ? "true" : "false"); break;
         case VAL_NULL: printf("null"); break;
@@ -172,12 +172,12 @@ void printValue(FalconVM *vm, FalconValue value) {
         case VAL_OBJ:
             switch (OBJ_TYPE(value)) {
                 case OBJ_STRING: printf("\"%s\"", AS_CSTRING(value)); break;
-                case OBJ_FUNCTION: printFunction(AS_FUNCTION(value)); break;
-                case OBJ_CLOSURE: printFunction(AS_CLOSURE(value)->function); break;
+                case OBJ_FUNCTION: print_fn(AS_FUNCTION(value)); break;
+                case OBJ_CLOSURE: print_fn(AS_CLOSURE(value)->function); break;
                 case OBJ_CLASS: printf("<class %s>", AS_CLASS(value)->name->chars); break;
-                case OBJ_BMETHOD: printFunction(AS_BMETHOD(value)->method->function); break;
-                case OBJ_LIST: printf("%s", listToString(vm, AS_LIST(value))->chars); break;
-                case OBJ_MAP: printf("%s", mapToString(vm, AS_MAP(value))->chars); break;
+                case OBJ_BMETHOD: print_fn(AS_BMETHOD(value)->method->function); break;
+                case OBJ_LIST: printf("%s", list_to_string(vm, AS_LIST(value))->chars); break;
+                case OBJ_MAP: printf("%s", map_to_string(vm, AS_MAP(value))->chars); break;
                 case OBJ_NATIVE: printf("<native fn %s>", AS_NATIVE(value)->name); break;
                 case OBJ_INSTANCE:
                     printf("<instance of %s>", AS_INSTANCE(value)->class_->name->chars);

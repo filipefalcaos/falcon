@@ -10,31 +10,31 @@
 /**
  * Initializes an empty bytecode chunk.
  */
-void initBytecode(BytecodeChunk *bytecode) {
+void init_bytecode(BytecodeChunk *bytecode) {
     bytecode->count = 0;
     bytecode->capacity = 0;
     bytecode->lineCount = 0;
     bytecode->lineCapacity = 0;
     bytecode->code = NULL;
     bytecode->lines = NULL;
-    initValArray(&bytecode->constants);
+    init_value_array(&bytecode->constants);
 }
 
 /**
  * Frees a previously allocated bytecode chunk and its list of constants.
  */
-void freeBytecode(FalconVM *vm, BytecodeChunk *bytecode) {
+void free_bytecode(FalconVM *vm, BytecodeChunk *bytecode) {
     FALCON_FREE_ARRAY(vm, uint8_t, bytecode->code, bytecode->capacity);
     FALCON_FREE_ARRAY(vm, SourceLine, bytecode->lines, bytecode->lineCapacity);
-    freeValArray(vm, &bytecode->constants);
-    initBytecode(bytecode);
+    free_value_array(vm, &bytecode->constants);
+    init_bytecode(bytecode);
 }
 
 /**
  * Appends a byte to the end of a bytecode chunk. If the current size is not enough, the capacity
  * of the bytecode chunk is increased to fit the new byte.
  */
-void writeBytecode(FalconVM *vm, BytecodeChunk *bytecode, uint8_t byte, int line) {
+void write_bytecode(FalconVM *vm, BytecodeChunk *bytecode, uint8_t byte, int line) {
     if (bytecode->capacity < bytecode->count + 1) { /* Checks if should increase */
         int oldCapacity = bytecode->capacity;
         bytecode->capacity = FALCON_INCREASE_CAPACITY(oldCapacity); /* Increases the capacity */
@@ -69,7 +69,7 @@ void writeBytecode(FalconVM *vm, BytecodeChunk *bytecode, uint8_t byte, int line
  * is only possible because Falcon is single-pass compiled, which means instruction codes can only
  * increase. Thus, the array is always sorted and a binary search is possible.
  */
-int getLine(const BytecodeChunk *bytecode, int instruction) {
+int get_source_line(const BytecodeChunk *bytecode, int instruction) {
     int start = 0;
     int end = bytecode->lineCount - 1;
 
@@ -91,9 +91,9 @@ int getLine(const BytecodeChunk *bytecode, int instruction) {
 /**
  * Adds a new constant to the constants list of a bytecode chunk and returns its index.
  */
-int addConstant(FalconVM *vm, BytecodeChunk *bytecode, FalconValue value) {
-    DISABLE_GC(vm);                                 /* Avoids GC from the "writeValArray" ahead */
-    writeValArray(vm, &bytecode->constants, value); /* Adds the constant */
+int add_constant(FalconVM *vm, BytecodeChunk *bytecode, FalconValue value) {
+    DISABLE_GC(vm); /* Avoids GC from the "write_value_array" ahead */
+    write_value_array(vm, &bytecode->constants, value); /* Adds the constant */
     ENABLE_GC(vm);
     return bytecode->constants.count - 1;
 }

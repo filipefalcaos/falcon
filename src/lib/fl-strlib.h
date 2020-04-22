@@ -11,8 +11,8 @@
 #include "../core/fl-vm.h"
 
 /* String operations */
-uint32_t hashString(const unsigned char *key, size_t length);
-int cmpStrings(const ObjString *str1, const ObjString *str2);
-ObjString *concatStrings(FalconVM *vm, const ObjString *str1, const ObjString *str2);
+uint32_t hash_string(const unsigned char *key, size_t length);
+int cmp_strings(const ObjString *str1, const ObjString *str2);
+ObjString *concat_strings(FalconVM *vm, const ObjString *str1, const ObjString *str2);
 
 #endif // FALCON_STRING_H

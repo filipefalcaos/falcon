@@ -12,7 +12,7 @@
 /**
  * Concatenates two given Falcon lists.
  */
-ObjList *concatLists(FalconVM *vm, const ObjList *list1, const ObjList *list2) {
+ObjList *concat_lists(FalconVM *vm, const ObjList *list1, const ObjList *list2) {
     int length = list1->elements.count + list2->elements.count;
     ObjList *result = FALCON_ALLOCATE_OBJ(vm, ObjList, OBJ_LIST);
     result->elements.count = length;
@@ -31,7 +31,7 @@ ObjList *concatLists(FalconVM *vm, const ObjList *list1, const ObjList *list2) {
 /**
  * Converts a given Falcon List to a Falcon string.
  */
-ObjString *listToString(FalconVM *vm, ObjList *list) {
+ObjString *list_to_string(FalconVM *vm, ObjList *list) {
     size_t allocationSize = MIN_COLLECTION_TO_STR;
     char *string = FALCON_ALLOCATE(vm, char, allocationSize); /* Initial allocation */
     int stringLen = sprintf(string, "[");
@@ -51,7 +51,7 @@ ObjString *listToString(FalconVM *vm, ObjList *list) {
             currLen = stringLen + elementLen + 5; /* +5 = quotes (2) + ", " (2) + init space (1) */
             isString = true;
         } else {
-            elementString = valueToString(vm, &list->elements.values[i])->chars;
+            elementString = value_to_string(vm, &list->elements.values[i])->chars;
             elementLen = strlen(elementString);
             currLen = stringLen + elementLen + 3; /* +3 = ", " (2) + init space (1) */
             isString = false;
@@ -80,5 +80,5 @@ ObjString *listToString(FalconVM *vm, ObjList *list) {
     }
 
     sprintf(string + stringLen, "]");
-    return falconString(vm, string, strlen(string));
+    return new_ObjString(vm, string, strlen(string));
 }

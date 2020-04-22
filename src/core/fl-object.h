@@ -42,6 +42,7 @@ struct _ObjString {
     uint32_t hash;
     char chars[]; /* Flexible array member */
 };
+
 /* A key-value entry of an ObjMap. Keys must be ObjStrings and values can be any FalconValue. A
  * entry with key equals to NULL is empty */
 typedef struct {
@@ -161,45 +162,45 @@ typedef struct {
 #define AS_NATIVE(value)   ((ObjNative *) AS_OBJ(value))
 
 /* Returns the name, as a string, of a given ObjType */
-const char *getObjName(ObjType type);
+const char *get_object_name(ObjType type);
 
 /* Creates a new empty ObjString of a given length by claiming ownership of the new string */
-ObjString *makeString(FalconVM *vm, size_t length);
+ObjString *make_string(FalconVM *vm, size_t length);
 
 /* Copies and allocates a given string, of a given length, to the heap */
-ObjString *falconString(FalconVM *vm, const char *chars, size_t length);
+ObjString *new_ObjString(FalconVM *vm, const char *chars, size_t length);
 
 /* Allocates a new ObjFunction and initializes its fields */
-ObjFunction *falconFunction(FalconVM *vm);
+ObjFunction *new_ObjFunction(FalconVM *vm);
 
 /* Allocates a new ObjUpvalue and initializes its fields, setting the upvalue slot to a given
  * FalconValue */
-ObjUpvalue *falconUpvalue(FalconVM *vm, FalconValue *slot);
+ObjUpvalue *new_ObjUpvalue(FalconVM *vm, FalconValue *slot);
 
 /* Allocates a new ObjClosure and initializes its fields, also allocating a list of ObjUpvalues and
  * setting the closure function to a given ObjFunction */
-ObjClosure *falconClosure(FalconVM *vm, ObjFunction *function);
+ObjClosure *new_ObjClosure(FalconVM *vm, ObjFunction *function);
 
 /* Allocates a new ObjClass and initializes its fields, setting its name to a given ObjString */
-ObjClass *falconClass(FalconVM *vm, ObjString *name);
+ObjClass *new_ObjClass(FalconVM *vm, ObjString *name);
 
 /* Allocates a new ObjInstance and initializes its fields, setting its class to a given ObjClass */
-ObjInstance *falconInstance(FalconVM *vm, ObjClass *class_);
+ObjInstance *new_ObjInstance(FalconVM *vm, ObjClass *class_);
 
 /* Allocates a new ObjBMethod and initializes its fields, setting its receiver to a given
  * FalconValue and its method to a given ObjClosure */
-ObjBMethod *falconBMethod(FalconVM *vm, FalconValue receiver, ObjClosure *method);
+ObjBMethod *new_ObjBMethod(FalconVM *vm, FalconValue receiver, ObjClosure *method);
 
 /* Allocates a new ObjList and initializes its fields, also allocating a list of FalconValues of a
  * given size */
-ObjList *falconList(FalconVM *vm, uint16_t size);
+ObjList *new_ObjList(FalconVM *vm, uint16_t size);
 
 /* Allocates a new empty ObjMap and initializes its fields */
-ObjMap *falconMap(FalconVM *vm);
+ObjMap *new_ObjMap(FalconVM *vm);
 
 /* Allocates a new ObjNative and initializes its fields, setting its function to a given
  * FalconNativeFn and its name to a given string */
-ObjNative *falconNative(FalconVM *vm, FalconNativeFn function, const char *name);
+ObjNative *new_ObjNative(FalconVM *vm, FalconNativeFn function, const char *name);
 
 /**
  * Checks if a given FalconValue is of a given ObjType.
