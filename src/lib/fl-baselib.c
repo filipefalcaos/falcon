@@ -36,29 +36,40 @@ FalconValue lib_type(FalconVM *vm, int argCount, FalconValue *args) {
 
     /* Checks the value type */
     switch (args->type) {
-        case VAL_BOOL: return OBJ_VAL(new_ObjString(vm, "bool", 4));
-        case VAL_NULL: return OBJ_VAL(new_ObjString(vm, "null", 4));
-        case VAL_NUM: return OBJ_VAL(new_ObjString(vm, "number", 6));
+        case VAL_BOOL:
+            return OBJ_VAL(new_ObjString(vm, "bool", 4));
+        case VAL_NULL:
+            return OBJ_VAL(new_ObjString(vm, "null", 4));
+        case VAL_NUM:
+            return OBJ_VAL(new_ObjString(vm, "number", 6));
         case VAL_OBJ:
             switch (OBJ_TYPE(*args)) {
-                case OBJ_STRING: return OBJ_VAL(new_ObjString(vm, "string", 6));
-                case OBJ_CLASS: return OBJ_VAL(new_ObjString(vm, "class", 5));
-                case OBJ_LIST: return OBJ_VAL(new_ObjString(vm, "list", 4));
-                case OBJ_MAP: return OBJ_VAL(new_ObjString(vm, "map", 3));
-                case OBJ_BMETHOD: return OBJ_VAL(new_ObjString(vm, "method", 6));
+                case OBJ_STRING:
+                    return OBJ_VAL(new_ObjString(vm, "string", 6));
+                case OBJ_CLASS:
+                    return OBJ_VAL(new_ObjString(vm, "class", 5));
+                case OBJ_LIST:
+                    return OBJ_VAL(new_ObjString(vm, "list", 4));
+                case OBJ_MAP:
+                    return OBJ_VAL(new_ObjString(vm, "map", 3));
+                case OBJ_BMETHOD:
+                    return OBJ_VAL(new_ObjString(vm, "method", 6));
                 case OBJ_CLOSURE:
                 case OBJ_FUNCTION:
-                case OBJ_NATIVE: return OBJ_VAL(new_ObjString(vm, "function", 8));
+                case OBJ_NATIVE:
+                    return OBJ_VAL(new_ObjString(vm, "function", 8));
                 case OBJ_INSTANCE: {
                     ObjInstance *instance = AS_INSTANCE(*args);
                     char *typeStr = FALCON_ALLOCATE(vm, char, instance->class_->name->length + 6);
                     sprintf(typeStr, "class %s", instance->class_->name->chars);
                     return OBJ_VAL(new_ObjString(vm, typeStr, instance->class_->name->length + 6));
                 }
-                default: break;
+                default:
+                    break;
             }
             break;
-        default: break;
+        default:
+            break;
     }
 
     return OBJ_VAL(new_ObjString(vm, "unknown", 7)); /* Unknown type */
@@ -123,10 +134,15 @@ FalconValue lib_len(FalconVM *vm, int argCount, FalconValue *args) {
 
     /* Handles the subscript types */
     switch (AS_OBJ(*args)->type) {
-        case OBJ_LIST: return NUM_VAL(AS_LIST(*args)->elements.count); /* Returns the list length */
-        case OBJ_MAP: return NUM_VAL(AS_MAP(*args)->count);            /* Returns the map length */
-        case OBJ_STRING: return NUM_VAL(AS_STRING(*args)->length); /* Returns the string length */
-        default: interpreter_error(vm, VM_ARGS_TYPE_ERR, 1, "list, map, or string"); return ERR_VAL;
+        case OBJ_LIST:
+            return NUM_VAL(AS_LIST(*args)->elements.count); /* Returns the list length */
+        case OBJ_MAP:
+            return NUM_VAL(AS_MAP(*args)->count); /* Returns the map length */
+        case OBJ_STRING:
+            return NUM_VAL(AS_STRING(*args)->length); /* Returns the string length */
+        default:
+            interpreter_error(vm, VM_ARGS_TYPE_ERR, 1, "list, map, or string");
+            return ERR_VAL;
     }
 }
 

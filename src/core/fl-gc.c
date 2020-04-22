@@ -100,7 +100,9 @@ static void blacken_object(FalconVM *vm, FalconObj *object) {
             mark_array(vm, &function->bytecode.constants);
             break;
         }
-        case OBJ_UPVALUE: mark_value(vm, ((ObjUpvalue *) object)->closed); break;
+        case OBJ_UPVALUE:
+            mark_value(vm, ((ObjUpvalue *) object)->closed);
+            break;
         case OBJ_CLOSURE: {
             ObjClosure *closure = (ObjClosure *) object;
             mark_object(vm, (FalconObj *) closure->function);
@@ -136,7 +138,8 @@ static void blacken_object(FalconVM *vm, FalconObj *object) {
             break;
         }
         case OBJ_STRING:
-        case OBJ_NATIVE: break;
+        case OBJ_NATIVE:
+            break;
     }
 }
 

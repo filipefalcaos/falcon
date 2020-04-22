@@ -11,8 +11,7 @@ ColumnLimit:  100
 # Options
 AlignConsecutiveMacros: true
 AlignEscapedNewlines: Left
-AllowShortBlocksOnASingleLine: true
-AllowShortCaseLabelsOnASingleLine: true
+AllowShortBlocksOnASingleLine: Always
 AllowShortIfStatementsOnASingleLine: WithoutElse
 AllowShortFunctionsOnASingleLine: All
 AllowShortLoopsOnASingleLine: true

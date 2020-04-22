@@ -229,9 +229,14 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
                 goto EXEC; /* Stop parsing on "-i"*/
             case 't':
                 switch (argv[optionId][2]) {
-                    case '\0': vm->traceExec = true; break;
-                    case 't': vm->traceMemory = true; break;
-                    default: CLI_ERROR(argv, optionId, UNKNOWN_OPT_ERR);
+                    case '\0':
+                        vm->traceExec = true;
+                        break;
+                    case 't':
+                        vm->traceMemory = true;
+                        break;
+                    default:
+                        CLI_ERROR(argv, optionId, UNKNOWN_OPT_ERR);
                 }
 
                 break;
@@ -239,8 +244,11 @@ static void processArgs(FalconVM *vm, int argc, char **argv) {
                 VALIDATE_OPTION(argv, optionId);
                 printInfo();
                 exit(FALCON_NO_ERR);
-            case '-': optionId++; goto EXEC; /* Stop parsing on "--" */
-            default: CLI_ERROR(argv, optionId, UNKNOWN_OPT_ERR);
+            case '-':
+                optionId++;
+                goto EXEC; /* Stop parsing on "--" */
+            default:
+                CLI_ERROR(argv, optionId, UNKNOWN_OPT_ERR);
         }
     }
 

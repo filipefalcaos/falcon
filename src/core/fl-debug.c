@@ -133,73 +133,121 @@ int dump_instruction(FalconVM *vm, const BytecodeChunk *bytecode, int offset) {
     switch (instruction) {                        /* Verifies the instruction type */
 
         /* Constants and literals */
-        case OP_LOADCONST: return constant_instruction_16("LOADCONST", vm, bytecode, offset);
-        case OP_LOADFALSE: return simple_instruction("LOADFALSE", offset);
-        case OP_LOADTRUE: return simple_instruction("LOADTRUE", offset);
-        case OP_LOADNULL: return simple_instruction("LOADNULL", offset);
+        case OP_LOADCONST:
+            return constant_instruction_16("LOADCONST", vm, bytecode, offset);
+        case OP_LOADFALSE:
+            return simple_instruction("LOADFALSE", offset);
+        case OP_LOADTRUE:
+            return simple_instruction("LOADTRUE", offset);
+        case OP_LOADNULL:
+            return simple_instruction("LOADNULL", offset);
 
         /* Lists */
-        case OP_DEFLIST: return collection_instruction("DEFLIST", bytecode, offset);
-        case OP_DEFMAP: return collection_instruction("DEFMAP", bytecode, offset);
-        case OP_GETSUB: return simple_instruction("GETSUB", offset);
-        case OP_SETSUB: return simple_instruction("SETSUB", offset);
+        case OP_DEFLIST:
+            return collection_instruction("DEFLIST", bytecode, offset);
+        case OP_DEFMAP:
+            return collection_instruction("DEFMAP", bytecode, offset);
+        case OP_GETSUB:
+            return simple_instruction("GETSUB", offset);
+        case OP_SETSUB:
+            return simple_instruction("SETSUB", offset);
 
         /* Relational operations */
-        case OP_AND: return simple_instruction("AND", offset);
-        case OP_OR: return simple_instruction("OR", offset);
-        case OP_NOT: return simple_instruction("NOT", offset);
-        case OP_EQUAL: return simple_instruction("EQUAL", offset);
-        case OP_GREATER: return simple_instruction("GREATER", offset);
-        case OP_LESS: return simple_instruction("LESS", offset);
+        case OP_AND:
+            return simple_instruction("AND", offset);
+        case OP_OR:
+            return simple_instruction("OR", offset);
+        case OP_NOT:
+            return simple_instruction("NOT", offset);
+        case OP_EQUAL:
+            return simple_instruction("EQUAL", offset);
+        case OP_GREATER:
+            return simple_instruction("GREATER", offset);
+        case OP_LESS:
+            return simple_instruction("LESS", offset);
 
         /* Arithmetic operations */
-        case OP_ADD: return simple_instruction("ADD", offset);
-        case OP_SUB: return simple_instruction("SUB", offset);
-        case OP_NEG: return simple_instruction("NEG", offset);
-        case OP_DIV: return simple_instruction("DIV", offset);
-        case OP_MOD: return simple_instruction("MOD", offset);
-        case OP_MULT: return simple_instruction("MULT", offset);
-        case OP_POW: return simple_instruction("POW", offset);
+        case OP_ADD:
+            return simple_instruction("ADD", offset);
+        case OP_SUB:
+            return simple_instruction("SUB", offset);
+        case OP_NEG:
+            return simple_instruction("NEG", offset);
+        case OP_DIV:
+            return simple_instruction("DIV", offset);
+        case OP_MOD:
+            return simple_instruction("MOD", offset);
+        case OP_MULT:
+            return simple_instruction("MULT", offset);
+        case OP_POW:
+            return simple_instruction("POW", offset);
 
         /* Variable operations */
-        case OP_DEFGLOBAL: return constant_instruction("DEFGLOBAL", vm, bytecode, offset);
-        case OP_GETGLOBAL: return constant_instruction("GETGLOBAL", vm, bytecode, offset);
-        case OP_SETGLOBAL: return constant_instruction("SETGLOBAL", vm, bytecode, offset);
-        case OP_GETUPVAL: return byte_instruction("GETUPVAL", bytecode, offset);
-        case OP_SETUPVAL: return byte_instruction("SETUPVAL", bytecode, offset);
-        case OP_CLOSEUPVAL: return simple_instruction("CLOSEUPVAL", offset);
-        case OP_GETLOCAL: return byte_instruction("GETLOCAL", bytecode, offset);
-        case OP_SETLOCAL: return byte_instruction("SETLOCAL", bytecode, offset);
+        case OP_DEFGLOBAL:
+            return constant_instruction("DEFGLOBAL", vm, bytecode, offset);
+        case OP_GETGLOBAL:
+            return constant_instruction("GETGLOBAL", vm, bytecode, offset);
+        case OP_SETGLOBAL:
+            return constant_instruction("SETGLOBAL", vm, bytecode, offset);
+        case OP_GETUPVAL:
+            return byte_instruction("GETUPVAL", bytecode, offset);
+        case OP_SETUPVAL:
+            return byte_instruction("SETUPVAL", bytecode, offset);
+        case OP_CLOSEUPVAL:
+            return simple_instruction("CLOSEUPVAL", offset);
+        case OP_GETLOCAL:
+            return byte_instruction("GETLOCAL", bytecode, offset);
+        case OP_SETLOCAL:
+            return byte_instruction("SETLOCAL", bytecode, offset);
 
         /* Jump/loop operations */
-        case OP_JUMP: return jump_instruction("JUMP", 1, bytecode, offset);
-        case OP_JUMPIFF: return jump_instruction("JUMPIFF", 1, bytecode, offset);
-        case OP_LOOP: return jump_instruction("LOOP", -1, bytecode, offset);
+        case OP_JUMP:
+            return jump_instruction("JUMP", 1, bytecode, offset);
+        case OP_JUMPIFF:
+            return jump_instruction("JUMPIFF", 1, bytecode, offset);
+        case OP_LOOP:
+            return jump_instruction("LOOP", -1, bytecode, offset);
 
         /* Closures/functions operations */
-        case OP_CLOSURE: return closure_instruction("CLOSURE", vm, bytecode, offset);
-        case OP_CALL: return byte_instruction("CALL", bytecode, offset);
-        case OP_RETURN: return simple_instruction("RETURN", offset);
+        case OP_CLOSURE:
+            return closure_instruction("CLOSURE", vm, bytecode, offset);
+        case OP_CALL:
+            return byte_instruction("CALL", bytecode, offset);
+        case OP_RETURN:
+            return simple_instruction("RETURN", offset);
 
         /* Class operations */
-        case OP_DEFCLASS: return constant_instruction("DEFCLASS", vm, bytecode, offset);
-        case OP_INHERIT: return simple_instruction("INHERIT", offset);
-        case OP_DEFMETHOD: return constant_instruction("DEFMETHOD", vm, bytecode, offset);
-        case OP_INVPROP: return invoke_instruction("INVPROP", vm, bytecode, offset);
-        case OP_GETPROP: return constant_instruction("GETPROP", vm, bytecode, offset);
-        case OP_SETPROP: return constant_instruction("SETPROP", vm, bytecode, offset);
-        case OP_SUPER: return constant_instruction("SUPER", vm, bytecode, offset);
-        case OP_INVSUPER: return invoke_instruction("INVSUPER", vm, bytecode, offset);
+        case OP_DEFCLASS:
+            return constant_instruction("DEFCLASS", vm, bytecode, offset);
+        case OP_INHERIT:
+            return simple_instruction("INHERIT", offset);
+        case OP_DEFMETHOD:
+            return constant_instruction("DEFMETHOD", vm, bytecode, offset);
+        case OP_INVPROP:
+            return invoke_instruction("INVPROP", vm, bytecode, offset);
+        case OP_GETPROP:
+            return constant_instruction("GETPROP", vm, bytecode, offset);
+        case OP_SETPROP:
+            return constant_instruction("SETPROP", vm, bytecode, offset);
+        case OP_SUPER:
+            return constant_instruction("SUPER", vm, bytecode, offset);
+        case OP_INVSUPER:
+            return invoke_instruction("INVSUPER", vm, bytecode, offset);
 
         /* VM operations */
-        case OP_DUPT: return simple_instruction("DUPT", offset);
-        case OP_POPT: return simple_instruction("POPT", offset);
-        case OP_POPEXPR: return simple_instruction("POPEXPR", offset);
+        case OP_DUPT:
+            return simple_instruction("DUPT", offset);
+        case OP_POPT:
+            return simple_instruction("POPT", offset);
+        case OP_POPEXPR:
+            return simple_instruction("POPEXPR", offset);
         case OP_TEMP:
             return simple_instruction("TEMP", offset); /* Should not be reachable */
 
         /* Unknown opcode */
-        default: printf("Unknown opcode %d\n", instruction); return offset + 1;
+        default:
+            printf("Unknown opcode %d\n", instruction);
+            return offset + 1;
     }
 }
 

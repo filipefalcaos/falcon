@@ -52,11 +52,16 @@ bool values_equal(FalconValue a, FalconValue b) {
     if (a.type != b.type) return false;
 
     switch (a.type) {
-        case VAL_BOOL: return AS_BOOL(a) == AS_BOOL(b);
-        case VAL_NULL: return true;
-        case VAL_NUM: return AS_NUM(a) == AS_NUM(b);
-        case VAL_OBJ: return AS_OBJ(a) == AS_OBJ(b);
-        default: return false;
+        case VAL_BOOL:
+            return AS_BOOL(a) == AS_BOOL(b);
+        case VAL_NULL:
+            return true;
+        case VAL_NUM:
+            return AS_NUM(a) == AS_NUM(b);
+        case VAL_OBJ:
+            return AS_OBJ(a) == AS_OBJ(b);
+        default:
+            return false;
     }
 }
 
@@ -142,11 +147,15 @@ ObjString *value_to_string(FalconVM *vm, FalconValue *value) {
                     sprintf(string, "<method %s>", methodName->chars);
                     return new_ObjString(vm, string, strlen(string));
                 }
-                case OBJ_LIST: return list_to_string(vm, AS_LIST(*value));
-                case OBJ_MAP: return map_to_string(vm, AS_MAP(*value));
-                default: break;
+                case OBJ_LIST:
+                    return list_to_string(vm, AS_LIST(*value));
+                case OBJ_MAP:
+                    return map_to_string(vm, AS_MAP(*value));
+                default:
+                    break;
             }
-        default: return NULL;
+        default:
+            return NULL;
     }
 }
 
@@ -166,24 +175,48 @@ void print_fn(ObjFunction *function) {
  */
 void print_value(FalconVM *vm, FalconValue value) {
     switch (value.type) {
-        case VAL_BOOL: printf("%s", AS_BOOL(value) ? "true" : "false"); break;
-        case VAL_NULL: printf("null"); break;
-        case VAL_NUM: printf("%g", AS_NUM(value)); break;
+        case VAL_BOOL:
+            printf("%s", AS_BOOL(value) ? "true" : "false");
+            break;
+        case VAL_NULL:
+            printf("null");
+            break;
+        case VAL_NUM:
+            printf("%g", AS_NUM(value));
+            break;
         case VAL_OBJ:
             switch (OBJ_TYPE(value)) {
-                case OBJ_STRING: printf("\"%s\"", AS_CSTRING(value)); break;
-                case OBJ_FUNCTION: print_fn(AS_FUNCTION(value)); break;
-                case OBJ_CLOSURE: print_fn(AS_CLOSURE(value)->function); break;
-                case OBJ_CLASS: printf("<class %s>", AS_CLASS(value)->name->chars); break;
-                case OBJ_BMETHOD: print_fn(AS_BMETHOD(value)->method->function); break;
-                case OBJ_LIST: printf("%s", list_to_string(vm, AS_LIST(value))->chars); break;
-                case OBJ_MAP: printf("%s", map_to_string(vm, AS_MAP(value))->chars); break;
-                case OBJ_NATIVE: printf("<native fn %s>", AS_NATIVE(value)->name); break;
+                case OBJ_STRING:
+                    printf("\"%s\"", AS_CSTRING(value));
+                    break;
+                case OBJ_FUNCTION:
+                    print_fn(AS_FUNCTION(value));
+                    break;
+                case OBJ_CLOSURE:
+                    print_fn(AS_CLOSURE(value)->function);
+                    break;
+                case OBJ_CLASS:
+                    printf("<class %s>", AS_CLASS(value)->name->chars);
+                    break;
+                case OBJ_BMETHOD:
+                    print_fn(AS_BMETHOD(value)->method->function);
+                    break;
+                case OBJ_LIST:
+                    printf("%s", list_to_string(vm, AS_LIST(value))->chars);
+                    break;
+                case OBJ_MAP:
+                    printf("%s", map_to_string(vm, AS_MAP(value))->chars);
+                    break;
+                case OBJ_NATIVE:
+                    printf("<native fn %s>", AS_NATIVE(value)->name);
+                    break;
                 case OBJ_INSTANCE:
                     printf("<instance of %s>", AS_INSTANCE(value)->class_->name->chars);
                     break;
-                default: break;
+                default:
+                    break;
             }
-        default: break;
+        default:
+            break;
     }
 }

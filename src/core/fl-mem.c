@@ -87,7 +87,9 @@ void free_object(FalconVM *vm, FalconObj *object) {
             FALCON_FREE(vm, ObjFunction, object);
             break;
         }
-        case OBJ_UPVALUE: FALCON_FREE(vm, ObjUpvalue, object); break;
+        case OBJ_UPVALUE:
+            FALCON_FREE(vm, ObjUpvalue, object);
+            break;
         case OBJ_CLOSURE: {
             ObjClosure *closure = (ObjClosure *) object;
             FALCON_FREE_ARRAY(vm, ObjUpvalue *, closure->upvalues, closure->upvalueCount);
@@ -106,15 +108,21 @@ void free_object(FalconVM *vm, FalconObj *object) {
             FALCON_FREE(vm, ObjInstance, object);
             break;
         }
-        case OBJ_BMETHOD: FALCON_FREE(vm, ObjBMethod, object); break;
+        case OBJ_BMETHOD:
+            FALCON_FREE(vm, ObjBMethod, object);
+            break;
         case OBJ_LIST: {
             ObjList *list = (ObjList *) object;
             FALCON_FREE_ARRAY(vm, FalconValue, list->elements.values, list->elements.capacity);
             FALCON_FREE(vm, ObjList, object);
             break;
         }
-        case OBJ_MAP: free_map(vm, (ObjMap *) object); break;
-        case OBJ_NATIVE: FALCON_FREE(vm, ObjNative, object); break;
+        case OBJ_MAP:
+            free_map(vm, (ObjMap *) object);
+            break;
+        case OBJ_NATIVE:
+            FALCON_FREE(vm, ObjNative, object);
+            break;
     }
 }
 

@@ -595,18 +595,41 @@ PARSE_RULE(binary) {
 
     /* Emits the operator instruction */
     switch (operatorType) {
-        case TK_NOTEQUAL: emit_bytes(compiler, OP_EQUAL, OP_NOT); break;
-        case TK_EQEQUAL: emit_byte(compiler, OP_EQUAL); break;
-        case TK_GREATER: emit_byte(compiler, OP_GREATER); break;
-        case TK_GREATEREQUAL: emit_bytes(compiler, OP_LESS, OP_NOT); break;
-        case TK_LESS: emit_byte(compiler, OP_LESS); break;
-        case TK_LESSEQUAL: emit_bytes(compiler, OP_GREATER, OP_NOT); break;
-        case TK_PLUS: emit_byte(compiler, OP_ADD); break;
-        case TK_MINUS: emit_byte(compiler, OP_SUB); break;
-        case TK_SLASH: emit_byte(compiler, OP_DIV); break;
-        case TK_PERCENT: emit_byte(compiler, OP_MOD); break;
-        case TK_STAR: emit_byte(compiler, OP_MULT); break;
-        default: return; /* Unreachable */
+        case TK_NOTEQUAL:
+            emit_bytes(compiler, OP_EQUAL, OP_NOT);
+            break;
+        case TK_EQEQUAL:
+            emit_byte(compiler, OP_EQUAL);
+            break;
+        case TK_GREATER:
+            emit_byte(compiler, OP_GREATER);
+            break;
+        case TK_GREATEREQUAL:
+            emit_bytes(compiler, OP_LESS, OP_NOT);
+            break;
+        case TK_LESS:
+            emit_byte(compiler, OP_LESS);
+            break;
+        case TK_LESSEQUAL:
+            emit_bytes(compiler, OP_GREATER, OP_NOT);
+            break;
+        case TK_PLUS:
+            emit_byte(compiler, OP_ADD);
+            break;
+        case TK_MINUS:
+            emit_byte(compiler, OP_SUB);
+            break;
+        case TK_SLASH:
+            emit_byte(compiler, OP_DIV);
+            break;
+        case TK_PERCENT:
+            emit_byte(compiler, OP_MOD);
+            break;
+        case TK_STAR:
+            emit_byte(compiler, OP_MULT);
+            break;
+        default:
+            return; /* Unreachable */
     }
 }
 
@@ -683,10 +706,17 @@ PARSE_RULE(list) {
 PARSE_RULE(literal) {
     (void) canAssign; /* Unused */
     switch (compiler->parser->previous.type) {
-        case TK_FALSE: emit_byte(compiler, OP_LOADFALSE); break;
-        case TK_NULL: emit_byte(compiler, OP_LOADNULL); break;
-        case TK_TRUE: emit_byte(compiler, OP_LOADTRUE); break;
-        default: return; /* Unreachable */
+        case TK_FALSE:
+            emit_byte(compiler, OP_LOADFALSE);
+            break;
+        case TK_NULL:
+            emit_byte(compiler, OP_LOADNULL);
+            break;
+        case TK_TRUE:
+            emit_byte(compiler, OP_LOADTRUE);
+            break;
+        default:
+            return; /* Unreachable */
     }
 }
 
@@ -819,9 +849,14 @@ PARSE_RULE(unary) {
     parse_precedence(compiler, PREC_UNARY); /* Compiles the operand */
 
     switch (operatorType) {
-        case TK_MINUS: emit_byte(compiler, OP_NEG); break;
-        case TK_NOT: emit_byte(compiler, OP_NOT); break;
-        default: return;
+        case TK_MINUS:
+            emit_byte(compiler, OP_NEG);
+            break;
+        case TK_NOT:
+            emit_byte(compiler, OP_NOT);
+            break;
+        default:
+            return;
     }
 }
 
@@ -1253,7 +1288,8 @@ int get_instruction_args(const BytecodeChunk *bytecode, int pc) {
         case OP_DUPT:
         case OP_POPT:
         case OP_POPEXPR:
-        case OP_TEMP: return 0; /* Instructions with no arguments */
+        case OP_TEMP:
+            return 0; /* Instructions with no arguments */
 
         case OP_DEFGLOBAL:
         case OP_GETGLOBAL:
@@ -1267,7 +1303,8 @@ int get_instruction_args(const BytecodeChunk *bytecode, int pc) {
         case OP_DEFMETHOD:
         case OP_GETPROP:
         case OP_SETPROP:
-        case OP_INVPROP: return 1; /* Instructions with single byte as argument */
+        case OP_INVPROP:
+            return 1; /* Instructions with single byte as argument */
 
         case OP_LOADCONST:
         case OP_DEFLIST:
@@ -1276,7 +1313,8 @@ int get_instruction_args(const BytecodeChunk *bytecode, int pc) {
         case OP_OR:
         case OP_JUMP:
         case OP_JUMPIFF:
-        case OP_LOOP: return 2; /* Instructions with 2 bytes as arguments */
+        case OP_LOOP:
+            return 2; /* Instructions with 2 bytes as arguments */
 
         case OP_CLOSURE: {
             int index = bytecode->code[pc + 1];
@@ -1284,7 +1322,8 @@ int get_instruction_args(const BytecodeChunk *bytecode, int pc) {
             return 1 + function->upvalueCount * 2; /* Function: 1 byte; Upvalues: 2 bytes each */
         }
 
-        default: return 0;
+        default:
+            return 0;
     }
 }
 
@@ -1501,7 +1540,8 @@ static void synchronize(FalconCompiler *compiler) {
             case TK_RETURN:
             case TK_SWITCH:
             case TK_VAR:
-            case TK_WHILE: return;
+            case TK_WHILE:
+                return;
             default:; /* Keep skipping tokens */
         }
 

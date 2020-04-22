@@ -133,7 +133,9 @@ static void clean_source(Scanner *scanner) {
         switch (c) {
             case ' ':
             case '\r':
-            case '\t': advance(scanner); break;
+            case '\t':
+                advance(scanner);
+                break;
             case '\n':
                 scanner->line++;
                 advance(scanner);
@@ -144,7 +146,8 @@ static void clean_source(Scanner *scanner) {
                 while (peek(scanner) != '\n' && !has_reached_EOF(scanner))
                     advance(scanner); /* Loop on comments */
                 break;
-            default: return;
+            default:
+                return;
         }
     }
 }
@@ -168,52 +171,74 @@ static FalconTokens find_token_type(Scanner *scanner) {
     const char start = scanner->start[0]; /* Current char */
 
     switch (start) {
-        case 'a': return check_keyword(1, 2, "nd", TK_AND, scanner);
-        case 'b': return check_keyword(1, 4, "reak", TK_BREAK, scanner);
-        case 'c': return check_keyword(1, 4, "lass", TK_CLASS, scanner);
-        case 'e': return check_keyword(1, 3, "lse", TK_ELSE, scanner);
+        case 'a':
+            return check_keyword(1, 2, "nd", TK_AND, scanner);
+        case 'b':
+            return check_keyword(1, 4, "reak", TK_BREAK, scanner);
+        case 'c':
+            return check_keyword(1, 4, "lass", TK_CLASS, scanner);
+        case 'e':
+            return check_keyword(1, 3, "lse", TK_ELSE, scanner);
         case 'f':
             if (scanner->current - scanner->start > 1) {
                 switch (scanner->start[1]) {
-                    case 'a': return check_keyword(2, 3, "lse", TK_FALSE, scanner);
-                    case 'n': return check_keyword(2, 0, "", TK_FUNCTION, scanner);
-                    case 'o': return check_keyword(2, 1, "r", TK_FOR, scanner);
-                    default: break;
+                    case 'a':
+                        return check_keyword(2, 3, "lse", TK_FALSE, scanner);
+                    case 'n':
+                        return check_keyword(2, 0, "", TK_FUNCTION, scanner);
+                    case 'o':
+                        return check_keyword(2, 1, "r", TK_FOR, scanner);
+                    default:
+                        break;
                 }
             }
             break;
-        case 'i': return check_keyword(1, 1, "f", TK_IF, scanner);
+        case 'i':
+            return check_keyword(1, 1, "f", TK_IF, scanner);
         case 'n':
             if (scanner->current - scanner->start > 1) {
                 switch (scanner->start[1]) {
-                    case 'e': return check_keyword(2, 2, "xt", TK_NEXT, scanner);
-                    case 'o': return check_keyword(2, 1, "t", TK_NOT, scanner);
-                    case 'u': return check_keyword(2, 2, "ll", TK_NULL, scanner);
-                    default: break;
+                    case 'e':
+                        return check_keyword(2, 2, "xt", TK_NEXT, scanner);
+                    case 'o':
+                        return check_keyword(2, 1, "t", TK_NOT, scanner);
+                    case 'u':
+                        return check_keyword(2, 2, "ll", TK_NULL, scanner);
+                    default:
+                        break;
                 }
             }
             break;
-        case 'o': return check_keyword(1, 1, "r", TK_OR, scanner);
-        case 'r': return check_keyword(1, 5, "eturn", TK_RETURN, scanner);
+        case 'o':
+            return check_keyword(1, 1, "r", TK_OR, scanner);
+        case 'r':
+            return check_keyword(1, 5, "eturn", TK_RETURN, scanner);
         case 's':
             if (scanner->current - scanner->start > 1) {
                 switch (scanner->start[1]) {
-                    case 'u': return check_keyword(2, 3, "per", TK_SUPER, scanner);
-                    case 'w': return check_keyword(2, 4, "itch", TK_SWITCH, scanner);
-                    default: break;
+                    case 'u':
+                        return check_keyword(2, 3, "per", TK_SUPER, scanner);
+                    case 'w':
+                        return check_keyword(2, 4, "itch", TK_SWITCH, scanner);
+                    default:
+                        break;
                 }
             }
             break;
         case 't':
             if (scanner->current - scanner->start > 1) {
                 switch (scanner->start[1]) {
-                    case 'h': return check_keyword(2, 2, "is", TK_THIS, scanner);
-                    case 'r': return check_keyword(2, 2, "ue", TK_TRUE, scanner);
-                    default: break;
+                    case 'h':
+                        return check_keyword(2, 2, "is", TK_THIS, scanner);
+                    case 'r':
+                        return check_keyword(2, 2, "ue", TK_TRUE, scanner);
+                    default:
+                        break;
                 }
             }
             break;
-        case 'v': return check_keyword(1, 2, "ar", TK_VAR, scanner);
+        case 'v':
+            return check_keyword(1, 2, "ar", TK_VAR, scanner);
         case 'w': {
             const char *current = scanner->start;
             long length = scanner->current - scanner->start; /* Current token length */
@@ -223,19 +248,24 @@ static FalconTokens find_token_type(Scanner *scanner) {
                     case 'h': {
                         if (length > 2) {
                             switch (current[2]) {
-                                case 'e': return check_keyword(3, 1, "n", TK_WHEN, scanner);
-                                case 'i': return check_keyword(3, 2, "le", TK_WHILE, scanner);
-                                default: break;
+                                case 'e':
+                                    return check_keyword(3, 1, "n", TK_WHEN, scanner);
+                                case 'i':
+                                    return check_keyword(3, 2, "le", TK_WHILE, scanner);
+                                default:
+                                    break;
                             }
                         }
                     }
-                    default: break;
+                    default:
+                        break;
                 }
             }
 
             break;
         }
-        default: return TK_IDENTIFIER;
+        default:
+            return TK_IDENTIFIER;
     }
 
     return TK_IDENTIFIER;
@@ -301,15 +331,32 @@ static Token string(Scanner *scanner, FalconVM *vm) {
         /* Checks if an escape character is found */
         if (nextChar == '\\') {
             switch (advance(scanner)) {
-                case '"': nextChar = '"'; break;
-                case '\\': nextChar = '\\'; break;
-                case 'b': nextChar = '\b'; break;
-                case 'n': nextChar = '\n'; break;
-                case 'r': nextChar = '\r'; break;
-                case 'f': nextChar = '\f'; break;
-                case 't': nextChar = '\t'; break;
-                case 'v': nextChar = '\v'; break;
-                default: return error_token(SCAN_INVALID_ESCAPE, scanner);
+                case '"':
+                    nextChar = '"';
+                    break;
+                case '\\':
+                    nextChar = '\\';
+                    break;
+                case 'b':
+                    nextChar = '\b';
+                    break;
+                case 'n':
+                    nextChar = '\n';
+                    break;
+                case 'r':
+                    nextChar = '\r';
+                    break;
+                case 'f':
+                    nextChar = '\f';
+                    break;
+                case 't':
+                    nextChar = '\t';
+                    break;
+                case 'v':
+                    nextChar = '\v';
+                    break;
+                default:
+                    return error_token(SCAN_INVALID_ESCAPE, scanner);
             }
         }
 
@@ -337,35 +384,56 @@ Token scan_token(Scanner *scanner, FalconVM *vm) {
     if (is_digit(nextChar)) return number(scanner);     /* Checks if is an digit */
 
     switch (nextChar) { /* Checks for lexemes matching */
-        case '(': return simple_token(TK_LPAREN, scanner);
-        case ')': return simple_token(TK_RPAREN, scanner);
-        case '{': return simple_token(TK_LBRACE, scanner);
-        case '}': return simple_token(TK_RBRACE, scanner);
-        case '[': return simple_token(TK_LBRACKET, scanner);
-        case ']': return simple_token(TK_RBRACKET, scanner);
-        case '?': return simple_token(TK_QUESTION, scanner);
-        case ':': return simple_token(TK_COLON, scanner);
-        case ';': return simple_token(TK_SEMICOLON, scanner);
-        case ',': return simple_token(TK_COMMA, scanner);
-        case '.': return simple_token(TK_DOT, scanner);
+        case '(':
+            return simple_token(TK_LPAREN, scanner);
+        case ')':
+            return simple_token(TK_RPAREN, scanner);
+        case '{':
+            return simple_token(TK_LBRACE, scanner);
+        case '}':
+            return simple_token(TK_RBRACE, scanner);
+        case '[':
+            return simple_token(TK_LBRACKET, scanner);
+        case ']':
+            return simple_token(TK_RBRACKET, scanner);
+        case '?':
+            return simple_token(TK_QUESTION, scanner);
+        case ':':
+            return simple_token(TK_COLON, scanner);
+        case ';':
+            return simple_token(TK_SEMICOLON, scanner);
+        case ',':
+            return simple_token(TK_COMMA, scanner);
+        case '.':
+            return simple_token(TK_DOT, scanner);
         case '-':
             if (match('>', scanner)) {
                 return simple_token(TK_ARROW, scanner);
             } else {
                 return simple_token(TK_MINUS, scanner);
             }
-        case '+': return simple_token(TK_PLUS, scanner);
-        case '/': return simple_token(TK_SLASH, scanner);
-        case '%': return simple_token(TK_PERCENT, scanner);
-        case '*': return simple_token(TK_STAR, scanner);
-        case '^': return simple_token(TK_CIRCUMFLEX, scanner);
+        case '+':
+            return simple_token(TK_PLUS, scanner);
+        case '/':
+            return simple_token(TK_SLASH, scanner);
+        case '%':
+            return simple_token(TK_PERCENT, scanner);
+        case '*':
+            return simple_token(TK_STAR, scanner);
+        case '^':
+            return simple_token(TK_CIRCUMFLEX, scanner);
         case '!':
             if (match('=', scanner)) /* Logical not operator is "not" instead of "!" */
                 return simple_token(TK_NOTEQUAL, scanner);
-        case '=': return simple_token(match('=', scanner) ? TK_EQEQUAL : TK_EQUAL, scanner);
-        case '<': return simple_token(match('=', scanner) ? TK_LESSEQUAL : TK_LESS, scanner);
-        case '>': return simple_token(match('=', scanner) ? TK_GREATEREQUAL : TK_GREATER, scanner);
-        case '"': return string(scanner, vm);
-        default: return error_token(SCAN_UNEXPECTED_TK_ERR, scanner);
+        case '=':
+            return simple_token(match('=', scanner) ? TK_EQEQUAL : TK_EQUAL, scanner);
+        case '<':
+            return simple_token(match('=', scanner) ? TK_LESSEQUAL : TK_LESS, scanner);
+        case '>':
+            return simple_token(match('=', scanner) ? TK_GREATEREQUAL : TK_GREATER, scanner);
+        case '"':
+            return string(scanner, vm);
+        default:
+            return error_token(SCAN_UNEXPECTED_TK_ERR, scanner);
     }
 }
