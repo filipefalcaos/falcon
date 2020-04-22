@@ -5,8 +5,8 @@
  */
 
 #include "falcon.h"
+#include "core/fl-vm.h"
 #include "lib/fl-iolib.h"
-#include "vm/fl-vm.h"
 #include <stdlib.h>
 #include <string.h>
 

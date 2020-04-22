@@ -7,7 +7,7 @@
 #ifndef FALCON_MAP_H
 #define FALCON_MAP_H
 
-#include "../vm/fl-object.h"
+#include "../core/fl-object.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

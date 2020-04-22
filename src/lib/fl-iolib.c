@@ -5,7 +5,7 @@
  */
 
 #include "fl-iolib.h"
-#include "../vm/fl-mem.h"
+#include "../core/fl-mem.h"
 #include <stdlib.h>
 #include <string.h>
 

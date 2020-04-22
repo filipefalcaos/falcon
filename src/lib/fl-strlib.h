@@ -7,8 +7,8 @@
 #ifndef FALCON_STRING_H
 #define FALCON_STRING_H
 
-#include "../vm/fl-value.h"
-#include "../vm/fl-vm.h"
+#include "../core/fl-value.h"
+#include "../core/fl-vm.h"
 
 /* String operations */
 uint32_t hashString(const unsigned char *key, size_t length);

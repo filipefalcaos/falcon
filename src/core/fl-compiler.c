@@ -6,7 +6,7 @@
 
 #include "fl-compiler.h"
 #include "../lib/fl-strlib.h"
-#include "../vm/fl-debug.h"
+#include "fl-debug.h"
 #include <stdio.h>
 #include <string.h>
 

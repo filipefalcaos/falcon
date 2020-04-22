@@ -5,7 +5,7 @@
  */
 
 #include "fl-maplib.h"
-#include "../vm/fl-mem.h"
+#include "../core/fl-mem.h"
 #include <stdio.h>
 #include <string.h>
 

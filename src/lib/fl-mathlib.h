@@ -7,7 +7,7 @@
 #ifndef FALCON_MATH_H
 #define FALCON_MATH_H
 
-#include "../vm/fl-vm.h"
+#include "../core/fl-vm.h"
 
 /* Calculates and returns the absolute value of a given numeric FalconValue. Only one numerical
  * argument is accepted */

@@ -7,7 +7,7 @@
 #ifndef FALCON_SYS_H
 #define FALCON_SYS_H
 
-#include "../vm/fl-vm.h"
+#include "../core/fl-vm.h"
 
 /* Exits the running process with a given exit code. Only one numerical is accepted. No return
  * value is provided */

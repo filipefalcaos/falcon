@@ -7,7 +7,7 @@
 #ifndef FALCON_BASELIB_H
 #define FALCON_BASELIB_H
 
-#include "../vm/fl-vm.h"
+#include "../core/fl-vm.h"
 
 /* Basic library functions errors */
 #define FALCON_CONV_STR_NUM_ERR "Could not convert string to number."

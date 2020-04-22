@@ -7,7 +7,7 @@
 #ifndef FALCON_LIST_H
 #define FALCON_LIST_H
 
-#include "../vm/fl-object.h"
+#include "../core/fl-object.h"
 
 /* List functions */
 ObjList *concatLists(FalconVM *vm, const ObjList *list1, const ObjList *list2);

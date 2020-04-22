@@ -7,10 +7,10 @@
 #ifndef FALCON_VM_H
 #define FALCON_VM_H
 
-#include "../compiler/fl-compiler.h"
 #include "../falcon.h"
 #include "../lib/fl-maplib.h"
 #include "fl-bcode.h"
+#include "fl-compiler.h"
 #include "fl-object.h"
 
 /* A call frame defines a "frame" within the VM's stack where the local variables of a function can

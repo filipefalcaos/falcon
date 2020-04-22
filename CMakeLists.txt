@@ -42,12 +42,27 @@ add_executable(
     src/falcon.h
     src/falcon.c
 
-    # Compiler
-    src/compiler/fl-compiler.h
-    src/compiler/fl-compiler.c
-    src/compiler/fl-scanner.h
-    src/compiler/fl-scanner.c
-    src/compiler/fl-tokens.h
+    # Core
+    src/core/fl-bcode.h
+    src/core/fl-bcode.c
+    src/core/fl-compiler.h
+    src/core/fl-compiler.c
+    src/core/fl-debug.h
+    src/core/fl-debug.c
+    src/core/fl-gc.h
+    src/core/fl-gc.c
+    src/core/fl-mem.h
+    src/core/fl-mem.c
+    src/core/fl-object.h
+    src/core/fl-object.c
+    src/core/fl-opcodes.h
+    src/core/fl-scanner.h
+    src/core/fl-scanner.c
+    src/core/fl-tokens.h
+    src/core/fl-value.h
+    src/core/fl-value.c
+    src/core/fl-vm.h
+    src/core/fl-vm.c
 
     # Standard Lib
     src/lib/fl-baselib.h
@@ -64,23 +79,6 @@ add_executable(
     src/lib/fl-strlib.c
     src/lib/fl-syslib.h
     src/lib/fl-syslib.c
-
-    # Virtual Machine
-    src/vm/fl-bcode.h
-    src/vm/fl-bcode.c
-    src/vm/fl-debug.h
-    src/vm/fl-debug.c
-    src/vm/fl-gc.h
-    src/vm/fl-gc.c
-    src/vm/fl-mem.h
-    src/vm/fl-mem.c
-    src/vm/fl-object.h
-    src/vm/fl-object.c
-    src/vm/fl-opcodes.h
-    src/vm/fl-value.h
-    src/vm/fl-value.c
-    src/vm/fl-vm.h
-    src/vm/fl-vm.c
 )
 
 # Links the <math.h> library

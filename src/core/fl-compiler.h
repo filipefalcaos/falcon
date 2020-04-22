@@ -8,7 +8,7 @@
 #define FALCON_COMPILER_H
 
 #include "../falcon.h"
-#include "../vm/fl-object.h"
+#include "fl-object.h"
 #include "fl-scanner.h"
 
 /* Function types: (i) TYPE_FUNCTION represents an user-defined function; (ii) TYPE_SCRIPT

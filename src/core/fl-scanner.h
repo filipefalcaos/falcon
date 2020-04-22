@@ -7,8 +7,8 @@
 #ifndef FALCON_SCANNER_H
 #define FALCON_SCANNER_H
 
-#include "../vm/fl-value.h"
 #include "fl-tokens.h"
+#include "fl-value.h"
 #include <stdint.h>
 
 /* Token representation */

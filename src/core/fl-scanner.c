@@ -6,7 +6,7 @@
 
 #include "fl-scanner.h"
 #include "../lib/fl-strlib.h"
-#include "../vm/fl-mem.h"
+#include "fl-mem.h"
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>

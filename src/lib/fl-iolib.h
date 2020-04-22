@@ -7,7 +7,7 @@
 #ifndef FALCON_IO_H
 #define FALCON_IO_H
 
-#include "../vm/fl-vm.h"
+#include "../core/fl-vm.h"
 #include <stdio.h>
 
 /* Reads the content of an input file, given its path. If the function fails to read the file, an
