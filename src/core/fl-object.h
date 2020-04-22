@@ -4,8 +4,8 @@
  * See Falcon's license in the LICENSE file
  */
 
-#ifndef FALCON_OBJECT_H
-#define FALCON_OBJECT_H
+#ifndef FL_OBJECT_H
+#define FL_OBJECT_H
 
 #include "fl-bcode.h"
 #include "fl-value.h"
@@ -209,4 +209,4 @@ static inline bool isObjType(FalconValue value, ObjType type) {
     return IS_OBJ(value) && AS_OBJ(value)->type == type;
 }
 
-#endif // FALCON_OBJECT_H
+#endif // FL_OBJECT_H

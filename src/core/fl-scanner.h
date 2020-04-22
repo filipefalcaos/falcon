@@ -4,8 +4,8 @@
  * See Falcon's license in the LICENSE file
  */
 
-#ifndef FALCON_SCANNER_H
-#define FALCON_SCANNER_H
+#ifndef FL_SCANNER_H
+#define FL_SCANNER_H
 
 #include "fl-tokens.h"
 #include "fl-value.h"
@@ -41,4 +41,4 @@ Token scan_token(Scanner *scanner, FalconVM *vm);
 #define SCAN_INVALID_ESCAPE       "Invalid escape character."
 #define SCAN_UNEXPECTED_TK_ERR    "Unexpected token."
 
-#endif // FALCON_SCANNER_H
+#endif // FL_SCANNER_H

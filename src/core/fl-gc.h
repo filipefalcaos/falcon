@@ -4,8 +4,8 @@
  * See Falcon's license in the LICENSE file
  */
 
-#ifndef FALCON_GC_H
-#define FALCON_GC_H
+#ifndef FL_GC_H
+#define FL_GC_H
 
 #include "fl-vm.h"
 
@@ -16,4 +16,4 @@
 /* Starts a new garbage collector run */
 void run_GC(FalconVM *vm);
 
-#endif // FALCON_GC_H
+#endif // FL_GC_H

@@ -4,8 +4,8 @@
  * See Falcon's license in the LICENSE file
  */
 
-#ifndef FALCON_TOKENS_H
-#define FALCON_TOKENS_H
+#ifndef FL_TOKENS_H
+#define FL_TOKENS_H
 
 /* Types of tokens in Falcon */
 typedef enum {
@@ -72,4 +72,4 @@ typedef enum {
 
 } FalconTokens;
 
-#endif // FALCON_TOKENS_H
+#endif // FL_TOKENS_H

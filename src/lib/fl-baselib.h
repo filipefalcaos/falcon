@@ -4,8 +4,8 @@
  * See Falcon's license in the LICENSE file
  */
 
-#ifndef FALCON_BASELIB_H
-#define FALCON_BASELIB_H
+#ifndef FL_BASELIB_H
+#define FL_BASELIB_H
 
 #include "../core/fl-vm.h"
 
@@ -51,4 +51,4 @@ FalconValue lib_setField(FalconVM *vm, int argCount, FalconValue *args);
  * ObjString (the field). Null is always returned */
 FalconValue lib_delField(FalconVM *vm, int argCount, FalconValue *args);
 
-#endif // FALCON_BASELIB_H
+#endif // FL_BASELIB_H

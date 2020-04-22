@@ -4,8 +4,8 @@
  * See Falcon's license in the LICENSE file
  */
 
-#ifndef FALCON_BYTECODE_H
-#define FALCON_BYTECODE_H
+#ifndef FL_BCODE_H
+#define FL_BCODE_H
 
 #include "fl-opcodes.h"
 #include "fl-value.h"
@@ -45,4 +45,4 @@ int get_source_line(const BytecodeChunk *bytecode, int instruction);
 /* Adds a new constant to the constants list of a bytecode chunk and returns its index */
 int add_constant(FalconVM *vm, BytecodeChunk *bytecode, FalconValue value);
 
-#endif // FALCON_BYTECODE_H
+#endif // FL_BCODE_H

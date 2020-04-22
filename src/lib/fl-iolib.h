@@ -4,8 +4,8 @@
  * See Falcon's license in the LICENSE file
  */
 
-#ifndef FALCON_IO_H
-#define FALCON_IO_H
+#ifndef FL_IOLIB_H
+#define FL_IOLIB_H
 
 #include "../core/fl-vm.h"
 #include <stdio.h>
@@ -26,4 +26,4 @@ FalconValue lib_input(FalconVM *vm, int argCount, FalconValue *args);
 #define IO_OPEN_FILE_ERR "Could not open file"
 #define IO_READ_FILE_ERR "Could not read file"
 
-#endif // FALCON_IO_H
+#endif // FL_IOLIB_H

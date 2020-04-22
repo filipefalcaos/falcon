@@ -4,8 +4,8 @@
  * See Falcon's license in the LICENSE file
  */
 
-#ifndef FALCON_MAP_H
-#define FALCON_MAP_H
+#ifndef FL_MAPLIB_H
+#define FL_MAPLIB_H
 
 #include "../core/fl-object.h"
 #include <stdbool.h>
@@ -41,4 +41,4 @@ void copy_entries(FalconVM *vm, ObjMap *from, ObjMap *to);
 /* Converts a given ObjMap to a ObjString */
 ObjString *map_to_string(FalconVM *vm, ObjMap *map);
 
-#endif // FALCON_MAP_H
+#endif // FL_MAPLIB_H

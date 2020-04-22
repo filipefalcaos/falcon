@@ -4,8 +4,8 @@
  * See Falcon's license in the LICENSE file
  */
 
-#ifndef FALCON_OPCODES_H
-#define FALCON_OPCODES_H
+#ifndef FL_OPCODES_H
+#define FL_OPCODES_H
 
 /* clang-format off */
 
@@ -83,4 +83,4 @@ typedef enum {
 
 /* clang-format on */
 
-#endif // FALCON_OPCODES_H
+#endif // FL_OPCODES_H

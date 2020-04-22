@@ -4,8 +4,8 @@
  * See Falcon's license in the LICENSE file
  */
 
-#ifndef FALCON_VM_H
-#define FALCON_VM_H
+#ifndef FL_VM_H
+#define FL_VM_H
 
 #include "../falcon.h"
 #include "../lib/fl-maplib.h"
@@ -169,4 +169,4 @@ FalconValue pop(FalconVM *vm);
 #define VM_STRING_BOUNDS_ERR "String index out of bounds."
 #define VM_STRING_MUT_ERR    "String content cannot be modified."
 
-#endif // FALCON_VM_H
+#endif // FL_VM_H

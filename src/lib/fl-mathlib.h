@@ -4,8 +4,8 @@
  * See Falcon's license in the LICENSE file
  */
 
-#ifndef FALCON_MATH_H
-#define FALCON_MATH_H
+#ifndef FL_MATHLIB_H
+#define FL_MATHLIB_H
 
 #include "../core/fl-vm.h"
 
@@ -21,4 +21,4 @@ FalconValue lib_sqrt(FalconVM *vm, int argCount, FalconValue *args);
  * numeric FalconValues */
 FalconValue lib_pow(FalconVM *vm, int argCount, FalconValue *args);
 
-#endif // FALCON_MATH_H
+#endif // FL_MATHLIB_H

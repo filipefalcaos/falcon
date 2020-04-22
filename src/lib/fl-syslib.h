@@ -4,8 +4,8 @@
  * See Falcon's license in the LICENSE file
  */
 
-#ifndef FALCON_SYS_H
-#define FALCON_SYS_H
+#ifndef FL_SYSLIB_H
+#define FL_SYSLIB_H
 
 #include "../core/fl-vm.h"
 
@@ -20,4 +20,4 @@ FalconValue lib_clock(FalconVM *vm, int argCount, FalconValue *args);
 /* Computes and returns the UNIX timestamp, in seconds. No arguments are accepted */
 FalconValue lib_time(FalconVM *vm, int argCount, FalconValue *args);
 
-#endif // FALCON_SYS_H
+#endif // FL_SYSLIB_H

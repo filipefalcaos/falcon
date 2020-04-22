@@ -4,8 +4,8 @@
  * See Falcon's license in the LICENSE file
  */
 
-#ifndef FALCON_COMPILER_H
-#define FALCON_COMPILER_H
+#ifndef FL_COMPILER_H
+#define FL_COMPILER_H
 
 #include "../falcon.h"
 #include "fl-object.h"
@@ -177,4 +177,4 @@ ObjFunction *compile_source(FalconVM *vm, const char *source);
 #define COMP_ARGS_LIMIT_ERR    "Limit of 255 arguments reached."
 #define COMP_PARAMS_LIMIT_ERR  "Limit of 255 parameters reached."
 
-#endif // FALCON_COMPILER_H
+#endif // FL_COMPILER_H

@@ -4,8 +4,8 @@
  * See Falcon's license in the LICENSE file
  */
 
-#ifndef FALCON_MEMORY_H
-#define FALCON_MEMORY_H
+#ifndef FL_MEM_H
+#define FL_MEM_H
 
 #include "fl-gc.h"
 #include "fl-object.h"
@@ -64,4 +64,4 @@ static inline size_t increaseStringAllocation(size_t currLen, size_t allocationS
     }
 }
 
-#endif // FALCON_MEMORY_H
+#endif // FL_MEM_H

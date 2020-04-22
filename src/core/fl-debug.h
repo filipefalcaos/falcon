@@ -4,8 +4,8 @@
  * See Falcon's license in the LICENSE file
  */
 
-#ifndef FALCON_DEBUG_H
-#define FALCON_DEBUG_H
+#ifndef FL_DEBUG_H
+#define FL_DEBUG_H
 
 #include "fl-bcode.h"
 #include "fl-object.h"
@@ -48,4 +48,4 @@ void dump_blacken(FalconObj *object);
  * number of bytes required for the next garbage collector activation */
 void dump_GC(FalconVM *vm, size_t bytesAllocated);
 
-#endif // FALCON_DEBUG_H
+#endif // FL_DEBUG_H

@@ -4,8 +4,8 @@
  * See Falcon's license in the LICENSE file
  */
 
-#ifndef FALCON_VALUE_H
-#define FALCON_VALUE_H
+#ifndef FL_VALUE_H
+#define FL_VALUE_H
 
 #include "../falcon.h"
 #include <stdbool.h>
@@ -91,4 +91,4 @@ ObjString *value_to_string(FalconVM *vm, FalconValue *value);
 /* Prints a single FalconValue to stdout */
 void print_value(FalconVM *vm, FalconValue value);
 
-#endif // FALCON_VALUE_H
+#endif // FL_VALUE_H

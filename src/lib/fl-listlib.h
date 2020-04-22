@@ -4,8 +4,8 @@
  * See Falcon's license in the LICENSE file
  */
 
-#ifndef FALCON_LIST_H
-#define FALCON_LIST_H
+#ifndef FL_LISTLIB_H
+#define FL_LISTLIB_H
 
 #include "../core/fl-object.h"
 
@@ -13,4 +13,4 @@
 ObjList *concat_lists(FalconVM *vm, const ObjList *list1, const ObjList *list2);
 ObjString *list_to_string(FalconVM *vm, ObjList *list);
 
-#endif // FALCON_LIST_H
+#endif // FL_LISTLIB_H
