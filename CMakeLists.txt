@@ -43,40 +43,44 @@ add_executable(
     src/falcon.c
 
     # Compiler
-    src/compiler/falcon_compiler.h
-    src/compiler/falcon_compiler.c
-    src/compiler/falcon_scanner.h
-    src/compiler/falcon_scanner.c
-    src/compiler/falcon_tokens.h
+    src/compiler/fl-compiler.h
+    src/compiler/fl-compiler.c
+    src/compiler/fl-scanner.h
+    src/compiler/fl-scanner.c
+    src/compiler/fl-tokens.h
 
     # Standard Lib
-    src/lib/falcon_io.h
-    src/lib/falcon_io.c
-    src/lib/falcon_list.h
-    src/lib/falcon_list.c
-    src/lib/falcon_map.h
-    src/lib/falcon_map.c
-    src/lib/falcon_natives.h
-    src/lib/falcon_natives.c
-    src/lib/falcon_string.h
-    src/lib/falcon_string.c
+    src/lib/fl-baselib.h
+    src/lib/fl-baselib.c
+    src/lib/fl-iolib.h
+    src/lib/fl-iolib.c
+    src/lib/fl-listlib.h
+    src/lib/fl-listlib.c
+    src/lib/fl-maplib.h
+    src/lib/fl-maplib.c
+    src/lib/fl-mathlib.h
+    src/lib/fl-mathlib.c
+    src/lib/fl-strlib.h
+    src/lib/fl-strlib.c
+    src/lib/fl-syslib.h
+    src/lib/fl-syslib.c
 
     # Virtual Machine
-    src/vm/falcon_bytecode.h
-    src/vm/falcon_bytecode.c
-    src/vm/falcon_debug.h
-    src/vm/falcon_debug.c
-    src/vm/falcon_gc.h
-    src/vm/falcon_gc.c
-    src/vm/falcon_memory.h
-    src/vm/falcon_memory.c
-    src/vm/falcon_object.h
-    src/vm/falcon_object.c
-    src/vm/falcon_opcodes.h
-    src/vm/falcon_value.h
-    src/vm/falcon_value.c
-    src/vm/falcon_vm.h
-    src/vm/falcon_vm.c
+    src/vm/fl-bcode.h
+    src/vm/fl-bcode.c
+    src/vm/fl-debug.h
+    src/vm/fl-debug.c
+    src/vm/fl-gc.h
+    src/vm/fl-gc.c
+    src/vm/fl-mem.h
+    src/vm/fl-mem.c
+    src/vm/fl-object.h
+    src/vm/fl-object.c
+    src/vm/fl-opcodes.h
+    src/vm/fl-value.h
+    src/vm/fl-value.c
+    src/vm/fl-vm.h
+    src/vm/fl-vm.c
 )
 
 # Links the <math.h> library
